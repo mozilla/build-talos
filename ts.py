@@ -1,5 +1,3 @@
-#!c:/Python24/python.exe
-#
 # ***** BEGIN LICENSE BLOCK *****
 # Version: MPL 1.1/GPL 2.0/LGPL 2.1
 #
@@ -21,6 +19,7 @@
 #
 # Contributor(s):
 #   Annie Sullivan <annie.sullivan@gmail.com> (original author)
+#   Alice Nodelman <anodelman@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -55,7 +54,8 @@ import time
 
 import ffprocess
 import ffprofile
-import paths
+import ffinfo
+import config
 
 
 # Regular expression to get the time for startup test (Ts)
@@ -96,7 +96,7 @@ def RunStartupTest(firefox_path, profile_dir, num_runs, timeout):
     # Create a command line that passes in the url of the startup test
     # with the current time as the begin_time argument
     time_arg = int(time.time() * 1000)
-    url = paths.TS_URL + str(time_arg)
+    url = config.TS_URL + str(time_arg)
     command_line = ffprocess.GenerateFirefoxCommandLine(firefox_path, profile_dir, url)
     (match, timed_out) = ffprocess.RunProcessAndWaitForOutput(command_line,
                                                               'firefox',
@@ -110,12 +110,11 @@ def RunStartupTest(firefox_path, profile_dir, num_runs, timeout):
   return startup_times
 
 
-def RunStartupTests(source_profile_dir, profile_configs, num_runs):
+def RunStartupTests(profile_configs, num_runs):
   """Runs the startup tests with profiles created from the
      given base profile directory and list of configurations.
 
   Args:
-    source_profile_dir:  Full path to base directory to copy profile from.
     profile_configs:  Array of configuration options for each profile.
       These are of the format:
       [{prefname:prevalue,prefname2:prefvalue2},{extensionguid:path_to_extension}],[{prefname...
@@ -128,7 +127,7 @@ def RunStartupTests(source_profile_dir, profile_configs, num_runs):
   all_times = []
   for config in profile_configs:
     # Create the new profile
-    profile_dir = ffprofile.CreateTempProfileDir(source_profile_dir,
+    profile_dir = ffprofile.CreateTempProfileDir(config[5],
                                                  config[0],
                                                  config[1])
 
@@ -136,9 +135,10 @@ def RunStartupTests(source_profile_dir, profile_configs, num_runs):
     # cause a performance hit, and the second Firefox that gets
     # created is properly terminated.
     ffprofile.InitializeNewProfile(config[2], profile_dir)
+    ffinfo.GetMetricsFromBrowser(config[2], profile_dir)
 
     # Run the startup tests for this profile and log the results.
-    times = RunStartupTest(config[2], profile_dir, 5, 30)
+    times = RunStartupTest(config[2], profile_dir, num_runs, 10)
     all_times.append(times)
 
     # Delete the temp profile directory.  Make it writeable first,

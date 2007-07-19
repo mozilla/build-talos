@@ -11,7 +11,7 @@
    - for the specific language governing rights and limitations under the
    - License.
    -
-   - The Original Code is JavaScript startup test.
+   - The Original Code is Windows performance test.
    -
    - The Initial Developer of the Original Code is
    - Google Inc.
@@ -34,16 +34,19 @@
    - the provisions above, a recipient may use your version of this file under
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
-   - ***** END LICENSE BLOCK ***** --><!-- Pick off begin time as a cgi argument and print it out --><html><!-- call this with an arg, e.g. file://foo/startup-test.html?begin=12345678 --><!-- In-line this to avoid compilation. -->
-<body onload="
-    var now = (new Date()).getTime();  
-    var begin = document.location.search.split('=')[1]; // ?begin=nnnnn
-    var startupTime = now - begin;
-	document.write('\n\nStartup time = ' + startupTime + ' ms<br>');
-    if (window.dump) {
-      dump('\n\n__startuptime,' + startupTime + '\n\n');
-    }
-    window.close();
+   - ***** END LICENSE BLOCK ***** -->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>shutdown script</title>
+  </head>
+
+  <body onload="
+	if (window.dump) {
+		dump('\n\n__metricsScreen width:' + screen.width + ' Screen height:' + screen.height + ' colorDepth:' + screen.colorDepth);
+	}
+	window.close();
 ">
-</body>
+  </body>
 </html>
