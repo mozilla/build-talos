@@ -8,6 +8,6 @@
     <toolbarbutton id="sample-toolbar-button"
       label="&sampleToolbar.label;"
       tooltiptext="&sampleToolbar.tooltip;"
-      oncommand="Sample.doIt();"/>
+      oncommand="BenchFE.nextTest();"/>
   </toolbar>
 </overlay>
