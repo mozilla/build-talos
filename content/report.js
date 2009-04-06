@@ -7,6 +7,8 @@ function Report() {
   this.pandistance = undefined;
   //lag during pageloads
   this.loadlag = [];
+  //zoomin lag
+  this.zoominlag = [];
 }
 
 Report.prototype = {
@@ -46,9 +48,10 @@ Report.prototype = {
       +"<br>\nversion: "+navigator.userAgent
       +"<br>\ndate: "+new Date()
       +"<br>\npan time: "+this.pantime
-      +"<br>\npan distance: "+Math.ceil(this.pandistance)
+      +"<br>\npan distance: "+Math.ceil(this.pandistance) + " screen pixels"
       +"<br>\npan lag: " + pretty_array(this.panlag)
       +"<br>\nload lag: " + pretty_array(this.loadlag)
+      +"<br>\nzoomin lag: " + pretty_array(this.zoominlag)
       +"</div></body></html>";
     foStream.write(str, str.length);
     foStream.close();

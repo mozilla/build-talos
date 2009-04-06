@@ -10,7 +10,6 @@ LagDuringLoad.prototype = {
     let self = this;
     function timeout() {
       let diff = (new Date() - self._beforeTimeout) - self._timeoutDelay;
-      dump("scheduleNextEvent:"+diff+"\n")
       self._fe.report.loadlag.push(diff);
       self.scheduleNextEvent();
     }
@@ -30,8 +29,8 @@ LagDuringLoad.prototype = {
     function dummy() {
     }
   
-    browser.loadURI("http://w3.org", null, null, false);
-//    browser.loadURI("http://pravda.ru", null, null, false);
+//    browser.loadURI("http://w3.org", null, null, false);
+    browser.loadURI("http://pravda.ru", null, null, false);
     self.scheduleNextEvent();
   }
 }

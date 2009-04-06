@@ -1,7 +1,7 @@
 var BenchFE = {
   currentTest:-1,
-  tests:[LagDuringLoad, PanDown],
-  report:new Report(),
+  tests: [LagDuringLoad, Zoom, PanDown],
+  report: new Report(),
   
   nextTest : function(aEvent) {
     this.currentTest++;
