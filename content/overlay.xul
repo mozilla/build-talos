@@ -2,8 +2,10 @@
 <?xml-stylesheet href="chrome://sample/skin/overlay.css" type="text/css"?>
 <!DOCTYPE overlay SYSTEM "chrome://sample/locale/overlay.dtd">
 <overlay id="sample-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
-  <script type="application/x-javascript" src="overlay.js">
-  </script>
+  <script type="application/x-javascript" src="report.js"/>
+  <script type="application/x-javascript" src="pan.js"/>
+  <script type="application/x-javascript" src="pageload.js"/>
+  <script type="application/x-javascript" src="overlay.js"/>
   <toolbar id="toolbar-main">
     <toolbarbutton id="sample-toolbar-button"
       label="&sampleToolbar.label;"
