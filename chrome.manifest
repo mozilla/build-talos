@@ -1,4 +1,4 @@
-content sample  content/
-locale  sample  en-US	locale/en-US/
-skin    sample  classic/1.0  skin/
-overlay	chrome://browser/content/browser.xul	chrome://sample/content/overlay.xul
+content fennecbench  content/
+locale  fennecbench  en-US	locale/en-US/
+skin    fennecbench  classic/1.0  skin/
+overlay	chrome://browser/content/browser.xul	chrome://fennecbench/content/overlay.xul
