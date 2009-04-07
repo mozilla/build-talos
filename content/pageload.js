@@ -9,8 +9,10 @@ LagDuringLoad.prototype = {
   scheduleNextEvent: function() {
     let self = this;
     function timeout() {
+      // Deal with timeouts that fire sooner than expected
       let diff = (new Date() - self._beforeTimeout) - self._timeoutDelay;
-      self._fe.report.loadlag.push(diff);
+      if (diff > 0)
+        self._fe.report.loadlag.push(diff);
       self.scheduleNextEvent();
     }
     if (Browser.selectedTab.isLoading()) {
@@ -30,7 +32,7 @@ LagDuringLoad.prototype = {
     }
   
 //    browser.loadURI("http://w3.org", null, null, false);
-    browser.loadURI("http://pravda.ru", null, null, false);
+    browser.loadURI("http://www.iol.co.za/", null, null, false);
     self.scheduleNextEvent();
   }
 }

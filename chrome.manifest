@@ -1,4 +1,3 @@
 content fennecbench  content/
-locale  fennecbench  en-US	locale/en-US/
 skin    fennecbench  classic/1.0  skin/
 overlay	chrome://browser/content/browser.xul	chrome://fennecbench/content/overlay.xul
