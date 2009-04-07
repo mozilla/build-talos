@@ -8,10 +8,10 @@
                    em:maxVersion="1.0.*" />
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="bench@taras.glek"
-                   em:name="Fennec Benc2h"
+                   em:name="Fennec Bench"
                    em:version="1.0"
                    em:creator="Taras Glek"
-                   em:description="Bench startup+panning"
+                   em:description="Benchmark for measuring Fennec panning/zoom/pageload responsiveness"
                    em:updateKey="MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCXNAEiJJcW7c+a/fVUCuCfTcyo5R0V0OHNzN86Zimo7PMsynVZmUSDrK9672rYGEw+dKLzrD1b/sYEOHiwmK/xeEXyQJUk75jbmLEQymVLjfyW95yPmig6koTleNatWrERO5RIDOl29nyCzYudzGOKl6wVgW/Bx9YMlLIXLsrwbQIDAQAB">
     <em:targetApplication RDF:resource="rdf:#$fOBOT3"/>
   </RDF:Description>
