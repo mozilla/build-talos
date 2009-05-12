@@ -17,7 +17,7 @@ Zoom.prototype = {
   },
 
   click: function(x,y) {
-    let cwu = Browser._windowUtils;
+    let cwu = Browser.windowUtils;
     cwu.sendMouseEvent("mousedown", x, y,
                        0, 1, 0, true);
     cwu.sendMouseEvent("mousemove", x, y,

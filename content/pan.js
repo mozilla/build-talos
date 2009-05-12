@@ -6,7 +6,7 @@ PanDown.prototype = {
   go: function() {
     let startTime = new Date();
     let self = this;
-    let cwu = Browser._windowUtils;
+    let cwu = Browser.windowUtils;
     let cb = Browser._canvasBrowser;
     //    cb.zoomLevel = 2;
     let pageH = cb._contentAreaDimensions[1];        
