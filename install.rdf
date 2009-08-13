@@ -8,7 +8,7 @@
                    em:maxVersion="1.0.*" />
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="bench@taras.glek"
-                   em:name="Fennec Bench"
+                   em:name="Fennecmark"
                    em:version="1.0"
                    em:creator="Taras Glek"
                    em:description="Benchmark for measuring Fennec panning/zoom/pageload responsiveness"

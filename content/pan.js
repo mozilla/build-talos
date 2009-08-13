@@ -7,15 +7,15 @@ PanDown.prototype = {
     let startTime = new Date();
     let self = this;
     let cwu = Browser.windowUtils;
-    let cb = Browser._canvasBrowser;
-    //    cb.zoomLevel = 2;
-    let pageH = cb._contentAreaDimensions[1];        
-    let from = window.innerHeight-1;
+    let tileContainer = document.getElementById('tile-container')
+    let pageH = tileContainer.getBoundingClientRect().height;
+    let innerHeight = window.innerHeight;
+    let from = innerHeight-1;
     let to = 1;
     let step = 15;
     let x = window.innerWidth/2;
     let r = this._fe.report;
-    r.pandistance = cb._pageToScreen(pageH);
+    r.pandistance = pageH;
     function pan () {
       cwu.sendMouseEvent("mousedown", x, from,
                          0, 1, 0, true);
@@ -31,12 +31,13 @@ PanDown.prototype = {
       } catch (ex) {
         dump("ex:"+ex+"\n");
       }
+
       let delay = new Date() - before;
       r.panlag.push(delay);
       let timeToDelay = Math.max(0, 200 - delay);
-      let viewBottom = cb._visibleBounds.bottom;
-      dump([pageH, viewBottom, timeToDelay]+" pageH, viewBottom, timeToPan\n");
-      if (pageH > viewBottom) {
+      let pageBottom = tileContainer.getBoundingClientRect().bottom
+//      dump([innerHeight, pageBottom]+"\n")
+      if (innerHeight < pageBottom) {
         setTimeout(pan, timeToDelay, this);
       } else {
         r.pantime = new Date() - startTime;;

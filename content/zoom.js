@@ -1,6 +1,6 @@
 function Zoom(fe) {
   this._fe = fe;
-  this._zoomLevel = Browser._canvasBrowser.zoomLevel;
+  this._initialZoomLevel = Browser._browserView.getZoomLevel();
 }
 
 Zoom.prototype = {
@@ -29,14 +29,13 @@ Zoom.prototype = {
   nextStep: function () {
     let r = this._fe.report;
     let startTime = new Date();    
-    let cb = Browser._canvasBrowser;
-    let oldZoom = cb.zoomLevel;
+    let oldZoom = Browser._browserView.getZoomLevel();
     let self = this;
     this.click(this._x, this._y);
     this.click(this._x, this._y);
     
     //only report successful zoom changes
-    if (oldZoom != cb.zoomLevel)
+    if (oldZoom != Browser._browserView.getZoomLevel())
       r.zoominlag.push(new Date() - startTime);
     this._stepsLeft--;
     if (this._stepsLeft > 0) {
@@ -44,8 +43,8 @@ Zoom.prototype = {
       this._y += this._stepY;
       setTimeout(function() {self.nextStep()}, 1000);
     } else {
-      ws.panTo(0,0);
-      cb.zoomLevel = this._zoomLevel;
+      Browser._browserView.setZoomLevel(this._zoomLevel);
+      Browser.scrollContentToTop();
       setTimeout(function() {self._fe.nextTest()}, 1000);
     }
   }
