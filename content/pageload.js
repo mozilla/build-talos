@@ -31,8 +31,12 @@ LagDuringLoad.prototype = {
     function dummy() {
     }
   
-//    browser.loadURI("http://w3.org", null, null, false);
-    browser.loadURI("http://www.iol.co.za/", null, null, false);
+
+    let url = "http://www.iol.co.za";
+    if (self._fe.talos == true) {
+      url = "http://localhost/page_load_test/pages/en.wikipedia.org_wiki_Main_Page/en.wikipedia.org/wiki/Main_Page.html";
+    }
+    browser.loadURI(url, null, null, false);
     self.scheduleNextEvent();
   }
 }

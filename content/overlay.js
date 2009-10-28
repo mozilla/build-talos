@@ -2,6 +2,7 @@ var BenchFE = {
   currentTest:-1,
   tests: [LagDuringLoad, Zoom, PanDown],
   report: new Report(),
+  talos: false,
   
   nextTest : function(aEvent) {
     try {
@@ -18,4 +19,23 @@ var BenchFE = {
     }
   }
 };
-//setTimeout(function() {BenchFE.nextTest()}, 1000);
+
+/*
+  NOTE: need to load page, so calling LagDuringLoad for each test set.
+        We are not testing this as it is covered in page_load_test
+*/
+
+var myExtension = {
+  myListener: function(evt) {
+    BenchFE.talos = true;
+    BenchFE.report.setTalos();
+    var test = evt.target.getAttribute("attribute1");
+    if (test == "Zoom") { BenchFE.tests = [LagDuringLoad, Zoom]; };
+    if (test == "PanDown") { BenchFE.tests = [LagDuringLoad, PanDown]; };
+
+    setTimeout(function() {BenchFE.nextTest(); }, 3000);
+  }
+}
+
+document.addEventListener("myExtensionEvent", function (e) { myExtension.myListener(e); }, false, true);
+

@@ -36,11 +36,12 @@ PanDown.prototype = {
       r.panlag.push(delay);
       let timeToDelay = Math.max(0, 200 - delay);
       let pageBottom = tileContainer.getBoundingClientRect().bottom
-//      dump([innerHeight, pageBottom]+"\n")
-      if (innerHeight < pageBottom) {
+      dump([pageH, pageBottom, timeToDelay]+" pageH, pageBottom, timeToPan\n")
+
+      if (parseInt(innerHeight) <= (parseInt(pageBottom) - 10)) {
         setTimeout(pan, timeToDelay, this);
       } else {
-        r.pantime = new Date() - startTime;;
+        r.pantime = new Date() - startTime;
         setTimeout(function() {self._fe.nextTest()}, 0);
       }
     }
