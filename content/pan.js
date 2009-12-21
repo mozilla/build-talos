@@ -29,7 +29,6 @@ PanDown.prototype = {
       try {
         cwu.sendMouseEvent("click", x, to, 0, 1, 0, true);
       } catch (ex) {
-        dump("ex:"+ex+"\n");
       }
 
       let delay = new Date() - before;
