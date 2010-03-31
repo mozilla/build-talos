@@ -34,7 +34,7 @@ LagDuringLoad.prototype = {
 
     let url = "http://www.iol.co.za";
     if (self._fe.talos == true) {
-      url = "http://localhost/page_load_test/pages/en.wikipedia.org_wiki_Main_Page/en.wikipedia.org/wiki/Main_Page.html";
+      url = "http://" + self._fe.webServer + "/startup_test/fennecmark/wikipedia.html";
     }
     browser.loadURI(url, null, null, false);
     self.scheduleNextEvent();

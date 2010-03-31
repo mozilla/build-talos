@@ -3,6 +3,7 @@ var BenchFE = {
   tests: [LagDuringLoad, Zoom, PanDown],
   report: new Report(),
   talos: false,
+  webServer: "locahost",
   
   nextTest : function(aEvent) {
     try {
@@ -30,6 +31,10 @@ var myExtension = {
     BenchFE.talos = true;
     BenchFE.report.setTalos();
     var test = evt.target.getAttribute("attribute1");
+    BenchFE.webServer = evt.target.getAttribute("webServer");
+    if (BenchFE.webServer == null) {
+      BenchFE.webServer = "localhost";
+    }
     if (test == "Zoom") { BenchFE.tests = [LagDuringLoad, Zoom]; };
     if (test == "PanDown") { BenchFE.tests = [LagDuringLoad, PanDown]; };
 
