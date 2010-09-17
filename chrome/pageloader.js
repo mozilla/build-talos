@@ -290,6 +290,18 @@ function plLoadHandler(evt) {
   if (timeout > 0) { 
     clearTimeout(timeoutEvent);
   }
+  var docElem;
+  if (browserWindow)
+    docElem = browserWindow.frames["content"].document.documentElement;
+  else
+    docElem = content.contentDocument.documentElement;
+  var width;
+  if ("getBoundingClientRect" in docElem) {
+    width = docElem.getBoundingClientRect().width;
+  } else if ("offsetWidth" in docElem) {
+    width = docElem.offsetWidth;
+  }
+
   var end_time = Date.now();
   var time = (end_time - start_time);
 
