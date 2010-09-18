@@ -9,7 +9,8 @@ var BenchFE = {
     try {
     this.currentTest++;
     if (this.currentTest < this.tests.length) {
-      (new this.tests[this.currentTest](this)).go();
+      this._test = (new this.tests[this.currentTest](this));
+      this._test.go();
     } else {
       Browser.addTab(this.report.save(), true);
       this._currentTest = -1;
@@ -26,21 +27,19 @@ var BenchFE = {
         We are not testing this as it is covered in page_load_test
 */
 
-var myExtension = {
-  myListener: function(evt) {
-    BenchFE.talos = true;
-    BenchFE.report.setTalos();
-    var test = evt.target.getAttribute("attribute1");
-    BenchFE.webServer = evt.target.getAttribute("webServer");
-    if (BenchFE.webServer == null) {
-      BenchFE.webServer = "localhost";
-    }
-    if (test == "Zoom") { BenchFE.tests = [LagDuringLoad, Zoom]; };
-    if (test == "PanDown") { BenchFE.tests = [LagDuringLoad, PanDown]; };
-
-    setTimeout(function() {BenchFE.nextTest(); }, 3000);
+function myListener(m) {
+  BenchFE.talos = true;
+  BenchFE.report.setTalos();
+  var test = m.json.test;
+  BenchFE.webServer = m.json.webServer;
+  if (BenchFE.webServer == null) {
+    BenchFE.webServer = "localhost";
   }
+  if (test == "Zoom") { BenchFE.tests = [LagDuringLoad, Zoom]; };
+  if (test == "PanDown") { BenchFE.tests = [LagDuringLoad, PanDown]; };
+
+  setTimeout(function() {BenchFE.nextTest(); }, 3000);
 }
 
-document.addEventListener("myExtensionEvent", function (e) { myExtension.myListener(e); }, false, true);
+messageManager.addMessageListener("fbChromeEvent", myListener);
 

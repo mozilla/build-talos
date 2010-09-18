@@ -50,6 +50,41 @@ Report.prototype = {
       var median = ls.length % 2 == 1 ? ls[Math.floor(mid)] : (ls[mid-1]+ls[mid])/2;
       return median;
     }
+    
+    function writeFile(filename, msg) {
+      var FOSTREAM_CID = "@mozilla.org/network/file-output-stream;1";
+      var LF_CID = "@mozilla.org/file/local;1";
+      var PR_WRITE_ONLY   = 0x02;
+      var PR_CREATE_FILE  = 0x08;
+      var PR_TRUNCATE     = 0x20;
+
+      var lFile = Cc[LF_CID].createInstance(Ci.nsILocalFile);
+      lFile.initWithPath(filename);
+
+      var foStream = Cc[FOSTREAM_CID].createInstance(Ci.nsIFileOutputStream);
+      foStream.init(lFile, PR_WRITE_ONLY | PR_CREATE_FILE | PR_TRUNCATE,
+                                       0664, 0);
+
+      foStream.write(msg, msg.length);
+      foStream.close();
+  
+      foStream = null;
+      lFile = null;
+    }
+    
+    function dumpLog(msg) {
+      var logFile = null;
+      
+      try {
+        var prefs = Cc['@mozilla.org/preferences-service;1']
+          .getService(Ci.nsIPrefBranch2);
+        logFile = prefs.getCharPref("talos.logfile");
+      } catch(ex) {} //preference is not set, only dump
+      if (logFile != null && logFile != '') {
+        writeFile(logFile, msg);
+      }
+      dump(msg);
+    }
    
     var file = Cc["@mozilla.org/file/directory_service;1"].
                      getService(Ci.nsIProperties).
@@ -70,16 +105,17 @@ Report.prototype = {
       +"</div></body></html>";
 
     if (this.talos == true) {
+
       var tpan = "";
       if (pretty_array(this.panlag) == null) {
-        tpan = "__start_report" + median_array(this.zoominlag) + "__end_report";
+        tpan = "__start_report" + median_array(this.zoominlag) + "__end_report\n";
       }
       else {
-        tpan = "__start_report" + this.pantime + "__end_report";
+        tpan = "__start_report" + this.pantime + "__end_report\n";
       }
       var now = (new Date()).getTime();
       tpan += "__startTimestamp" + now + "__endTimestamp\n";
-      dump(tpan);
+      dumpLog(tpan);
       
       goQuitApplication();
       window.close();
