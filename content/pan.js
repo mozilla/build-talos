@@ -7,8 +7,8 @@ PanDown.prototype = {
     let startTime = new Date();
     let self = this;
     let cwu = Browser.windowUtils;
-    let tileContainer = document.getElementById('tile-container')
-    let pageH = tileContainer.getBoundingClientRect().height;
+    let viewport = document.getElementById('content-viewport')
+    let pageH = viewport.getBoundingClientRect().height;
     let innerHeight = window.innerHeight;
     let from = innerHeight-1;
     let to = 1;
@@ -34,7 +34,7 @@ PanDown.prototype = {
       let delay = new Date() - before;
       r.panlag.push(delay);
       let timeToDelay = Math.max(0, 200 - delay);
-      let pageBottom = tileContainer.getBoundingClientRect().bottom
+      let pageBottom = viewport.getBoundingClientRect().bottom
       dump([pageH, pageBottom, timeToDelay]+" pageH, pageBottom, timeToPan\n")
 
       if (parseInt(innerHeight) <= (parseInt(pageBottom) - 10)) {

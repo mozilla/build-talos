@@ -1,6 +1,6 @@
 function Zoom(fe) {
   this._fe = fe;
-  this._initialZoomLevel = Browser._browserView.getZoomLevel();
+  this._initialZoomLevel = getBrowser().scale;
 }
 
 Zoom.prototype = {
@@ -30,7 +30,7 @@ Zoom.prototype = {
     
   nextStep: function () {
     this._startTime = new Date();
-    this._oldZoom = Browser._browserView.getZoomLevel();
+    this._oldZoom = getBrowser().scale;
     this.click(this._x, this._y);
     this.click(this._x, this._y);
     setTimeout(function() {self.zoomEvent()}, 10000);
@@ -44,7 +44,7 @@ function zoomEvent() {
   let self = zoom;
 
   //only report successful zoom changes
-  if (zoom._oldZoom != Browser._browserView.getZoomLevel() && zoom._startTime > 0) {
+  if (zoom._oldZoom != getBrowser().scale && zoom._startTime > 0) {
     let diff = new Date() - zoom._startTime;
     r.zoominlag.push(diff);
   }
@@ -54,7 +54,7 @@ function zoomEvent() {
     zoom._y += zoom._stepY;
     setTimeout(function() {self.nextStep()}, 1000);
   } else {
-    Browser._browserView.setZoomLevel(zoom._zoomLevel);
+    getBrowser().scale = zoom._zoomLevel;
     Browser.scrollContentToTop();
     removeEventListener("ZoomChanged", zoom.zoomEvent, false);
     setTimeout(function() {self._fe.nextTest()}, 1000);
