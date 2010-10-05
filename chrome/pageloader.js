@@ -37,8 +37,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
+try {
+  if (Cc === undefined) {
+    var Cc = Components.classes;
+    var Ci = Components.interfaces;
+  }
+} catch (ex) {}
 
 var NUM_CYCLES = 5;
 
@@ -371,6 +375,9 @@ function plStop(force) {
   if (content)
     content.removeEventListener('load', plLoadHandler, true);
 
+  if (MozillaFileLogger)
+    MozillaFileLogger.close();
+
   goQuitApplication();
 }
 
@@ -448,6 +455,8 @@ function plLoadURLsFromURI(manifestUri) {
 }
 
 function dumpLine(str) {
+  if (MozillaFileLogger)
+    MozillaFileLogger.log(str + "\n");
   dump(str);
   dump("\n");
 }
