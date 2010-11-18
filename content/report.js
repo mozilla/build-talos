@@ -67,13 +67,15 @@ Report.prototype = {
 
       foStream.write(msg, msg.length);
       foStream.close();
-  
+      
       foStream = null;
       lFile = null;
     }
     
     function dumpLog(msg) {
       var logFile = null;
+      if (msg.length <= 0)
+        return;
       
       try {
         var prefs = Cc['@mozilla.org/preferences-service;1']
@@ -85,24 +87,6 @@ Report.prototype = {
       }
       dump(msg);
     }
-   
-    var file = Cc["@mozilla.org/file/directory_service;1"].
-                     getService(Ci.nsIProperties).
-                     get("TmpD", Ci.nsIFile);
-    file.append("results.html");
-    file.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, 0666);
-    var foStream = Cc["@mozilla.org/network/file-output-stream;1"].
-                         createInstance(Ci.nsIFileOutputStream);
-    foStream.init(file, 0x02 | 0x08 | 0x20, 0666, 0); 
-    let str = "<html><body><div style='width:80%'>"
-      +"<br>\nversion: "+navigator.userAgent
-      +"<br>\ndate: "+new Date()
-      +"<br>\npan time: "+this.pantime
-      +"<br>\npan distance: "+Math.ceil(this.pandistance) + " screen pixels"
-      +"<br>\npan lag: " + pretty_array(this.panlag)
-      +"<br>\nload lag: " + pretty_array(this.loadlag)
-      +"<br>\nzoomin lag: " + pretty_array(this.zoominlag)
-      +"</div></body></html>";
 
     if (this.talos == true) {
 
@@ -116,14 +100,26 @@ Report.prototype = {
       var now = (new Date()).getTime();
       tpan += "__startTimestamp" + now + "__endTimestamp\n";
       dumpLog(tpan);
-      
       goQuitApplication();
-      window.close();
+    } else { 
+      var file = Cc["@mozilla.org/file/directory_service;1"].
+                       getService(Ci.nsIProperties).
+                       get("TmpD", Ci.nsIFile);
+      file.append("results.html");
+
+      let str = "<html><body><div style='width:80%'>"
+        +"<br>\nversion: "+navigator.userAgent
+        +"<br>\ndate: "+new Date()
+        +"<br>\npan time: "+this.pantime
+        +"<br>\npan distance: "+Math.ceil(this.pandistance) + " screen pixels"
+        +"<br>\npan lag: " + pretty_array(this.panlag)
+        +"<br>\nload lag: " + pretty_array(this.loadlag)
+        +"<br>\nzoomin lag: " + pretty_array(this.zoominlag)
+        +"</div></body></html>";
+      writeFile(file.path, str);
+      return "file://"+file.path;
     }
 
-    foStream.write(str, str.length);
-    foStream.close();
-    return "file://"+file.path;
   },
 
   setTalos: function() {
