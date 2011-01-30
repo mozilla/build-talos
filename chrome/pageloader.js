@@ -62,6 +62,7 @@ var report;
 var renderReport;
 var noisy = false;
 var timeout = -1;
+var delay = 250;
 var timeoutEvent = -1;
 var running = false;
 var forceCC = true;
@@ -98,6 +99,7 @@ function plInit() {
     if (args.filter) pageFilterRegexp = new RegExp(args.filter);
     if (args.noisy) noisy = true;
     if (args.timeout) timeout = parseInt(args.timeout);
+    if (args.delay) delay = parseInt(args.delay);
     forceCC = !args.noForceCC;
     doRenderTest = args.doRender;
 
@@ -168,6 +170,18 @@ function plInit() {
                      browserWindow.focus();
 
                      content = browserWindow.getBrowser();
+
+                     // Load the frame script for e10s / IPC message support
+                     if (content.getAttribute("remote") == "true") {
+                       let contentScript = "data:,addEventListener('load', function(e) { " +
+                         "  if (e.originalTarget.defaultView == content) { " +
+                         "    sendAsyncMessage('PageLoader:Load', {}); " +
+                         "    content.wrappedJSObject.tpRecordTime = function(t) { sendAsyncMessage('PageLoader:RecordTime', { time: t }); } " +
+                         "  }" +
+                         "}, true);"
+                       content.messageManager.loadFrameScript(contentScript, false);
+                     }
+
                      setTimeout(plLoadPage, 100);
                    }, 500);
       };
@@ -178,7 +192,7 @@ function plInit() {
 
       content = document.getElementById('contentPageloader');
 
-      setTimeout(plLoadPage, 250);
+      setTimeout(plLoadPage, delay);
     }
   } catch(e) {
     dumpLine(e);
@@ -192,11 +206,15 @@ function plPageFlags() {
 
 // load the current page, start timing
 var removeLastAddedListener = null;
+var removeLastAddedMsgListener = null;
 function plLoadPage() {
   var pageName = pages[pageIndex].url.spec;
 
   if (removeLastAddedListener)
     removeLastAddedListener();
+
+  if (removeLastAddedMsgListener)
+    removeLastAddedMsgListener();
 
   if (plPageFlags() & TEST_DOES_OWN_TIMING) {
     // if the page does its own timing, use a capturing handler
@@ -214,6 +232,16 @@ function plLoadPage() {
     content.addEventListener('load', plLoadHandler, true);
     removeLastAddedListener = function() {
       content.removeEventListener('load', plLoadHandler, true);
+    };
+  }
+
+  // If the test browser is remote (e10s / IPC) we need to use messages to watch for page load
+  if (content.getAttribute("remote") == "true") {
+    content.messageManager.addMessageListener('PageLoader:Load', plLoadHandlerMessage);
+    content.messageManager.addMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
+    removeLastAddedMsgListener = function() {
+      content.messageManager.removeMessageListener('PageLoader:Load', plLoadHandlerMessage);
+      content.messageManager.removeMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
     };
   }
 
@@ -243,7 +271,7 @@ function plNextPage() {
       report.recordCCTime(tccend - tccstart);
     }
 
-    setTimeout(plLoadPage, 250);
+    setTimeout(plLoadPage, delay);
   } else {
     plStop(false);
   }
@@ -281,7 +309,7 @@ function plLoadHandlerCapturing(evt) {
   // set up the function for content to call
   content.contentWindow.wrappedJSObject.tpRecordTime = function (time) {
     plRecordTime(time);
-    setTimeout(plNextPage, 250);
+    setTimeout(plNextPage, delay);
   };
 }
 
@@ -324,6 +352,34 @@ function plLoadHandler(evt) {
   plNextPage();
 }
 
+// the onload handler used for remote (e10s) browser
+function plLoadHandlerMessage(message) {
+  if (timeout > 0) { 
+    clearTimeout(timeoutEvent);
+  }
+
+  // does this page want to do its own timing?
+  // if so, let's bail
+  if (plPageFlags() & TEST_DOES_OWN_TIMING)
+    return;
+
+  var end_time = Date.now();
+  var time = (end_time - start_time);
+
+  plRecordTime(time);
+
+  if (doRenderTest)
+    runRenderTest();
+
+  plNextPage();
+}
+
+// the record time handler used for remote (e10s) browser
+function plRecordTimeMessage(message) {
+  plRecordTime(message.json.time);
+  setTimeout(plNextPage, delay);
+}
+
 function runRenderTest() {
   const redrawsPerSample = 500;
 
@@ -352,7 +408,7 @@ function plStop(force) {
       pageIndex = 0;
       if (cycle < NUM_CYCLES-1) {
         cycle++;
-        setTimeout(plLoadPage, 250);
+        setTimeout(plLoadPage, delay);
         return;
       }
 
@@ -372,8 +428,11 @@ function plStop(force) {
     dumpLine(e);
   }
 
-  if (content)
+  if (content) {
     content.removeEventListener('load', plLoadHandler, true);
+    if (content.getAttribute("remote") == "true")
+      content.messageManager.removeMessageListener('PageLoader:Load', plLoadHandlerMessage);
+  }
 
   if (MozillaFileLogger)
     MozillaFileLogger.close();
