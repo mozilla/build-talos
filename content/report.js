@@ -19,7 +19,7 @@ Report.prototype = {
   save: function() {
     function pretty_array(inls) {
       if (!inls.length)
-        return null;
+        return 0;
       
       var ls = inls.slice(0);
       ls.sort(function (x,y){return x-y});
@@ -91,7 +91,7 @@ Report.prototype = {
     if (this.talos == true) {
 
       var tpan = "";
-      if (pretty_array(this.panlag) == null) {
+      if (this.zoominlag.length > 0) {
         tpan = "__start_report" + median_array(this.zoominlag) + "__end_report\n";
       }
       else {
