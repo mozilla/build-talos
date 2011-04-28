@@ -153,7 +153,7 @@ function plInit() {
       blank.data = "about:blank";
       browserWindow = wwatch.openWindow
         (null, "chrome://browser/content/", "_blank",
-         "chrome,dialog=no,width=" + winWidth + ",height=" + winHeight, blank);
+         "chrome,all,dialog=no,width=" + winWidth + ",height=" + winHeight, blank);
 
       // get our window out of the way
       window.resizeTo(10,10);
