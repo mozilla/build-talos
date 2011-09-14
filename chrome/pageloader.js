@@ -67,6 +67,14 @@ var timeoutEvent = -1;
 var running = false;
 var forceCC = true;
 
+var useMozAfterPaint = false;
+var gPaintWindow = window;
+var gPaintListener = false;
+
+//when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
+var gTime = -1;
+var gStartTime = -1;
+
 var content;
 
 var TEST_DOES_OWN_TIMING = 1;
@@ -100,6 +108,8 @@ function plInit() {
     if (args.noisy) noisy = true;
     if (args.timeout) timeout = parseInt(args.timeout);
     if (args.delay) delay = parseInt(args.delay);
+    if (args.mozafterpaint) useMozAfterPaint = true;
+
     forceCC = !args.noForceCC;
     doRenderTest = args.doRender;
 
@@ -155,6 +165,7 @@ function plInit() {
         (null, "chrome://browser/content/", "_blank",
          "chrome,all,dialog=no,width=" + winWidth + ",height=" + winHeight, blank);
 
+      gPaintWindow = browserWindow;
       // get our window out of the way
       window.resizeTo(10,10);
 
@@ -173,12 +184,30 @@ function plInit() {
 
                      // Load the frame script for e10s / IPC message support
                      if (content.getAttribute("remote") == "true") {
-                       let contentScript = "data:,addEventListener('load', function(e) { " +
+                       let contentScript = "data:,function _contentLoadHandler(e) { " +
                          "  if (e.originalTarget.defaultView == content) { " +
-                         "    sendAsyncMessage('PageLoader:Load', {}); " +
-                         "    content.wrappedJSObject.tpRecordTime = function(t) { sendAsyncMessage('PageLoader:RecordTime', { time: t }); } " +
+                         "    content.wrappedJSObject.tpRecordTime = function(t, s) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s }); }; ";
+                        if (useMozAfterPaint) {
+                          contentScript += "" + 
+                          "function _contentPaintHandler() { " +
+                          "  var utils = content.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils); " +
+                          "  if (utils.isMozAfterPaintPending) { " +
+                          "    addEventListener('MozAfterPaint', function(e) { " +
+                          "      removeEventListener('MozAfterPaint', arguments.callee, true); " + 
+                          "      sendAsyncMessage('PageLoader:MozAfterPaint', {}); " +
+                          "    }, true); " + 
+                          "  } else { " +
+                          "    sendAsyncMessage('PageLoader:MozAfterPaint', {}); " +
+                          "  } " +
+                          "}; " +
+                          "content.wrappedJSObject.setTimeout(_contentPaintHandler, 0); ";
+                       } else {
+                         contentScript += "    sendAsyncMessage('PageLoader:Load', {}); ";
+                       }
+                       contentScript += "" + 
                          "  }" +
-                         "}, true);"
+                         "} " +
+                         "addEventListener('load', _contentLoadHandler, true); ";
                        content.messageManager.loadFrameScript(contentScript, false);
                      }
 
@@ -188,6 +217,7 @@ function plInit() {
 
       browserWindow.addEventListener('load', browserLoadFunc, true);
     } else {
+      gPaintWindow = window;
       window.resizeTo(winWidth, winHeight);
 
       content = document.getElementById('contentPageloader');
@@ -219,9 +249,14 @@ function plLoadPage() {
   if (plPageFlags() & TEST_DOES_OWN_TIMING) {
     // if the page does its own timing, use a capturing handler
     // to make sure that we can set up the function for content to call
+
     content.addEventListener('load', plLoadHandlerCapturing, true);
     removeLastAddedListener = function() {
       content.removeEventListener('load', plLoadHandlerCapturing, true);
+      if (useMozAfterPaint) {
+        content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
+        gPaintHandler = false;
+      }
     };
   } else {
     // if the page doesn't do its own timing, use a bubbling handler
@@ -232,6 +267,10 @@ function plLoadPage() {
     content.addEventListener('load', plLoadHandler, true);
     removeLastAddedListener = function() {
       content.removeEventListener('load', plLoadHandler, true);
+      if (useMozAfterPaint) {
+        gPaintWindow.removeEventListener("MozAfterPaint", plPainted, true);
+        gPaintHandler = false;
+      }
     };
   }
 
@@ -239,9 +278,13 @@ function plLoadPage() {
   if (content.getAttribute("remote") == "true") {
     content.messageManager.addMessageListener('PageLoader:Load', plLoadHandlerMessage);
     content.messageManager.addMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
+    if (useMozAfterPaint)
+      content.messageManager.addMessageListener('PageLoader:MozAfterPaint', plPaintHandler);
     removeLastAddedMsgListener = function() {
       content.messageManager.removeMessageListener('PageLoader:Load', plLoadHandlerMessage);
       content.messageManager.removeMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
+      if (useMozAfterPaint)
+        content.messageManager.removeMessageListener('PageLoader:MozAfterPaint', plPaintHandler);
     };
   }
 
@@ -297,6 +340,43 @@ function plLoadHandlerCapturing(evt) {
   if (evt.type != 'load' ||
        evt.originalTarget.defaultView.frameElement)
       return;
+
+  //set the tpRecordTime function (called from test pages we load to store a global time.
+  content.contentWindow.wrappedJSObject.tpRecordTime = function (time, startTime) {
+    gTime = time;
+    gStartTime = startTime;
+    setTimeout(plWaitForPaintingCapturing, 0);
+  }
+
+  content.removeEventListener('load', plLoadHandlerCapturing, true);
+
+  setTimeout(plWaitForPaintingCapturing, 0);
+}
+
+function plWaitForPaintingCapturing() {
+  if (gPaintListener)
+    return;
+
+  var utils = gPaintWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                   .getInterface(Components.interfaces.nsIDOMWindowUtils);
+
+  if (utils.isMozAfterPaintPending && useMozAfterPaint) {
+    if (gPaintListener == false)
+      gPaintWindow.addEventListener("MozAfterPaint", plPaintedCapturing, true);
+    gPaintListener = true;
+    return;
+  }
+
+  _loadHandlerCapturing();
+}
+
+function plPaintedCapturing() {
+  gPaintWindow.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
+  gPaintListener = false;
+  _loadHandlerCapturing();
+}
+
+function _loadHandlerCapturing() {
   if (timeout > 0) { 
     clearTimeout(timeoutEvent);
   }
@@ -306,9 +386,17 @@ function plLoadHandlerCapturing(evt) {
     plStop(true);
   }
 
+  if (useMozAfterPaint) {
+    if (gStartTime != null && gStartTime >= 0) {
+      gTime = (new Date()) - gStartTime;
+      gStartTime = -1;
+    }
+  }
+
   // set up the function for content to call
-  content.contentWindow.wrappedJSObject.tpRecordTime = function (time) {
-    plRecordTime(time);
+  if (gTime >= 0) {
+    plRecordTime(gTime);
+    gTime = -1;
     setTimeout(plNextPage, delay);
   };
 }
@@ -319,6 +407,34 @@ function plLoadHandler(evt) {
   if (evt.type != 'load' ||
        evt.originalTarget.defaultView.frameElement)
       return;
+
+  content.removeEventListener('load', plLoadHandler, true);
+  setTimeout(waitForPainted, 0);
+}
+
+// This is called after we have received a load event, now we wait for painted
+function waitForPainted() {
+
+  var utils = gPaintWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+                   .getInterface(Components.interfaces.nsIDOMWindowUtils);
+
+  if (!utils.isMozAfterPaintPending || !useMozAfterPaint) {
+    _loadHandler();
+    return;
+  }
+
+  if (gPaintListener == false)
+    gPaintWindow.addEventListener("MozAfterPaint", plPainted, true);
+  gPaintListener = true;
+}
+
+function plPainted() {
+  gPaintWindow.removeEventListener("MozAfterPaint", plPainted, true);
+  gPaintListener = false;
+  _loadHandler();
+}
+
+function _loadHandler() {
   if (timeout > 0) { 
     clearTimeout(timeoutEvent);
   }
@@ -354,30 +470,59 @@ function plLoadHandler(evt) {
 
 // the onload handler used for remote (e10s) browser
 function plLoadHandlerMessage(message) {
+  _loadHandlerMessage();
+}
+
+// the mozafterpaint handler for remote (e10s) browser
+function plPaintHandler(message) {
+  _loadHandlerMessage();
+}
+
+// the core handler for remote (e10s) browser
+function _loadHandlerMessage() {
   if (timeout > 0) { 
     clearTimeout(timeoutEvent);
   }
 
+  var time = -1;
+
   // does this page want to do its own timing?
-  // if so, let's bail
-  if (plPageFlags() & TEST_DOES_OWN_TIMING)
-    return;
+  if ((plPageFlags() & TEST_DOES_OWN_TIMING)) {
+    if (typeof(gStartTime) != "number")
+      gStartTime = Date.parse(gStartTime);
 
-  var end_time = Date.now();
-  var time = (end_time - start_time);
+    if (gTime >= 0) {
+      if (useMozAfterPaint && gStartTime >= 0) {
+        gTime = Date.now() - gStartTime;
+        gStartTime = -1;
+      } else if (useMozAfterPaint) {
+        gTime = -1;
+      }
+      time = gTime;
+      gTime = -1;
+    }
 
-  plRecordTime(time);
+  } else {
+    var end_time = Date.now();
+    time = (end_time - start_time);
+  }
 
-  if (doRenderTest)
-    runRenderTest();
+  if (time >= 0) {
+    plRecordTime(time);
+    if (doRenderTest)
+      runRenderTest();
 
-  plNextPage();
+    plNextPage();
+  }
 }
 
 // the record time handler used for remote (e10s) browser
 function plRecordTimeMessage(message) {
-  plRecordTime(message.json.time);
-  setTimeout(plNextPage, delay);
+  gTime = message.json.time;
+  if (useMozAfterPaint) {
+    gStartTime = message.json.startTime;
+  }
+  _loadHandlerMessage();
 }
 
 function runRenderTest() {
@@ -429,9 +574,20 @@ function plStop(force) {
   }
 
   if (content) {
+    content.removeEventListener('load', plLoadHandlerCapturing, true);
     content.removeEventListener('load', plLoadHandler, true);
-    if (content.getAttribute("remote") == "true")
+    if (useMozAfterPaint)
+      content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
+      content.removeEventListener("MozAfterPaint", plPainted, true);
+
+    if (content.getAttribute("remote") == "true") {
       content.messageManager.removeMessageListener('PageLoader:Load', plLoadHandlerMessage);
+      content.messageManager.removeMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
+      if (MozAfterPaint)
+        content.messageManager.removeMessageListener('PageLoader:MozAfterPaint', plPaintHandler);
+
+      content.messageManager.loadFrameScript("data:,removeEventListener('load', _contentLoadHandler, true);", false);
+    }
   }
 
   if (MozillaFileLogger)

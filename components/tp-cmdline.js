@@ -93,6 +93,7 @@ PageLoaderCmdLineHandler.prototype =
       args.timeout = cmdLine.handleFlagWithParam("tptimeout", false);
       args.delay = cmdLine.handleFlagWithParam("tpdelay", false);
       args.noForceCC = cmdLine.handleFlag("tpnoforcecc", false);
+      args.mozafterpaint = cmdLine.handleFlag("tpmozafterpaint", false);
     }
     catch (e) {
       return;
@@ -123,7 +124,8 @@ PageLoaderCmdLineHandler.prototype =
   "  -tpnoisy           Dump the name of the last loaded page to console\n" + 
   "  -tptimeout         Max amount of time given for a page to load, quit if exceeded\n" +
   "  -tpdelay           Amount of time to wait between each pageload\n" +
-  "  -tpnoforcecc       Don't force cycle collection between each pageload\n"
+  "  -tpnoforcecc       Don't force cycle collection between each pageload\n" +
+  "  -tpmozafterpaint   Measure Time after recieving MozAfterPaint event instead of load event\n"
 
 };
 
