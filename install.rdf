@@ -9,7 +9,7 @@
       <Description>
         <em:id>toolkit@mozilla.org</em:id>
        <em:minVersion>2.0b3pre</em:minVersion>
-       <em:maxVersion>9.0</em:maxVersion>
+       <em:maxVersion>*</em:maxVersion>
       </Description>
     </em:targetApplication>
     <!-- Front End MetaData -->
