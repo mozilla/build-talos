@@ -583,7 +583,7 @@ function plStop(force) {
     if (content.getAttribute("remote") == "true") {
       content.messageManager.removeMessageListener('PageLoader:Load', plLoadHandlerMessage);
       content.messageManager.removeMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
-      if (MozAfterPaint)
+      if (useMozAfterPaint)
         content.messageManager.removeMessageListener('PageLoader:MozAfterPaint', plPaintHandler);
 
       content.messageManager.loadFrameScript("data:,removeEventListener('load', _contentLoadHandler, true);", false);
