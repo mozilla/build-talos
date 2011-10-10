@@ -6,10 +6,11 @@ function Zoom(fe) {
 Zoom.prototype = {
   go: function() {
     addEventListener("ZoomChanged", zoomEvent, false);
-    let toX = window.innerWidth-1;
-    let toY = window.innerHeight-1;
-    this._x = 1;
-    this._y = 200;
+    let bcr = getBrowser().getBoundingClientRect();
+    let toX = bcr.left + bcr.width - 1;
+    let toY = bcr.top + bcr.height - 1;
+    this._x = bcr.left + 1;
+    this._y = bcr.top + 1;
     this._stepsLeft = 20;
     this._stepX = (toX - this._x)/this._stepsLeft;
     this._stepY = (toY - this._y)/this._stepsLeft;
