@@ -619,7 +619,7 @@ function plLoadURLsFromURI(manifestUri) {
     s = s.replace(/#.*/, '');
 
     // strip leading and trailing whitespace
-    s = s.replace(/^\s*/, '').replace(/s\*$/, '');
+    s = s.replace(/^\s*/, '').replace(/\s*$/, '');
 
     if (!s)
       continue;
