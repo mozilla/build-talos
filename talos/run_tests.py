@@ -505,6 +505,7 @@ def test_file(filename, to_screen, amo):
       utils.stamped_msg("Failed " + testname, "Stopped")
       print 'FAIL: Busted: ' + testname
       print 'FAIL: ' + e.msg.replace('\n','\nRETURN:')
+      raise e
     utils.stamped_msg("Completed test " + testname, "Stopped")
   elapsed = utils.stopTimer()
   print "RETURN: cycle time: " + elapsed + "<br>"
@@ -529,6 +530,7 @@ def test_file(filename, to_screen, amo):
         testname = test['name']
         send_to_csv(None, {testname : results[testname]})
       print '\nFAIL: ' + e.msg.replace('\n', '\nRETURN:')
+      raise e
 
 def main(args=sys.argv[1:]):
 
