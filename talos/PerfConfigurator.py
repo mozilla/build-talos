@@ -160,22 +160,19 @@ class PerfConfigurator:
                 newline = self.convertUrlToRemote(newline)
                 line = newline
 
-            #only do this if the user has provided a list of tests to turn on/off
-            # otherwise, all tests are considered to be active
-            if self.activeTests:
-                if line.startswith('- name'): 
-                    #found the start of an individual test description
-                    printMe = False
-                for test in activeList: 
-                    reTestMatch = re.compile('^-\s*name\s*:\s*' + test + '\s*$')
-                    #determine if this is a test we are going to run
-                    match = re.match(reTestMatch, line)
-                    if match:
-                        printMe = True
-                        if (test == 'tp') and self.fast: #only affects the tp test name
-                            newline = newline.replace('tp', 'tp_fast')
-                        if self.testPrefix:
-                            newline = newline.replace(test, self.testPrefix + '_' + test)
+            if line.startswith('- name'): 
+                #found the start of an individual test description
+                printMe = False
+            for test in activeList: 
+                reTestMatch = re.compile('^-\s*name\s*:\s*' + test + '\s*$')
+                #determine if this is a test we are going to run
+                match = re.match(reTestMatch, line)
+                if match:
+                    printMe = True
+                    if (test == 'tp') and self.fast: #only affects the tp test name
+                        newline = newline.replace('tp', 'tp_fast')
+                    if self.testPrefix:
+                        newline = newline.replace(test, self.testPrefix + '_' + test)
 
             #HACK: we are depending on -tpchrome to be in the cli options in order to run mozafterpaint
             if self.mozAfterPaint and (line.find('-tpchrome') > 0): 
@@ -227,8 +224,7 @@ class PerfConfigurator:
             if line.startswith('tests :'): 
                 #enter into test writing mode
                 testMode = True
-                if self.activeTests:
-                    printMe = False
+                printMe = False
         destination.close()
         if self.verbose:
             self._dumpConfiguration()
@@ -460,6 +456,8 @@ class TalosOptions(optparse.OptionParser):
     def verifyCommandLine(self, args, options):
         if len(args) > 0:
             raise Configuration("Configurator does not take command line arguments, only options (arguments were: %s)" % (",".join(args)))
+        elif not options.activeTests:
+            raise Configuration("Active tests should be declared explicitly. Nothing declared with --activeTests.")
 
         if options.develop == True:
             if  options.resultsServer == '':
