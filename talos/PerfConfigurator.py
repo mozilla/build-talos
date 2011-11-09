@@ -30,7 +30,7 @@ class PerfConfigurator:
                   'activeTests', 'noChrome', 'fast', 'testPrefix', 'extension',
                   'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID', 
                   'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint', 
-                  'webServer', 'develop'];
+                  'webServer', 'develop', 'responsiveness'];
     masterIniSubpath = "application.ini"
 
     def _dumpConfiguration(self):
@@ -186,6 +186,9 @@ class PerfConfigurator:
             if self.noChrome: 
                 #if noChrome is True remove --tpchrome option 
                 newline = line.replace('-tpchrome ','')
+
+            if self.responsiveness and ('responsiveness' in line):
+                newline = line.replace('False', 'True')
 
         if self.extraPrefs != [] and (re.match('^\s*preferences :\s*$', line)): 
             newline = 'preferences :\n'
@@ -446,6 +449,11 @@ class TalosOptions(optparse.OptionParser):
                         help = "useful for running tests on a developer machine. \
                                 Creates a local webserver and doesn't upload to the graph servers.")  
         defaults["develop"] = False
+
+        self.add_option("--responsiveness",
+                        action = "store_true", dest = "responsiveness",
+                        help = "turn on responsiveness collection")
+        defaults["responsiveness"] = False
 
         self.set_defaults(**defaults)
 
