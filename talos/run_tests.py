@@ -451,7 +451,8 @@ def test_file(filename, to_screen, amo):
                     'test_timeout'       : yaml_config.get('test_timeout', 1200),
                     'addon_id'           : yaml_config.get('addon_id', 'NULL'),
                     'bcontroller_config' : yaml_config.get('bcontroller_config', 'bcontroller.yml'),
-                    'xperf_path'         : yaml_config.get('xperf_path', None)}
+                    'xperf_path'         : yaml_config.get('xperf_path', None),
+                    'develop'            : yaml_config.get('develop', False)}
 
   #normalize paths to work accross platforms
   dm = None
@@ -486,6 +487,28 @@ def test_file(filename, to_screen, amo):
     if (dm.processExist(procName)):
       dm.killProcess(procName)
 
+  httpd = None
+  if browser_config['develop'] == True:
+    import urlparse
+    scheme = "http://"
+    if (browser_config['webserver'].startswith('http://') or
+        browser_config['webserver'].startswith('chrome://') or
+        browser_config['webserver'].startswith('file:///')):
+      scheme = ""
+    elif (browser_config['webserver'].find('://') >= 0):
+      print "Unable to parse user defined webserver: '%s'" % (browser_config['webserver'])
+      sys.exit(2)
+
+    url = urlparse.urlparse('%s%s' % (scheme, browser_config['webserver']))
+    port = url.port
+
+    if port:
+      import mozhttpd
+      httpd = mozhttpd.MozHttpd(host=url.hostname, port=int(port), docroot=os.path.split(os.path.realpath(__file__))[0])
+      httpd.start()
+    else:
+      print "WARNING: unable to start web server without custom port configured"
+      
   utils.startTimer()
   utils.stamped_msg(title, "Started")
   for test in tests:
@@ -505,11 +528,16 @@ def test_file(filename, to_screen, amo):
       utils.stamped_msg("Failed " + testname, "Stopped")
       print 'FAIL: Busted: ' + testname
       print 'FAIL: ' + e.msg.replace('\n','\nRETURN:')
+      if browser_config['develop'] == True and httpd:
+        httpd.stop()
       raise e
     utils.stamped_msg("Completed test " + testname, "Stopped")
   elapsed = utils.stopTimer()
   print "RETURN: cycle time: " + elapsed + "<br>"
   utils.stamped_msg(title, "Stopped")
+
+  if browser_config['develop'] == True and httpd:
+    httpd.stop()
 
   #process the results
   if (results_server != '') and (results_link != ''):

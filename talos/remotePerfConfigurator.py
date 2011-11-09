@@ -13,7 +13,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
         #this depends on buildID which requires querying the device
         pc.PerfConfigurator.__init__(self, options)
-        pc.PerfConfigurator.attributes += ['remoteDevice', 'remotePort', 'webServer', 'deviceRoot']
+        pc.PerfConfigurator.attributes += ['remoteDevice', 'remotePort', 'deviceRoot']
 
     def _setupRemote(self):
         try:
@@ -40,19 +40,12 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         printMe, newline = pc.PerfConfigurator.convertLine(self, line, testMode, printMe)
         if 'deviceip:' in line:
            newline = 'deviceip: %s\n' % self.remoteDevice
-        if 'webserver:' in line:
-           newline = 'webserver: %s\n' % self.webServer
         if 'deviceroot:' in line:
             newline = 'deviceroot: %s\n' % self.deviceRoot
         if 'deviceport:' in line:
             newline = 'deviceport: %s\n' % self.remotePort
         if 'remote:' in line:
             newline = 'remote: %s\n' % self._remote
-        if 'init_url' in line:
-            newline = self.convertUrlToRemote(newline)
-        if testMode:
-            if ('url' in line) and ('url_mod' not in line):
-                newline = self.convertUrlToRemote(newline)
         if 'talos.logfile:' in line:
             parts = line.split(':')
             if (parts[1] != None and parts[1].strip() == ''):
@@ -94,18 +87,13 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         if self._remote == False:
             return line
 
+        line = pc.PerfConfigurator.convertUrlToRemote(self, line)
         parts = line.split(' ')
         newline = ''
         for part in parts:
-            if ('.html' in part):
-                newline += 'http://' + self.webServer + '/' + part
-            elif ('.manifest' in part):
-                newline += self.buildRemoteManifest(part) + ' '
-            elif ('winopen.xul' in part):
+            if 'winopen.xul' in part:
                 self.buildRemoteTwinopen()
                 newline += 'file://' + self.deviceRoot + '/talos/' + part
-            elif ('.xul' in part):
-                newline += 'http://' + self.webServer + '/' + part
             else:
                 newline += part
                 if (part <> parts[-1]):
@@ -117,23 +105,15 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
     def buildRemoteManifest(self, manifestName):
         """
-          Take a given manifest name, convert the localhost->remoteserver, and then copy to the device
-          returns the remote filename on the device so we can add it to the .config file
+           Push the manifest name to the remote device.
         """
         remoteName = self.deviceRoot
-        fHandle = open(manifestName, 'r')
-        manifestData = fHandle.read()
-        fHandle.close()
-
-        newHandle = open(manifestName + '.remote', 'w')
-        for line in manifestData.split('\n'):
-            newHandle.write(line.replace('localhost', self.webServer) + "\n")
-        newHandle.close()
+        newManifestName = pc.PerfConfigurator.buildRemoteManifest(self, manifestName)
 
         remoteName += '/' + os.path.basename(manifestName)
-        if self.testAgent.pushFile(manifestName + '.remote', remoteName) == False:
+        if self.testAgent.pushFile(newManifestName, remoteName) == False:
             raise Configuration("Unable to copy remote manifest file "
-                                + manifestName + ".remote to " + remoteName)
+                                + newManifestName + " to " + remoteName)
         return remoteName
 
     def _getMasterIniContents(self):
@@ -181,11 +161,6 @@ class remoteTalosOptions(pc.TalosOptions):
                     help = "SUTAgent port (defaults to 20701, specify -1 to use ADB)")
         defaults["remotePort"] = 20701
 
-        self.add_option("--webServer", action="store",
-                    type = "string", dest = "webServer",
-                    help = "IP address of the webserver hosting the talos files")
-        defaults["webServer"] = ''
-
         self.add_option("--deviceRoot", action="store",
                     type = "string", dest = "deviceRoot",
                     help = "path on the device that will hold files and the profile")
@@ -195,7 +170,11 @@ class remoteTalosOptions(pc.TalosOptions):
         self.set_defaults(**defaults)
 
     def verifyCommandLine(self, args, options):
-        pc.TalosOptions.verifyCommandLine(self, args, options)
+        options = pc.TalosOptions.verifyCommandLine(self, args, options)
+    
+        if options.develop:
+            if options.webServer.startswith('localhost'):
+                options.webServer = pc.getLanIp()
 
         #webServer can be used without remoteDevice, but is required when using remoteDevice
         if (options.remoteDevice != '' or options.deviceRoot != ''):

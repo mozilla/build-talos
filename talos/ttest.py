@@ -133,7 +133,8 @@ class TTest(object):
         # Create the new profile
         temp_dir, profile_dir = self._ffsetup.CreateTempProfileDir(profile_path,
                                                      browser_config['preferences'],
-                                                     browser_config['extensions'])
+                                                     browser_config['extensions'],
+                                                     browser_config['webserver'])
         utils.debug("created profile") 
         return profile_dir, temp_dir
 

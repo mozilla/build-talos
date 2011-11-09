@@ -206,7 +206,7 @@ class FFSetup(object):
             shutil.copy(addon, addon_file)
             shutil.rmtree(addonTmpPath, ignore_errors=True)
 
-    def CreateTempProfileDir(self, source_profile, prefs, extensions):
+    def CreateTempProfileDir(self, source_profile, prefs, extensions, webserver):
         """Creates a temporary profile directory from the source profile directory
             and adds the given prefs and links to extensions.
 
@@ -236,8 +236,8 @@ class FFSetup(object):
 
         user_js_file.close()
 
-        if (self._remoteWebServer <> 'localhost'):
-             self.ffprocess.addRemoteServerPref(profile_dir, self._remoteWebServer)
+        if (webserver and webserver <> 'localhost'):
+             self.ffprocess.addRemoteServerPref(profile_dir, webserver)
 
         # Add links to all the extensions.
         extension_dir = os.path.join(profile_dir, "extensions")
@@ -246,7 +246,7 @@ class FFSetup(object):
         for addon in extensions:
             self.install_addon(profile_dir, addon)
 
-        if (self._remoteWebServer <> 'localhost'):
+        if (webserver <> 'localhost' and self._host != ''):
             remote_dir = self.ffprocess.copyDirToDevice(profile_dir)
             profile_dir = remote_dir
         return temp_dir, profile_dir

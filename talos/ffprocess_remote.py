@@ -37,7 +37,6 @@ import tempfile
 import re
 import shutil
 from utils import talosError
-import urlparse
 
 DEFAULT_PORT = 20701
 
@@ -255,42 +254,4 @@ class RemoteProcess(FFProcess):
         #we will not raise an error here because the functions that depend on this do their own error handling
         data = self.testAgent.getDeviceRoot()
         return data
-
-    def addRemoteServerPref(self, profile_dir, server):
-        """
-          edit the user.js in the profile (on the host machine) and
-          add the xpconnect priviledges for the remote server
-        """
-        user_js_filename = os.path.join(profile_dir, 'user.js')
-        user_js_file = open(user_js_filename, 'a+')
-
-        #NOTE: this should be sufficient for defining a docroot
-        scheme = "http://"
-        if (server.startswith('http://') or
-            server.startswith('chrome://') or
-            server.startswith('file:///')):
-          scheme = ""
-        elif (server.find('://') >= 0):
-          raise talosError("Unable to parse user defined webserver: '%s'" % (server))
-          
-        url = urlparse.urlparse('%s%s' % (scheme, server))
-
-        port = url.port
-        if url.port == None:
-          port = 80
-
-        if int(port) <= 0:
-          port = 80
-
-        #TODO: p2 is hardcoded, how do we determine what prefs.js has hardcoded?
-        remoteCode = """
-user_pref("capability.principal.codebase.p2.granted", "UniversalPreferencesWrite UniversalXPConnect UniversalPreferencesRead");
-user_pref("capability.principal.codebase.p2.id", "http://%(server)s");
-user_pref("capability.principal.codebase.p2.subjectName", "");
-user_pref("network.proxy.type", 1);
-user_pref("network.proxy.http", "%(host)s");
-user_pref("network.proxy.http_port", %(port)d);
-""" % { "server": server, "host": url.hostname, "port": int(port) }
-        user_js_file.write(remoteCode)
-        user_js_file.close()
 

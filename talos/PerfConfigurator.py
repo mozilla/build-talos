@@ -29,7 +29,8 @@ class PerfConfigurator:
                   'verbose', 'testDate', 'useId', 'resultsServer', 'resultsLink',
                   'activeTests', 'noChrome', 'fast', 'testPrefix', 'extension',
                   'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID', 
-                  'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint'];
+                  'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint', 
+                  'webServer', 'develop'];
     masterIniSubpath = "application.ini"
 
     def _dumpConfiguration(self):
@@ -94,6 +95,8 @@ class PerfConfigurator:
             newline = 'xperf_path: %s\n' % self.xperf_path
         if 'browser_log:' in line:
             newline = 'browser_log: ' + self.logFile + '\n'
+        if 'webserver:' in line:
+           newline = 'webserver: %s\n' % self.webServer
         if 'title:' in line:
             newline = 'title: ' + self.title + '\n'
             if self.testDate:
@@ -138,6 +141,8 @@ class PerfConfigurator:
             newline = 'branch: ' + self.branch
 
         #only change the results_server if the user has provided one
+        if 'develop' in line:
+            newline = 'develop: %s\n' % self.develop
         if self.resultsServer and ('results_server' in line):
             newline = 'results_server: ' + self.resultsServer + '\n'
         #only change the results_link if the user has provided one
@@ -148,7 +153,13 @@ class PerfConfigurator:
             newline = 'browser_wait: ' + str(self.browserWait) + '\n'
         if self.noShutdown and ('shutdown :' in line):
             newline = line.replace('True', 'False')
+        if 'init_url' in line:
+            newline = self.convertUrlToRemote(newline)
         if testMode:
+            if ('url' in line) and ('url_mod' not in line):
+                newline = self.convertUrlToRemote(newline)
+                line = newline
+
             #only do this if the user has provided a list of tests to turn on/off
             # otherwise, all tests are considered to be active
             if self.activeTests:
@@ -219,6 +230,55 @@ class PerfConfigurator:
         if self.verbose:
             self._dumpConfiguration()
     
+    def convertUrlToRemote(self, line):
+        """
+          For a give url line in the .config file, add a webserver.
+          In addition if there is a .manifest file specified, covert 
+          and copy that file to the remote device.
+        """
+        
+        if (not self.webServer or self.webServer == 'localhost'):
+          return line
+        
+        #NOTE: line.split() causes this to fail because it splits on the \n and not every single ' '
+        parts = line.split(' ')
+        newline = ''
+        for part in parts:
+            if '.html' in part:
+                newline += 'http://' + self.webServer + '/' + part
+            elif '.manifest' in part:
+                newline += self.buildRemoteManifest(part) + ' '
+            elif '.xul' in part:
+                newline += 'http://' + self.webServer + '/' + part
+            else:
+                newline += part
+                if (part <> parts[-1]):
+                    newline += ' '
+
+        return newline
+
+    def buildRemoteManifest(self, manifestName):
+        """
+          Take a given manifest name, convert the localhost->remoteserver, and then copy to the device
+          returns the remote filename on the device so we can add it to the .config file
+        """
+        fHandle = None
+        try:
+          fHandle = open(manifestName, 'r')
+          manifestData = fHandle.read()
+          fHandle.close()
+        except:
+          if fHandle:
+            fHandle.close()
+          return manifestName
+
+        newHandle = open(manifestName + '.develop', 'w')
+        for line in manifestData.split('\n'):
+            newHandle.write(line.replace('localhost', self.webServer) + "\n")
+        newHandle.close()
+        
+        return manifestName + '.develop'
+
     def __init__(self, options):
         self.__dict__.update(options.__dict__)
 
@@ -376,12 +436,46 @@ class TalosOptions(optparse.OptionParser):
                         help = "defines an extra user preference")  
         defaults["extraPrefs"] = []
 
+        self.add_option("--webServer", action="store",
+                    type = "string", dest = "webServer",
+                    help = "IP address of the webserver hosting the talos files")
+        defaults["webServer"] = ''
+
+        self.add_option("--develop",
+                        action = "store_true", dest = "develop",
+                        help = "useful for running tests on a developer machine. \
+                                Creates a local webserver and doesn't upload to the graph servers.")  
+        defaults["develop"] = False
+
         self.set_defaults(**defaults)
 
     def verifyCommandLine(self, args, options):
         if len(args) > 0:
             raise Configuration("Configurator does not take command line arguments, only options (arguments were: %s)" % (",".join(args)))
 
+        if options.develop == True:
+            if  options.resultsServer == '':
+                options.resultsServer = ' '
+            if options.resultsLink == '':
+                options.resultsLink = ' '
+            
+            if options.webServer == '':
+              options.webServer = "localhost:%s" % (findOpenPort('127.0.0.1'))
+        return options
+
+# Used for the --develop option where we dynamically create a webserver
+def getLanIp():
+    import devicemanager
+    nettools = devicemanager.NetworkTools()
+    ip = nettools.getLanIp()
+    port = findOpenPort(ip)
+    return "%s:%s" % (ip, port)
+    
+def findOpenPort(ip):
+    import devicemanager
+    nettools = devicemanager.NetworkTools()
+    port = nettools.findOpenPort(ip, 15707)
+    return str(port)
 
 def main(argv=None):
     parser = TalosOptions()
