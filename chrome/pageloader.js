@@ -66,6 +66,7 @@ var delay = 250;
 var timeoutEvent = -1;
 var running = false;
 var forceCC = true;
+var reportRSS = false;
 
 var useMozAfterPaint = false;
 var gPaintWindow = window;
@@ -109,6 +110,7 @@ function plInit() {
     if (args.timeout) timeout = parseInt(args.timeout);
     if (args.delay) delay = parseInt(args.delay);
     if (args.mozafterpaint) useMozAfterPaint = true;
+    if (args.rss) reportRSS = true;
 
     forceCC = !args.noForceCC;
     doRenderTest = args.doRender;
@@ -210,8 +212,11 @@ function plInit() {
                          "addEventListener('load', _contentLoadHandler, true); ";
                        content.messageManager.loadFrameScript(contentScript, false);
                      }
-
-                     setTimeout(plLoadPage, 100);
+                     if (reportRSS) {
+                       initializeMemoryCollector(plLoadPage, 100);
+                     } else {
+                       setTimeout(plLoadPage, 100);
+                     }
                    }, 500);
       };
 
@@ -222,7 +227,11 @@ function plInit() {
 
       content = document.getElementById('contentPageloader');
 
-      setTimeout(plLoadPage, delay);
+      if (reportRSS) {
+        initializeMemoryCollector(plLoadPage, delay);
+      } else {
+        setTimeout(plLoadPage, delay);
+      }
     }
   } catch(e) {
     dumpLine(e);
@@ -290,7 +299,15 @@ function plLoadPage() {
 
   if (timeout > 0) {
     timeoutEvent = setTimeout('loadFail()', timeout);
-  } 
+  }
+  if (reportRSS) {
+    collectMemory(startAndLoadURI, pageName);
+  } else {
+    startAndLoadURI(pageName);
+  }
+}
+
+function startAndLoadURI(pageName) {
   start_time = Date.now();
   content.loadURI(pageName);
 }
@@ -548,6 +565,14 @@ function runRenderTest() {
 }
 
 function plStop(force) {
+  if (reportRSS) {
+    collectMemory(plStopAll, force);
+  } else {
+    plStopAll(force);
+  }
+}
+
+function plStopAll(force) {
   try {
     if (force == false) {
       pageIndex = 0;
@@ -571,6 +596,10 @@ function plStop(force) {
     }
   } catch (e) {
     dumpLine(e);
+  }
+
+  if (reportRSS) {
+    stopMemCollector();
   }
 
   if (content) {
