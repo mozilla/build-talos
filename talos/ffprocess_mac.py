@@ -92,11 +92,6 @@ class MacProcess(FFProcess):
         processes = utils.running_processes(process_name, psarg='-Acj')
         return [pid for pid,_ in processes]
 
-# XXX unsure how to reconcile this check with the above currently
-#            #overlook zombie processes
-#            if line.find("Z+") >= 0:
-#                continue
-
     def TerminateProcess(self, pid, timeout):
         """Helper function to terminate a process, given the pid
 
