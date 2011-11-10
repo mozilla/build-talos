@@ -52,9 +52,6 @@ import platform
 
 class MacProcess(FFProcess):
 
-    def __init__(self):
-        pass
-
     def GenerateBrowserCommandLine(self, browser_path, extra_args, profile_dir, url):
         """Generates the command line for a process to run Browser
 
@@ -82,7 +79,6 @@ class MacProcess(FFProcess):
 
         return cmd
 
-
     def GetPidsByName(self, process_name):
         """Searches for processes containing a given string.
 
@@ -93,51 +89,13 @@ class MacProcess(FFProcess):
             A list of PIDs containing the string. An empty list is returned if none are
             found.
         """
+        processes = utils.running_processes(process_name, psarg='-Acj')
+        return [pid for pid,_ in processes]
 
-        matchingPids = []
-  
-        command = ['ps -Acj']
-        handle = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
-  
-        # wait for the process to terminate
-        handle.wait()
-        data = handle.stdout.readlines()
-  
-        # find all matching processes and add them to the list
-        for line in data:
-            #overlook the mac crashreporter daemon
-            if line.find("crashreporterd") >= 0:
-                continue
-            if line.find('defunct') != -1:
-                continue
-            #overlook zombie processes
-            if line.find("Z+") >= 0:
-                continue
-            if line.find(process_name) >= 0:
-                # splits by whitespace, the first one should be the pid
-                pid = int(line.split()[1])
-                matchingPids.append(pid)
-
-        return matchingPids
-
-
-    def ProcessesWithNames(self, *process_names):
-        """Returns a list of processes running with the given name(s).
-        Useful to check whether a Browser process is still running
-
-        Args:
-            process_names: String or strings containing process names, i.e. "firefox"
-
-        Returns:
-            An array with a list of processes in the list which are running
-        """
-        processes_with_names = []
-        for process_name in process_names:
-            pids = self.GetPidsByName(process_name)
-            if len(pids) > 0:
-                processes_with_names.append(process_name)
-        return processes_with_names
-
+# XXX unsure how to reconcile this check with the above currently
+#            #overlook zombie processes
+#            if line.find("Z+") >= 0:
+#                continue
 
     def TerminateProcess(self, pid, timeout):
         """Helper function to terminate a process, given the pid
@@ -147,13 +105,11 @@ class MacProcess(FFProcess):
         """
         ret = ''
         try:
-            if self.ProcessesWithNames(str(pid)):
-                os.kill(pid, signal.SIGTERM)
-                time.sleep(timeout)
-                ret = 'terminated with SIGTERM'
-            if self.ProcessesWithNames(str(pid)):
-                    os.kill(pid, signal.SIGKILL)
-                    ret = 'terminated with SIGKILL'
+            for sig in ('SIGTERM', 'SIGKILL'):
+                if utils._is_running(pid):
+                    os.kill(pid, getattr(signal, sig))
+                    time.sleep(timeout)
+                    ret = 'terminated with %s' % sig
         except OSError, (errno, strerror):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret

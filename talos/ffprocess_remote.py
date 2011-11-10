@@ -65,8 +65,8 @@ class RemoteProcess(FFProcess):
         else:
             self.dirSlash = "/"
 
-    def setupRemote(self, host = '', port = DEFAULT_PORT):
-        if (port == -1):
+    def setupRemote(self, host='', port=DEFAULT_PORT):
+        if port == -1:
             import devicemanagerADB
             self.testAgent = devicemanagerADB.DeviceManagerADB(host, port)
         else:
@@ -74,9 +74,7 @@ class RemoteProcess(FFProcess):
             self.testAgent = devicemanagerSUT.DeviceManagerSUT(host, port)
 
     def GetRunningProcesses(self):
-        current_procs = []
         return self.testAgent.getProcessList()
-
 
     def GenerateBrowserCommandLine(self, browser_path, extra_args, profile_dir, url):
         """Generates the command line for a process to run Browser
@@ -92,9 +90,9 @@ class RemoteProcess(FFProcess):
             profile_arg = '-profile %s' % profile_dir
 
         cmd = '%s %s %s %s' % (browser_path,
-                                 extra_args,
-                                 profile_arg,
-                                 url)
+                               extra_args,
+                               profile_arg,
+                               url)
         return cmd
   
 
@@ -111,17 +109,16 @@ class RemoteProcess(FFProcess):
 
         # refresh list of processes
         data = self.GetRunningProcesses()
-        if (data == None):
-            return False
+        if data is None:
+            return []
 
         processes_with_names = []
         for process_name in process_names:
             try:
                 procre = re.compile(".*" + process_name + ".*")
-                for line in data:
-                    if (procre.match(line[1])):
-                        processes_with_names.append(process_name)
-                        continue
+                for pid, appname, userid in data:
+                    if procre.match(appname):
+                        processes_with_names.append((pid, process_name))
             except:
                 # Might get an exception if there are no instances of the process running.
                 continue

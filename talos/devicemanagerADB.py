@@ -208,7 +208,7 @@ class DeviceManagerADB(DeviceManager):
 
   # external function
   # returns:
-  #  success: array of process tuples
+  #  success: a list of [ [pid, appname, userid], ...]
   #  failure: []
   def getProcessList(self):
     p = self.runCmd(["shell", "ps"])
@@ -218,7 +218,7 @@ class DeviceManagerADB(DeviceManager):
     ret = []
     while (proc):
       els = proc.split()
-      ret.append(list([els[1], els[len(els) - 1], els[0]]))
+      ret.append([els[1], els[len(els) - 1], els[0]])
       proc =  p.stdout.readline()
     return ret
 

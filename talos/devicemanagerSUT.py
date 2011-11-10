@@ -446,7 +446,7 @@ class DeviceManagerSUT(DeviceManager):
 
   # external function
   # returns:
-  #  success: array of process tuples
+  #  success: a list of [ [pid, appname, userid], ...]
   #  failure: []
   def getProcessList(self):
     try:

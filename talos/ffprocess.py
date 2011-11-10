@@ -52,8 +52,25 @@ import utils
 class FFProcess(object):
     testAgent = None
     
-    def __init__(self):
-        pass
+    def ProcessesWithNames(self, *process_names):
+        """Returns a list of processes running with the given name(s):
+        [(pid, name), (...), ...]
+        Useful to check whether a Browser process is still running
+
+        Args:
+            process_names: String or strings containing process names, i.e. "firefox"
+
+        Returns:
+            An array with a list of processes in the list which are running
+        """
+
+        processes_with_names = []
+        for process_name in process_names:
+            pids = self.GetPidsByName(process_name)
+            if len(pids) > 0:
+                processes_with_names.extend([(pid, process_name) for pid in pids])
+        return processes_with_names
+
 
     def checkBrowserAlive(self, process_name):
         #is the browser actually up?
