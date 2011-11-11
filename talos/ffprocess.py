@@ -44,6 +44,7 @@ __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 import platform
 import os
 import re
+import sys
 import time
 import subprocess
 from utils import talosError
@@ -126,7 +127,7 @@ class FFProcess(object):
         fhandle.write(content)
         fhandle.close()
 
-        return 'python bcontroller.py --configFile %s' % (browser_config['bcontroller_config'])
+        return '%s bcontroller.py --configFile %s' % (sys.executable, browser_config['bcontroller_config'])
 
         return terminate_result
 

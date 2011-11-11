@@ -111,15 +111,15 @@ class BrowserWaiter(threading.Thread):
       etlname = 'test.etl'
 
       #start_xperf.py -c <configfile> -e <etl filename>
-      os.system('python xtalos\\start_xperf.py -c %s -e %s' % (self.configFile, etlname))
+      os.system('%s xtalos\\start_xperf.py -c %s -e %s' % (sys.executable, self.configFile, etlname))
 
       self.returncode = os.system(self.command)
 
       #stop_xperf.py -x <path to xperf.exe>
       #etlparser.py -o <outputname[.csv]> -p <process_name (i.e. firefox.exe)> -c <path to configfile> -e <xperf_output[.etl]>
-      os.system('python xtalos\\stop_xperf.py -x "%s"' % (self.xperf_path))
-      parse_cmd = 'python xtalos\\etlparser.py -o %s -p %s -e %s -c %s' % (
-                   csvname, self.process, etlname, self.configFile)
+      os.system('%s xtalos\\stop_xperf.py -x "%s"' % (sys.executable, self.xperf_path))
+      parse_cmd = '%s xtalos\\etlparser.py -o %s -p %s -e %s -c %s' % (
+        sys.executable, csvname, self.process, etlname, self.configFile)
       os.system(parse_cmd)
       print "__xperf_data_begin__"
       fhandle = open(csvname, 'r')
