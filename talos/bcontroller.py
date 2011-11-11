@@ -66,9 +66,9 @@ defaults = {'endTime': -1,
 
 class BrowserWaiter(threading.Thread):
 
-  def __init__(self, deviceManager = None, **options):
+  def __init__(self, remoteProcess = None, **options):
       self.options = options
-      self.deviceManager = deviceManager
+      self.remoteProcess = remoteProcess
       for key, value in defaults.items():
           setattr(self, key, options.get(key, value))
 
@@ -77,9 +77,9 @@ class BrowserWaiter(threading.Thread):
 
   def run(self):
     if self.url_mod:
-      if (self.deviceManager): #working with a remote device
+      if (self.remoteProcess): #working with a remote device
         if (self.url_mod == "str(int(time.time()*1000))"):
-          curtime = self.deviceManager.getCurrentTime()
+          curtime = self.remoteProcess.getCurrentTime()
           if curtime is None:
             self.returncode = 1
             self.endtime = 0
@@ -90,18 +90,18 @@ class BrowserWaiter(threading.Thread):
         self.command = self.command + eval(self.url_mod)
 
     self.firstTime = int(time.time()*1000)
-    if (self.deviceManager): #working with a remote device
-      devroot = self.deviceManager.getDeviceRoot()
+    if (self.remoteProcess): #working with a remote device
+      devroot = self.remoteProcess.getDeviceRoot()
       if (devroot == None):
         self.returncode = 1
       else:
         remoteLog = devroot + '/' + self.browser_log.split('/')[-1]
-        retVal = self.deviceManager.launchProcess(self.command, outputFile=remoteLog, timeout=self.test_timeout)
+        retVal = self.remoteProcess.launchProcess(self.command, outputFile=remoteLog, timeout=self.test_timeout)
         if retVal <> None:
-          self.deviceManager.getFile(retVal, self.browser_log)
+          self.remoteProcess.getFile(retVal, self.browser_log)
           self.returncode = 0
         else:
-          data = self.deviceManager.getFile(remoteLog, self.browser_log)
+          data = self.remoteProcess.getFile(remoteLog, self.browser_log)
           if (data == ''):
             self.returncode = 1
           else:
@@ -146,7 +146,7 @@ class BrowserWaiter(threading.Thread):
 class BrowserController:
 
   def __init__(self, options):
-    self.deviceManager = None
+    self.remoteProcess = None
     options['env'] = ','.join(['%s=%s' % (str(key), str(value))
                                for key, value in options.get('env', {}).items()])
 
@@ -161,12 +161,12 @@ class BrowserController:
 
     if (self.host):
       from ffprocess_remote import RemoteProcess
-      self.deviceManager = RemoteProcess(self.host, self.port, self.deviceroot)
+      self.remoteProcess = RemoteProcess(self.host, self.port, self.deviceroot)
       if self.env:
         self.command = ' "%s" %s' % (self.env, self.command)
 
   def run(self):
-    self.bwaiter = BrowserWaiter(self.deviceManager, **self.options)
+    self.bwaiter = BrowserWaiter(self.remoteProcess, **self.options)
     noise = 0
     prev_size = 0
     while not self.bwaiter.hasTime():
