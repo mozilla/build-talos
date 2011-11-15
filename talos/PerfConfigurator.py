@@ -84,8 +84,42 @@ class PerfConfigurator:
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", buildIdTime)
 
     def convertLine(self, line, testMode, printMe):
-        buildidString = "'" + str(self.buildid) + "'"
-        activeList = self.activeTests.split(':')
+
+        # testmode == writing out a subset of talos tests
+        if testMode:
+            if line.startswith('- name'):
+                # found the start of an individual test description
+                printMe = False
+
+                for test in self.activeTests.split(':'):
+                    # determine if this is a test we are going to run
+                    if re.match('^-\s*name\s*:\s*' + test + '\s*$', line):
+                        printMe = True
+                        if test == 'tp' and self.fast: #only affects the tp test name
+                            line = line.replace('tp', 'tp_fast')
+                            if self.testPrefix:
+                                line = line.replace(test, '_'.join([self.testPrefix,
+                                                                    test]))
+
+            elif printMe:
+                if 'url' in line and 'url_mod' not in line:
+                    line = self.convertUrlToRemote(line)
+
+                # HACK: we are depending on -tpchrome to be in the cli options
+                # in order to run mozafterpaint
+                if self.mozAfterPaint and line.find('-tpchrome') > 0:
+                    # if mozAfterPaint is True add -tpmozafterpaint option
+                    line = line.replace('-tpchrome ','-tpchrome -tpmozafterpaint ')
+
+                if self.noChrome:
+                    # if noChrome is True remove --tpchrome option
+                    line = line.replace('-tpchrome ','')
+
+                if self.responsiveness and 'responsiveness' in line:
+                    line = line.replace('False', 'True')
+
+            return printMe, line
+
         newline = line
         if 'test_timeout:' in line:
             newline = 'test_timeout: ' + str(self.test_timeout) + '\n'
@@ -126,7 +160,8 @@ class PerfConfigurator:
         if self.extension and ('extensions : {}' in line):
             newline = 'extensions: ' + '\n- ' + self.extension
         if 'buildid:' in line:
-            newline = 'buildid: %s\n' % buildidString
+            newline = 'buildid: \'%s\'\n' % str(self.buildid)
+
         if 'talos.logfile:' in line:
             parts = line.split(':')
             if (parts[1] != None and parts[1].strip() == ''):
@@ -155,37 +190,6 @@ class PerfConfigurator:
             newline = line.replace('True', 'False')
         if 'init_url' in line:
             newline = self.convertUrlToRemote(newline)
-        if testMode:
-            if ('url' in line) and ('url_mod' not in line):
-                newline = self.convertUrlToRemote(newline)
-                line = newline
-
-            if line.startswith('- name'): 
-                #found the start of an individual test description
-                printMe = False
-            for test in activeList: 
-                reTestMatch = re.compile('^-\s*name\s*:\s*' + test + '\s*$')
-                #determine if this is a test we are going to run
-                match = re.match(reTestMatch, line)
-                if match:
-                    printMe = True
-                    if (test == 'tp') and self.fast: #only affects the tp test name
-                        newline = newline.replace('tp', 'tp_fast')
-                    if self.testPrefix:
-                        newline = newline.replace(test, self.testPrefix + '_' + test)
-
-            #HACK: we are depending on -tpchrome to be in the cli options in order to run mozafterpaint
-            if self.mozAfterPaint and (line.find('-tpchrome') > 0): 
-                #if mozAfterPaint is True add -tpmozafterpaint option 
-                line = line.replace('-tpchrome ','-tpchrome -tpmozafterpaint ')
-                newline = line
-
-            if self.noChrome: 
-                #if noChrome is True remove --tpchrome option 
-                newline = line.replace('-tpchrome ','')
-
-            if self.responsiveness and ('responsiveness' in line):
-                newline = line.replace('False', 'True')
 
         if self.extraPrefs != [] and (re.match('^\s*preferences :\s*$', line)): 
             newline = 'preferences :\n'
@@ -195,7 +199,7 @@ class PerfConfigurator:
                     print "Error: syntax error in --setPref=" + v
                     sys.exit(1)
                 newline += '  %s: %s\n' % (thispref[0], thispref[1])
-            
+
         return printMe, newline
 
     def writeConfigFile(self):

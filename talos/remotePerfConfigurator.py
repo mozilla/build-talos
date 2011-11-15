@@ -38,24 +38,27 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
     def convertLine(self, line, testMode, printMe):
         printMe, newline = pc.PerfConfigurator.convertLine(self, line, testMode, printMe)
-        if 'deviceip:' in line:
-           newline = 'deviceip: %s\n' % self.remoteDevice
-        if 'deviceroot:' in line:
-            newline = 'deviceroot: %s\n' % self.deviceRoot
-        if 'deviceport:' in line:
-            newline = 'deviceport: %s\n' % self.remotePort
-        if 'remote:' in line:
-            newline = 'remote: %s\n' % self._remote
-        if 'talos.logfile:' in line:
-            parts = line.split(':')
-            if (parts[1] != None and parts[1].strip() == ''):
-                lfile = os.path.join(os.getcwd(), 'browser_output.txt')
-            elif (self.logFile != 'browser_output.txt'):
-                lfile = self.logFile
-            else:
-                lfile = parts[1].strip().strip("'")
-            lfile = self.deviceRoot + '/' + lfile.split('/')[-1]
-            newline = '%s: %s\n' % (parts[0], lfile)
+
+        if printMe:
+            if 'deviceip:' in line:
+               newline = 'deviceip: %s\n' % self.remoteDevice
+            if 'deviceroot:' in line:
+                newline = 'deviceroot: %s\n' % self.deviceRoot
+            if 'deviceport:' in line:
+                newline = 'deviceport: %s\n' % self.remotePort
+            if 'remote:' in line:
+                newline = 'remote: %s\n' % self._remote
+            if 'talos.logfile:' in line:
+                parts = line.split(':')
+                if (parts[1] != None and parts[1].strip() == ''):
+                    lfile = os.path.join(os.getcwd(), 'browser_output.txt')
+                elif (self.logFile != 'browser_output.txt'):
+                    lfile = self.logFile
+                else:
+                    lfile = parts[1].strip().strip("'")
+                lfile = self.deviceRoot + '/' + lfile.split('/')[-1]
+                newline = '%s: %s\n' % (parts[0], lfile)
+
         return printMe, newline
 
     def buildRemoteTwinopen(self):
