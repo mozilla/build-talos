@@ -60,11 +60,13 @@ def shortName(name):
            "Private Bytes": "pbytes",
            "RSS": "rss",
            "XRes": "xres",
-           "Modified Page List Bytes": "modlistbytes"}
+           "Modified Page List Bytes": "modlistbytes",
+           "Main_RSS": "main_rss",
+           "Content_RSS": "content_rss"}
   return names.get(name, name)
 
 def isMemoryMetric(resultName):
-  memory_metric = ['memset', 'rss', 'pbytes', 'xres', 'modlistbytes'] #measured in bytes
+  memory_metric = ['memset', 'rss', 'pbytes', 'xres', 'modlistbytes', 'main_rss', 'content_rss'] #measured in bytes
   return bool([ i for i in memory_metric if i in resultName])
 
 def filesizeformat(bytes):

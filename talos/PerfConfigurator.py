@@ -30,7 +30,7 @@ class PerfConfigurator:
                   'activeTests', 'noChrome', 'fast', 'testPrefix', 'extension',
                   'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID', 
                   'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint', 
-                  'webServer', 'develop', 'responsiveness'];
+                  'webServer', 'develop', 'responsiveness', 'rss'];
     masterIniSubpath = "application.ini"
 
     def _dumpConfiguration(self):
@@ -107,9 +107,12 @@ class PerfConfigurator:
 
                 # HACK: we are depending on -tpchrome to be in the cli options
                 # in order to run mozafterpaint
-                if self.mozAfterPaint and line.find('-tpchrome') > 0:
-                    # if mozAfterPaint is True add -tpmozafterpaint option
+                if self.mozAfterPaint and '-tpchrome' in line:
                     line = line.replace('-tpchrome ','-tpchrome -tpmozafterpaint ')
+
+                if self.rss and '-tpchrome' in line:
+                    line = line.replace('-tpchrome ','-rss -tpchrome ')
+                    newline = line
 
                 if self.noChrome:
                     # if noChrome is True remove --tpchrome option
@@ -454,6 +457,11 @@ class TalosOptions(optparse.OptionParser):
                         action = "store_true", dest = "responsiveness",
                         help = "turn on responsiveness collection")
         defaults["responsiveness"] = False
+
+        self.add_option("--rss",
+                        action = "store_true", dest = "rss",
+                        help = "Collect RSS counters from pageloader instead of the operating system.")  
+        defaults["rss"] = False
 
         self.set_defaults(**defaults)
 

@@ -97,7 +97,8 @@ class TTest(object):
         cmanager = None
         _ffprocess = None
         if remote == True:
-            platform_type = 'win_'
+            platform_type = 'remote_'
+            cmanager = __import__('cmanager_remote')
         elif platform.system() == "Linux":
             cmanager = __import__('cmanager_linux')
             platform_type = 'linux_'
@@ -366,6 +367,19 @@ class TTest(object):
                     else:
                         raise talosError("unrecognized output format")
   
+                if ("Main_RSS" in counters) or ("Content_RSS" in counters):
+                    RSS_REGEX = re.compile('RSS:\s+([a-zA-Z0-9]+):\s+([0-9]+)$')
+                    counter_results['Main_RSS'] = []
+                    counter_results['Content_RSS'] = []
+                    for line in results_raw.split('\n'):
+                        rssmatch = RSS_REGEX.search(line)
+                        if (rssmatch):
+                            (type, value) = (rssmatch.group(1), rssmatch.group(2))
+                            if type == 'Main':
+                                counter_results['Main_RSS'].append(value)
+                            if type == 'Content':
+                                counter_results['Content_RSS'].append(value)
+                    
                 time.sleep(browser_config['browser_wait']) 
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir)
