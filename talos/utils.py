@@ -38,8 +38,6 @@
 
 import os
 import time
-import shlex
-import subprocess
 import sys
 import yaml
 
@@ -145,51 +143,3 @@ def readConfigFile(filename):
   yaml_config = yaml.load(config_file)
   config_file.close()
   return yaml_config
-
-def ps(arg='axwww'):
-  """
-  python front-end to `ps`
-  http://en.wikipedia.org/wiki/Ps_%28Unix%29
-  """
-  retval = []
-  process = subprocess.Popen(['ps', arg], stdout=subprocess.PIPE)
-  stdout, _ = process.communicate()
-  header = None
-  for line in stdout.splitlines():
-    line = line.strip()
-    if header is None:
-      # first line is the header
-      header = line.split()
-      continue
-    split = line.split(None, len(header)-1)
-    process_dict = dict(zip(header, split))
-    retval.append(process_dict)
-  return retval
-
-def is_running(pid, psarg='axwww'):
-  """returns if a pid is running"""
-  return bool([i for i in ps(psarg) if pid == int(i['PID'])])
-
-def running_processes(name, psarg='axwww', defunct=False):
-  """                                                                         
-  returns a list of 2-tuples of running processes:                            
-  (pid, ['path/to/executable', 'args', '...'])                                
-  with the executable named `name`.                                          
-  - defunct: whether to return defunct processes                             
-  """
-  retval = []
-  for process in ps(psarg):
-    command = process['COMMAND']
-    command = shlex.split(command)
-    if command[-1] == '<defunct>':
-      command = command[:-1]
-      if not command or not defunct:
-        continue
-    if 'STAT' in process and not defunct:
-      if process['STAT'] == 'Z+':
-        continue
-    prog = command[0]
-    basename = os.path.basename(prog)
-    if basename == name:
-      retval.append((int(process['PID']), command))
-  return retval

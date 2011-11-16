@@ -47,6 +47,9 @@ import utils
 
 class LinuxProcess(FFProcess):
 
+    def __init__(self):
+        pass
+
     def GenerateBrowserCommandLine(self, browser_path, extra_args, profile_dir, url):
         """Generates the command line for a process to run Browser
 
@@ -61,10 +64,11 @@ class LinuxProcess(FFProcess):
             profile_arg = '-profile %s' % profile_dir
 
         cmd = '%s %s %s %s' % (browser_path,
-                               extra_args,
-                               profile_arg,
-                               url)
+                            extra_args,
+                            profile_arg,
+                            url)
         return cmd
+
 
     def GetPidsByName(self, process_name):
         """Searches for processes containing a given string.
@@ -77,8 +81,58 @@ class LinuxProcess(FFProcess):
             A list of PIDs containing the string. An empty list is returned if none are
             found.
         """
-        processes = utils.running_processes(process_name)
-        return [pid for pid,_ in processes]
+
+        matchingPids = []
+  
+        # A list of process names which should not be in the PID list returned
+        # by this function.  This is needed so that we can reliably build a list
+        # of browser child processes without including any Talos python
+        # processes, which can pass the name of the child process as a parameter.
+        processExclusionList = ['bcontroller.py']
+  
+        command = ['ps', 'ax']
+        handle = subprocess.Popen(command, stdout=subprocess.PIPE)
+
+        # wait for the process to terminate
+        handle.wait()
+        data = handle.stdout.read()
+  
+        # find all matching processes and add them to the list
+        for line in data.splitlines():
+            if line.find('defunct') != -1:
+                continue
+            if line.find(process_name) >= 0:
+                shouldExclude = False
+                # skip this process if it's in the processExclusionList
+                for excludedProcess in processExclusionList:
+                    if line.find(excludedProcess) >= 0:
+                        shouldExclude = True
+                if not shouldExclude:
+                    # splits by whitespace, the first one should be the pid
+                    pid = int(line.split()[0])
+                    matchingPids.append(pid)
+
+        return matchingPids
+
+
+    def ProcessesWithNames(self, *process_names):
+        """Returns a list of processes running with the given name(s).
+        Useful to check whether a Browser process is still running
+
+        Args:
+            process_names: String or strings containing process names, i.e. "firefox"
+
+        Returns:
+            An array with a list of processes in the list which are running
+        """
+
+        processes_with_names = []
+        for process_name in process_names:
+            pids = self.GetPidsByName(process_name)
+            if len(pids) > 0:
+                processes_with_names.append(process_name)
+        return processes_with_names
+
 
     def TerminateProcess(self, pid, timeout):
         """Helper function to terminate a process, given the pid
@@ -88,11 +142,17 @@ class LinuxProcess(FFProcess):
         """
         ret = ''
         try:
-            for sig in ('SIGABRT', 'SIGTERM', 'SIGKILL'):
-                if utils._is_running(pid):
-                    os.kill(pid, getattr(signal, sig))
+            if self.ProcessesWithNames(str(pid)):
+                os.kill(pid, signal.SIGABRT)
+                time.sleep(timeout)
+                ret = 'terminated with SIGABRT'
+                if self.ProcessesWithNames(str(pid)):
+                    os.kill(pid, signal.SIGTERM)
                     time.sleep(timeout)
-                    ret = 'terminated with %s' % sig
+                    ret = 'terminated with SIGTERM'
+                    if self.ProcessesWithNames(str(pid)):
+                        os.kill(pid, signal.SIGKILL)
+                        ret = 'terminated with SIGKILL'
         except OSError, (errno, strerror):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
@@ -116,6 +176,7 @@ class LinuxProcess(FFProcess):
                 if ret:
                     result = result + process_name + '(' + str(pid) + '): ' + ret 
         return result
+
 
     def NonBlockingReadProcessOutput(self, handle):
         """Does a non-blocking read from the output of the process
@@ -206,3 +267,4 @@ class LinuxProcess(FFProcess):
             fileData = results_file.read()
             results_file.close()
         return fileData
+

@@ -89,8 +89,50 @@ class MacProcess(FFProcess):
             A list of PIDs containing the string. An empty list is returned if none are
             found.
         """
-        processes = utils.running_processes(process_name, psarg='-Acj')
-        return [pid for pid,_ in processes]
+        matchingPids = []
+
+        command = ['ps -Acj']
+        handle = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+
+        # wait for the process to terminate
+        handle.wait()
+        data = handle.stdout.readlines()
+
+        # find all matching processes and add them to the list
+        for line in data:
+            #overlook the mac crashreporter daemon
+            if line.find("crashreporterd") >= 0:
+                continue
+            if line.find('defunct') != -1:
+                continue
+            #overlook zombie processes
+            if line.find("Z+") >= 0:
+                continue
+            if line.find(process_name) >= 0:
+                # splits by whitespace, the first one should be the pid
+                pid = int(line.split()[1])
+                matchingPids.append(pid)
+
+        return matchingPids
+
+
+    def ProcessesWithNames(self, *process_names):
+        """Returns a list of processes running with the given name(s).
+        Useful to check whether a Browser process is still running
+
+        Args:
+            process_names: String or strings containing process names, i.e. "firefox"
+
+        Returns:
+            An array with a list of processes in the list which are running
+        """
+        processes_with_names = []
+        for process_name in process_names:
+            pids = self.GetPidsByName(process_name)
+            if len(pids) > 0:
+                processes_with_names.append(process_name)
+        return processes_with_names
+
 
     def TerminateProcess(self, pid, timeout):
         """Helper function to terminate a process, given the pid

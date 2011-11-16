@@ -52,6 +52,8 @@ except:
     pass
 
 class Win32Process(FFProcess):
+    def __init__(self):
+        pass
 
     def GenerateBrowserCommandLine(self, browser_path, extra_args, profile_dir, url):
         """Generates the command line for a process to run Browser
@@ -107,11 +109,12 @@ class Win32Process(FFProcess):
                 win32pdh.EnumObjects(None, None, 0, 1)
                 pids = win32pdhutil.FindPerformanceAttributesByName(process_name, counter="ID Process")
                 if len(pids) > 0:
-                    processes_with_names.extend([(pid, process_name) for pid in pids])
+                    processes_with_names.append(process_name)
             except:
                 # Might get an exception if there are no instances of the process running.
                 continue
         return processes_with_names
+
 
     def TerminateAllProcesses(self, *process_names):
         """Helper function to terminate all processes with the given process name
