@@ -47,9 +47,6 @@ import utils
 
 class LinuxProcess(FFProcess):
 
-    def __init__(self):
-        pass
-
     def GenerateBrowserCommandLine(self, browser_path, extra_args, profile_dir, url):
         """Generates the command line for a process to run Browser
 

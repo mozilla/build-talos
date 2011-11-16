@@ -52,9 +52,6 @@ import utils
 
 class FFProcess(object):
     testAgent = None
-    
-    def __init__(self):
-        pass
 
     def checkBrowserAlive(self, process_name):
         #is the browser actually up?
