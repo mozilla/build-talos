@@ -208,7 +208,7 @@ class TTest(object):
         self.initializeLibraries(browser_config)
 
         utils.debug("operating with platform_type : " + self.platform_type)
-        counters = test_config[self.platform_type + 'counters']
+        counters = test_config.get(self.platform_type + 'counters', [])
         resolution = test_config['resolution']
         all_browser_results = []
         all_counter_results = []
