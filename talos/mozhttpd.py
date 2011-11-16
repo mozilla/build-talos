@@ -61,7 +61,7 @@ class MozRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         return retval
 
     def translate_path(self, path):
-        path = path.strip('/').split()
+        path = urllib.unquote(path).strip('/').split('/')
         if path == ['']:
             path = []
         path.insert(0, self.docroot)
