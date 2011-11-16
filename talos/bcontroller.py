@@ -171,7 +171,8 @@ class BrowserController:
     prev_size = 0
     while not self.bwaiter.hasTime():
       if noise > self.test_timeout: # check for frozen browser
-        os.chmod(self.browser_log, 0777)
+        if os.path.isfile(self.browser_log):
+          os.chmod(self.browser_log, 0777)
         results_file = open(self.browser_log, "a")
         results_file.write("\n__FAILbrowser frozen__FAIL\n")
         results_file.close()
