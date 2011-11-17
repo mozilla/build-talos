@@ -107,8 +107,7 @@ class FFProcess(object):
         fhandle.write(content)
         fhandle.close()
 
-        return [sys.executable, 'bcontroller.py',
-                '--configFile', browser_config['bcontroller_config']]
+        return '%s bcontroller.py --configFile %s' % (sys.executable, browser_config['bcontroller_config'])
 
         return terminate_result
 
