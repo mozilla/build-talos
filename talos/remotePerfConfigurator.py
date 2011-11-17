@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import PerfConfigurator as pc
 from PerfConfigurator import Configuration
 import os, sys
@@ -204,6 +206,6 @@ def main(argv=None):
     # anticipate
 
     return 0
-    
+
 if __name__ == "__main__":
     sys.exit(main())
