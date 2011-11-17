@@ -253,7 +253,8 @@ class TTest(object):
             utils.debug("initialized " + browser_config['process'])
             if test_config['shutdown']:
                 shutdown = []
-            if 'responsiveness' in test_config and test_config['responsiveness']:
+            # ignore responsiveness tests on linux until we fix Bug 697555
+            if test_config.get('responsiveness') and platform.system() != "Linux":
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL': '10'})
@@ -391,7 +392,8 @@ class TTest(object):
  
                 if test_config['shutdown']:
                     shutdown.append(endTime - startTime)
-                if 'responsiveness' in test_config and test_config['responsiveness']:
+                # ignore responsiveness tests on linux until we fix Bug 697555
+                if test_config.get('responsiveness') and platform.system() != "Linux":
                     responsiveness = self.RESULTS_RESPONSIVENESS_REGEX.findall(results_raw)
 
                 all_browser_results.append(browser_results)
@@ -408,7 +410,8 @@ class TTest(object):
             utils.restoreEnvironmentVars()
             if test_config['shutdown']:
                 all_counter_results.append({'shutdown' : shutdown})      
-            if 'responsiveness' in test_config and test_config['responsiveness']:
+            # ignore responsiveness tests on linux until we fix Bug 697555
+            if test_config.get('responsiveness') and platform.system() != "Linux":
                 all_counter_results.append({'responsiveness' : responsiveness})      
             return (all_browser_results, all_counter_results, format)
         except:
