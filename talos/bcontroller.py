@@ -65,7 +65,6 @@ defaults = {'endTime': -1,
             'configFile': 'bcontroller.yml'}
 
 class BrowserWaiter(threading.Thread):
-
   def __init__(self, remoteProcess = None, **options):
       self.options = options
       self.remoteProcess = remoteProcess
@@ -111,23 +110,30 @@ class BrowserWaiter(threading.Thread):
       etlname = 'test.etl'
 
       #start_xperf.py -c <configfile> -e <etl filename>
-      os.system('%s xtalos\\start_xperf.py -c %s -e %s' % (sys.executable, self.configFile, etlname))
+      subprocess.call([sys.executable,
+                       os.path.join('xtalos', 'start_xperf.py'),
+                       '-c', self.configFile, '-e', etlname])
 
       self.returncode = os.system(self.command)
 
       #stop_xperf.py -x <path to xperf.exe>
       #etlparser.py -o <outputname[.csv]> -p <process_name (i.e. firefox.exe)> -c <path to configfile> -e <xperf_output[.etl]>
-      os.system('%s xtalos\\stop_xperf.py -x "%s"' % (sys.executable, self.xperf_path))
-      parse_cmd = '%s xtalos\\etlparser.py -o %s -p %s -e %s -c %s' % (
-        sys.executable, csvname, self.process, etlname, self.configFile)
-      os.system(parse_cmd)
+      subprocess.call([sys.executable,
+                       os.path.join('xtalos', 'stop_xperf.py'),
+                       '-x', self.xperf_path])
+      subprocess.call([sys.executable,
+                       os.path.join('xtalos', 'etlparser.py'),
+                       '-o', csvname,
+                       '-p', self.process,
+                       '-e', etlname,
+                       '-c', self.configFile])
       print "__xperf_data_begin__"
       fhandle = open(csvname, 'r')
       print fhandle.read()
       fhandle.close()
       print "__xperf_data_end__"
     else:    #blocking call to system, non-remote device
-      self.returncode = os.system(self.command + " > " + self.browser_log) 
+      self.returncode = os.system(self.command + " > " + self.browser_log)
 
     self.endTime = int(time.time()*1000)
 
