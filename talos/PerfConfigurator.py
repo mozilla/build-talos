@@ -249,13 +249,14 @@ class PerfConfigurator:
         #NOTE: line.split() causes this to fail because it splits on the \n and not every single ' '
         parts = line.split(' ')
         newline = ''
+
+        # We cannot load .xul remotely and winopen.xul is the only instance.
+        # winopen.xul is handled in remotePerfConfigurator.py
         for part in parts:
             if '.html' in part:
                 newline += 'http://' + self.webServer + '/' + part
             elif '.manifest' in part:
                 newline += self.buildRemoteManifest(part) + ' '
-            elif '.xul' in part:
-                newline += 'http://' + self.webServer + '/' + part
             else:
                 newline += part
                 if (part <> parts[-1]):
