@@ -143,7 +143,7 @@ class MacProcess(FFProcess):
         ret = ''
         try:
             for sig in ('SIGTERM', 'SIGKILL'):
-                if utils._is_running(pid):
+                if self.ProcessesWithName(str(pid)):
                     os.kill(pid, getattr(signal, sig))
                     time.sleep(timeout)
                     ret = 'terminated with %s' % sig
