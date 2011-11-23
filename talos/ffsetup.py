@@ -296,7 +296,7 @@ class FFSetup(object):
             b_log = browser_config['deviceroot'] + '/' + browser_config['browser_log']
 
         b_cmd = self.ffprocess.GenerateBControllerCommandLine(command_line, browser_config, {})
-        process = subprocess.Popen(b_cmd, universal_newlines=True, shell=True, bufsize=0, env=os.environ)
+        process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
 
         timeout = True
         total_time = 0

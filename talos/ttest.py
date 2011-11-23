@@ -287,9 +287,9 @@ class TTest(object):
                 url = test_config['url']
                 command_line = self._ffprocess.GenerateBrowserCommandLine(browser_config['browser_path'],
                                                                         browser_config['extra_args'],
-                                                                        profile_dir, 
+                                                                        profile_dir,
                                                                         url)
-  
+
                 utils.debug("command line: " + command_line)
 
                 b_log = browser_config['browser_log']
@@ -297,8 +297,8 @@ class TTest(object):
                     b_log = browser_config['deviceroot'] + '/' + browser_config['browser_log']
 
                 b_cmd = self._ffprocess.GenerateBControllerCommandLine(command_line, browser_config, test_config)
-                process = subprocess.Popen(b_cmd, universal_newlines=True, shell=True, bufsize=0, env=os.environ)
-  
+                process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
+
                 #give browser a chance to open
                 # this could mean that we are losing the first couple of data points
                 #   as the tests starts, but if we don't provide
