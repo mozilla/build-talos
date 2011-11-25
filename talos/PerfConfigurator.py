@@ -23,7 +23,7 @@ import optparse
 
 defaultTitle = "qm-pxp01"
 
-class PerfConfigurator:
+class PerfConfigurator(object):
     attributes = ['exePath', 'configPath', 'sampleConfig', 'outputName', 'title',
                   'branch', 'branchName', 'buildid', 'currentDate', 'browserWait',
                   'verbose', 'testDate', 'useId', 'resultsServer', 'resultsLink',
@@ -38,7 +38,7 @@ class PerfConfigurator:
         print "Writing configuration:"
         for i in self.attributes:
             print " - %s = %s" % (i, getattr(self, i))
-    
+
     def _getCurrentDateString(self):
         """collect a date string to be used in naming the created config file"""
         currentDateTime = datetime.now()
@@ -47,11 +47,10 @@ class PerfConfigurator:
     def _getMasterIniContents(self):
         """ Open and read the application.ini from the application directory """
         master = open(path.join(path.dirname(self.exePath), self.masterIniSubpath))
-            
         data = master.read()
         master.close()
         return data.split('\n')
-    
+
     def _getCurrentBuildId(self):
         masterContents = self._getMasterIniContents()
         if not masterContents:
@@ -64,7 +63,7 @@ class PerfConfigurator:
                 return match.group(1)
         raise Configuration("BuildID not found in " 
           + path.join(path.dirname(self.exePath), self.masterIniSubpath))
-    
+
     def _getTimeFromTimeStamp(self):
         if len(self.testDate) == 14: 
           buildIdTime = time.strptime(self.testDate, "%Y%m%d%H%M%S")
@@ -299,10 +298,6 @@ class Configuration(Exception):
     def __init__(self, msg):
         self.msg = "ERROR: " + msg
 
-class Usage(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-
 class TalosOptions(optparse.OptionParser):
     """Parses Mochitest commandline options."""
     def __init__(self, **kwargs):
@@ -313,12 +308,12 @@ class TalosOptions(optparse.OptionParser):
                         action = "store_true", dest = "verbose",
                         help = "display verbose output")
         defaults["verbose"] = False
-    
+
         self.add_option("-e", "--executablePath",
                         action = "store", dest = "exePath",
                         help = "path to executable we are testing")
         defaults["exePath"] = ''
-    
+
         self.add_option("-c", "--configPath",
                         action = "store", dest = "configPath",
                         help = "path to config file")
@@ -333,7 +328,7 @@ class TalosOptions(optparse.OptionParser):
                         action = "store", dest = "title",
                         help = "Title of the test run")
         defaults["title"] = defaultTitle
-    
+
         self.add_option("--branchName",
                         action = "store", dest = "branchName",
                         help = "Name of the branch we are testing on")
@@ -373,7 +368,7 @@ class TalosOptions(optparse.OptionParser):
                         action = "store", dest = "resultsServer",
                         help = "Address of the results server")
         defaults["resultsServer"] = ''
-    
+
         self.add_option("-l", "--resultsLink",
                         action = "store", dest = "resultsLink",
                         help = "Link to the results from this test run")
@@ -403,12 +398,12 @@ class TalosOptions(optparse.OptionParser):
                         action = "store", dest = "extension",
                         help = "Extension to install while running")
         defaults["extension"] = ''
-    
+
         self.add_option("--fast",
                         action = "store_true", dest = "fast",
                         help = "Run tp tests as tp_fast")
         defaults["fast"] = False
-    
+
         self.add_option("--symbolsPath",
                         action = "store", dest = "symbolsPath",
                         help = "Path to the symbols for the build we are testing")
@@ -466,18 +461,25 @@ class TalosOptions(optparse.OptionParser):
 
         self.set_defaults(**defaults)
 
+    def parse_args(self, args=None, values=None):
+        options, args = optparse.OptionParser.parse_args(self, args=args, values=values)
+        options = self.verifyCommandLine(args, options)
+        return options, args
+
     def verifyCommandLine(self, args, options):
-        if len(args) > 0:
+        if args:
             raise Configuration("Configurator does not take command line arguments, only options (arguments were: %s)" % (",".join(args)))
-        elif not options.activeTests:
+
+        # ensure tests are supplied
+        if not options.activeTests:
             raise Configuration("Active tests should be declared explicitly. Nothing declared with --activeTests.")
 
         if options.develop == True:
-            if  options.resultsServer == '':
+            if options.resultsServer == '':
                 options.resultsServer = ' '
             if options.resultsLink == '':
                 options.resultsLink = ' '
-            
+
             if options.webServer == '':
               options.webServer = "localhost:%s" % (findOpenPort('127.0.0.1'))
         return options
@@ -489,20 +491,19 @@ def getLanIp():
     ip = nettools.getLanIp()
     port = findOpenPort(ip)
     return "%s:%s" % (ip, port)
-    
+
 def findOpenPort(ip):
     import devicemanager
     nettools = devicemanager.NetworkTools()
     port = nettools.findOpenPort(ip, 15707)
     return str(port)
 
-def main(argv=None):
+def main(argv=sys.argv[1:]):
     parser = TalosOptions()
-    options, args = parser.parse_args()
+    progname = parser.get_prog_name()
 
-    progname = sys.argv[0].split("/")[-1]
     try:
-        parser.verifyCommandLine(args, options)
+        options, args = parser.parse_args(argv)
         configurator = PerfConfigurator(options);
         configurator.writeConfigFile()
     except Configuration, err:
