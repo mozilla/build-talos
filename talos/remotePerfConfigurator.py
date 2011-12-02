@@ -176,7 +176,7 @@ class remoteTalosOptions(pc.TalosOptions):
 
     def verifyCommandLine(self, args, options):
         options = pc.TalosOptions.verifyCommandLine(self, args, options)
-    
+
         if options.develop:
             if options.webServer.startswith('localhost'):
                 options.webServer = pc.getLanIp()
@@ -186,13 +186,14 @@ class remoteTalosOptions(pc.TalosOptions):
             if (options.webServer == 'localhost'  or options.remoteDevice == ''):
                 raise Configuration("When running Talos on a remote device, you need to provide a webServer and optionally a remotePort")
 
-def main(argv=None):
-    parser = remoteTalosOptions()
-    options, args = parser.parse_args()
+        return options
 
-    progname = sys.argv[0].split("/")[-1]
+def main(argv=sys.argv[1:]):
+    parser = remoteTalosOptions()
+    progname = parser.get_prog_name()
+
     try:
-        parser.verifyCommandLine(args, options)
+        options, args = parser.parse_args(argv)
         configurator = remotePerfConfigurator(options)
         configurator.writeConfigFile()
     except Configuration, err:
