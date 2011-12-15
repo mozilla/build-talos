@@ -255,6 +255,17 @@ def send_to_graph(results_server, results_link, machine, date, browser_config, r
       raise talosError("Unknown print format in send_to_graph")
     result_strings.append(construct_results(machine, fullname, browser_config, date, vals, amo))
     result_testnames.append(fullname)
+
+    #TODO: do we only test ts, if not, can we ensure that we are not trying to uplaod ts_rss, etc...
+    if amo and testname == 'ts':
+      sys.path.insert(0, "amo")
+      from amo_api import upload_amo_results
+      upload_amo_results(browser_config['addon_id'], 
+                         browser_config['browser_version'],
+                         browser_config['process'],
+                         testname,
+                         [val for val,page in vals])
+
     utils.stamped_msg("Generating results file: " + testname, "Stopped")
     #counters collected for this test
     for cd in counter_dump:
