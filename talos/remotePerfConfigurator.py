@@ -15,7 +15,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
         #this depends on buildID which requires querying the device
         pc.PerfConfigurator.__init__(self, options)
-        pc.PerfConfigurator.attributes += ['remoteDevice', 'remotePort', 'deviceRoot']
+        pc.PerfConfigurator.attributes += ['remoteDevice', 'remotePort', 'deviceRoot', 'nativeUI']
 
     def _setupRemote(self):
         try:
@@ -39,6 +39,11 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         pc.PerfConfigurator._dumpConfiguration(self)
 
     def convertLine(self, line, testMode, printMe):
+        # For NativeUI Fennec, we are working around bug 708793 and uploading a 
+        # unique machine name (defined via title) with a .n.  Currently a machine name
+        # is a 1:1 mapping with the OS+hardware
+        if self.nativeUI and not self.title.endswith(".n"):
+          self.title = "%s.n" % self.title
         printMe, newline = pc.PerfConfigurator.convertLine(self, line, testMode, printMe)
 
         if printMe:
@@ -170,6 +175,10 @@ class remoteTalosOptions(pc.TalosOptions):
                     type = "string", dest = "deviceRoot",
                     help = "path on the device that will hold files and the profile")
         defaults["deviceRoot"] = ''
+
+        self.add_option("--nativeUI", action = "store_true", dest = "nativeUI",
+                    help = "Run tests on Fennec with a Native Java UI instead of the XUL UI")
+        defaults["nativeUI"] = False
 
         defaults["sampleConfig"] = 'remote.config'
         self.set_defaults(**defaults)
