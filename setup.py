@@ -11,6 +11,18 @@ except IOError:
 version = "0.0"
 
 dependencies = ['PyYAML']
+dependency_links = []
+
+if os.name == 'nt':
+    base_link = "http://superb-sea2.dl.sourceforge.net/project/pywin32/"\
+                "pywin32/Build216/pywin32-216.%s-py%s.exe"
+    python_version = '%d.%d' % sys.version_info[0:2]
+    if sys.maxsize > 2**32:  # is 64bits?
+        platform_name = 'win-amd64'
+    else:
+        platform_name = 'win32'
+    dependencies.append('pywin32')
+    dependency_links.append(base_link % (platform_name, python_version))
 
 setup(name='talos',
       version=version,
@@ -42,6 +54,7 @@ setup(name='talos',
                            ]},
       zip_safe=False,
       install_requires=dependencies,
+      dependency_links=dependency_links,
       entry_points="""
       # -*- Entry points: -*-
       """,
