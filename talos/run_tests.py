@@ -378,7 +378,6 @@ def browserInfo(browser_config, devicemanager = None):
       match = re.match(reBuildID, line)
       if match:
         browser_config['buildid'] = match.group(1)
-        print 'RETURN:id:' + browser_config['buildid']
       match = re.match(reRepository, line)
       if match:
           browser_config['repository'] = match.group(1)
@@ -491,7 +490,6 @@ def test_file(filename, to_screen, amo):
     date = int(time.time()) #TODO get this into own file
   utils.debug("using testdate: %d" % date)
   utils.debug("actual date: %d" % int(time.time()))
-  print 'RETURN:s: %s' % title
   #pull buildid & sourcestamp from browser
   browser_config = browserInfo(browser_config, devicemanager = dm)
 
