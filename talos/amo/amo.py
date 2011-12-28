@@ -99,7 +99,7 @@ class AMOOAuth:
                         .from_consumer_and_token(self.get_consumer(), token,
                                                  method, url, parameters))
         request.sign_request(self.signature_method, self.get_consumer(), token)
-        client = httplib2.Http()
+        client = httplib2.Http(disable_ssl_certificate_validation=True)
         if data and method in ['POST', 'PUT']:
             data = encode_multipart(boundary, data)
             headers.update({'Content-Type':

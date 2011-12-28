@@ -20,7 +20,7 @@ def is_file(thing):
     return hasattr(thing, "read") and callable(thing.read)
 
 def encode_multipart(boundary, data):
-"""
+    """
 Copyright (c) Django Software Foundation and individual contributors.
 All rights reserved.
 
@@ -48,7 +48,7 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
+    """
     lines = []
 
     for key, value in data.items():

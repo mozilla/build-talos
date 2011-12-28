@@ -1,6 +1,7 @@
 
 from amo import AMOOAuth
 import mozinfo
+import os
 
 def avg_excluding_max(values):
   """return float rounded to two decimal places, converted to string
@@ -26,21 +27,20 @@ def getOSDetails():
   amo_os_values['win'] = "WINNT"
   amo_os_values['mac'] = "Darwin"
 
-  os = amo_os_values[mozinfo.info['os']]
+  osname = amo_os_values[mozinfo.info['os']]
   osversion = mozinfo.info['version']
   
   #define os, osversion, platform to match https://bugzilla.mozilla.org/show_bug.cgi?id=693209
-  if os == "Linux":
+  if osname == "Linux":
     relver = platform.release()
     osversion = relver.split('-')[0]
 
   #return 5.1 instead of 5.1.2600
-  elif os == "WINNT":
-    v = os.version
-    v.split('.')
+  elif osname == "WINNT":
+    v = osversion.split('.')
     osversion = '.'.join(v[0:-1])
 
-  return os, osversion, mozinfo.info['processor']
+  return osname, osversion, mozinfo.info['processor']
 
 # sample data structure:
 # amo.perf({'os':'WINNT', 'version':'1.23', 'platform': 'x86_64',
