@@ -56,24 +56,9 @@ from xml.dom import minidom
 import shutil
 
 import utils
-from utils import talosError
+from utils import talosError, zip_extractall
 import subprocess
 
-def zip_extractall(zipfile, rootdir):
-    """Python 2.4 compatibility instead of ZipFile.extractall."""
-    for name in zipfile.namelist():
-        if name.endswith('/'):
-            if not os.path.exists(os.path.join(rootdir, name)):
-                os.makedirs(os.path.join(rootdir, name))
-        else:
-            destfile = os.path.join(rootdir, name)
-            destdir = os.path.dirname(destfile)
-            if not os.path.isdir(destdir):
-                os.makedirs(destdir)
-            data = zipfile.read(name)
-            f = open(destfile, 'wb')
-            f.write(data)
-            f.close()
 
 class FFSetup(object):
 
