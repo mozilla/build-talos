@@ -19,11 +19,11 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
     def _setupRemote(self):
         try:
-            if (self.remotePort == -1):
-                import devicemanagerADB
+            if self.remotePort == -1:
+                from mozdevice import devicemanagerADB
                 self.testAgent = devicemanagerADB.DeviceManagerADB(self.remoteDevice, self.remotePort)
             else:
-                import devicemanagerSUT
+                from mozdevice import devicemanagerSUT
                 self.testAgent = devicemanagerSUT.DeviceManagerSUT(self.remoteDevice, self.remotePort)
 
             self.deviceRoot = self.testAgent.getDeviceRoot()

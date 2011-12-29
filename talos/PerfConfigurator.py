@@ -486,14 +486,14 @@ class TalosOptions(optparse.OptionParser):
 
 # Used for the --develop option where we dynamically create a webserver
 def getLanIp():
-    import devicemanager
+    from mozdevice import devicemanager
     nettools = devicemanager.NetworkTools()
     ip = nettools.getLanIp()
     port = findOpenPort(ip)
     return "%s:%s" % (ip, port)
 
 def findOpenPort(ip):
-    import devicemanager
+    from mozdevice import devicemanager
     nettools = devicemanager.NetworkTools()
     port = nettools.findOpenPort(ip, 15707)
     return str(port)

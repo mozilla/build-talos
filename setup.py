@@ -5,12 +5,12 @@ from setuptools import setup, find_packages
 try:
     here = os.path.dirname(os.path.abspath(__file__))
     description = file(os.path.join(here, 'README.txt')).read()
-except IOError: 
+except IOError, OSError:
     description = ''
 
 version = "0.0"
 
-dependencies = ['PyYAML']
+dependencies = ['PyYAML', 'mozdevice', 'mozhttpd', 'mozinfo']
 dependency_links = []
 
 if os.name == 'nt':
@@ -50,7 +50,7 @@ setup(name='talos',
                            '*.sqlite',
                            '*.svg',
                            '*.xml',
-                           '*.xul', 
+                           '*.xul',
                            ]},
       zip_safe=False,
       install_requires=dependencies,

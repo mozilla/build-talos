@@ -30,7 +30,7 @@
 #
 # ***** END LICENSE BLOCK *****
 from ffprocess import FFProcess
-import devicemanager
+from mozdevice import devicemanager
 import os
 import time
 import tempfile
@@ -67,10 +67,10 @@ class RemoteProcess(FFProcess):
 
     def setupRemote(self, host = '', port = DEFAULT_PORT):
         if (port == -1):
-            import devicemanagerADB
+            from mozdevice import devicemanagerADB
             self.testAgent = devicemanagerADB.DeviceManagerADB(host, port)
         else:
-            import devicemanagerSUT
+            from mozdevice import devicemanagerSUT
             self.testAgent = devicemanagerSUT.DeviceManagerSUT(host, port)
 
     def GetRunningProcesses(self):

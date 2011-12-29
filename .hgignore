@@ -1,7 +1,16 @@
 # Filenames that should be ignored wherever they appear
+# see http://www.selenic.com/mercurial/hgignore.5.html
+syntax: regexp
 ~$
 \.DS_Store$
-.pyc$
-.xpi$
-.yml$
-browser_output.txt$
+\.pyc$
+\.xpi$
+\.yml$
+browser_output\.txt$
+mozdevice
+mozinfo\.py$
+mozhttpd\.py$
+talos\.zip$
+mobile_tp4
+remoteapp\.ini
+\.develop$

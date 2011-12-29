@@ -469,12 +469,11 @@ def test_file(filename, to_screen, amo):
   #normalize paths to work accross platforms
   dm = None
   if (browser_config['remote'] == True):
-    import devicemanager
     if (browser_config['port'] == -1):
-        import devicemanagerADB
+        from mozdevice import devicemanagerADB
         dm = devicemanagerADB.DeviceManagerADB(browser_config['host'], browser_config['port'])
     else:
-        import devicemanagerSUT
+        from mozdevice import devicemanagerSUT
         dm = devicemanagerSUT.DeviceManagerSUT(browser_config['host'], browser_config['port'])
 
   browser_config['browser_path'] = os.path.normpath(browser_config['browser_path'])
