@@ -71,7 +71,7 @@ def main(args=sys.argv[1:]):
     newfiles = [filename for _,filename in manifest]
 
     # make the talos.zip file
-    zip = zipfile.ZipFile('talos.zip', mode='w')
+    zip = zipfile.ZipFile('talos.zip', mode='w', compression=zipfile.ZIP_DEFLATED)
     talosdir = os.path.abspath(os.path.join(here, 'talos'))
     for dirpath, dirnames, filenames in os.walk(talosdir):
         filenames = [i for i in filenames if not i.endswith('.pyc')]
