@@ -62,7 +62,6 @@ import subprocess
 
 class FFSetup(object):
 
-    ffprocess = None
     _remoteWebServer = 'localhost'
     _deviceroot = ''
     _host = ''
