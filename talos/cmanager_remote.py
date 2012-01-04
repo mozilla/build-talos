@@ -51,10 +51,6 @@ class CounterManager:
   def unregisterCounters(self, counters):
     pass
     
-  def getRegisteredCounters(self):
-    """Returns a list of the registered counters."""
-    return keys(self.registeredCounters)
-
   def getCounterValue(self, counterName):
     return None
 

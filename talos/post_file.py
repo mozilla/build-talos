@@ -5,7 +5,7 @@
 #   "Except where otherwise noted, recipes in the Python Cookbook are published under the Python license ."
 #   This recipe is covered under the Python license: http://www.python.org/license
 
-import httplib, mimetypes, urllib2
+import httplib, mimetypes
 import socket
 from socket import error, herror, gaierror, timeout
 socket.setdefaulttimeout(None)

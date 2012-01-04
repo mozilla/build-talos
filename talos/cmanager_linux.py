@@ -43,7 +43,6 @@ __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 import subprocess
 import sys
 import os
-import time
 
 def GetPrivateBytes(pids):
   """Calculate the amount of private, writeable memory allocated to a process.
@@ -175,10 +174,6 @@ class CounterManager:
     for counter in counters:
       if counter in self.registeredCounters:
         del self.registeredCounters[counter]
-
-  def getRegisteredCounters(self):
-    """Returns a list of the registered counters."""
-    return keys(self.registeredCounters)
 
   def getCounterValue(self, counterName):
     """Returns the last value of the counter 'counterName'"""

@@ -30,7 +30,6 @@
 #
 # ***** END LICENSE BLOCK *****
 from ffprocess import FFProcess
-from mozdevice import devicemanager
 import os
 import time
 import tempfile
@@ -74,7 +73,6 @@ class RemoteProcess(FFProcess):
             self.testAgent = devicemanagerSUT.DeviceManagerSUT(host, port)
 
     def GetRunningProcesses(self):
-        current_procs = []
         return self.testAgent.getProcessList()
 
 
@@ -205,7 +203,7 @@ class RemoteProcess(FFProcess):
             total_time = 0
             while total_time < timeout:
                 time.sleep(1)
-                if (self.poll(cmd) is None):
+                if not self.testAgent.processExist(cmd):
                     timed_out = False
                     break
                 total_time += 1
@@ -214,16 +212,7 @@ class RemoteProcess(FFProcess):
                 return None
       
         return handle
-  
-    def poll(self, process):
-        try:
-            if (self.testAgent.processExist(process) == None):
-                return None
-            return 1
-        except:
-            return None
-        return 1
-  
+
     #currently this is only used during setup of newprofile from ffsetup.py
     def copyDirToDevice(self, localDir):
         head, tail = os.path.split(localDir)

@@ -42,11 +42,8 @@ __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 import time
 import yaml
 import sys
-import urllib
-import optparse 
+import optparse
 import os
-import string
-import socket
 import re
 
 import utils

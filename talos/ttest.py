@@ -53,7 +53,6 @@ import platform
 import os
 import os.path
 import re
-import shutil
 import time
 import sys
 import subprocess
@@ -283,7 +282,6 @@ class TTest(object):
                 else:
                     timeout = 7200 # 2 hours
                 total_time = 0
-                output = ''
                 url = test_config['url']
                 command_line = self._ffprocess.GenerateBrowserCommandLine(browser_config['browser_path'],
                                                                         browser_config['extra_args'],
@@ -330,7 +328,6 @@ class TTest(object):
                         if (val):
                             counter_results[count_type].append(val)
                     if process.poll() != None: #browser_controller completed, file now full
-                        timed_out = False
                         break
                         
                 if total_time >= timeout:

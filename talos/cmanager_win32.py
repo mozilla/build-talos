@@ -37,8 +37,6 @@
 
 
 import win32pdh
-import win32pdhutil
-
 
 class CounterManager:
 
@@ -83,9 +81,6 @@ class CounterManager:
     for counter in counters:
       if counter in self.registeredCounters:
         del self.registeredCounters[counter]
-
-  def getRegisteredCounters(self):
-    return keys(self.registeredCounters)
 
   def updateCounterPathsForChildProcesses(self, counter):
     # Create a counter path for each instance of the child process that

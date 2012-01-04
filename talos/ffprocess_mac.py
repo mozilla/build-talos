@@ -236,27 +236,3 @@ class MacProcess(FFProcess):
     def removeDirectory(self, dir):
         self.MakeDirectoryContentsWritable(dir)
         shutil.rmtree(dir)
-
-    def launchProcess(self, cmd, outputFile = "process.txt", timeout = -1):
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True, shell=True, env=os.environ)
-        handle = process.stdout
-
-        timed_out = True
-        if (timeout > 0):
-            total_time = 0
-            while total_time < 600: #10 minutes
-              time.sleep(1)
-              if (not self.poll(process)):
-                  timed_out = False
-                  break
-              total_time += 1
-
-        if (timed_out == True):
-            return None
-
-        return handle
-
-    def poll(self, process):
-        return process.poll()
-
-

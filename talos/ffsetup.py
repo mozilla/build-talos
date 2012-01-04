@@ -43,7 +43,6 @@
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
 
-import platform
 import os
 import os.path
 import re
@@ -53,9 +52,7 @@ import time
 import glob
 import zipfile
 from xml.dom import minidom
-import shutil
 
-import utils
 from utils import talosError, zip_extractall
 import subprocess
 
@@ -276,8 +273,6 @@ class FFSetup(object):
                                                                  browser_config["init_url"])
 
         log = browser_config['browser_log']
-        if (browser_config['webserver'] != 'localhost'):
-            b_log = browser_config['deviceroot'] + '/' + browser_config['browser_log']
 
         b_cmd = self.ffprocess.GenerateBControllerCommandLine(command_line, browser_config, {})
         process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)

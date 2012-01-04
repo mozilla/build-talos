@@ -42,11 +42,9 @@ import os
 import time
 import subprocess
 import threading
-from utils import talosError
 import sys
 import utils
 import optparse
-import re
 
 defaults = {'endTime': -1,
             'returncode': -1,

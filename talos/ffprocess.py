@@ -39,14 +39,9 @@
 
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
-
-
-import platform
 import os
-import re
 import sys
 import time
-import subprocess
 from utils import talosError
 import utils
 
@@ -65,7 +60,6 @@ class FFProcess(object):
     def cleanupProcesses(self, process_name, child_process, browser_wait):
         #kill any remaining browser processes
         #returns string of which process_names were terminated and with what signal
-        terminate_result = ''
         terminate_result = self.TerminateAllProcesses(browser_wait, process_name, child_process, "crashreporter", "dwwin", "talkback")
         #check if anything is left behind
         if self.checkAllProcesses(process_name, child_process):
@@ -75,6 +69,8 @@ class FFProcess(object):
             time.sleep(browser_wait)
             if self.checkAllProcesses(process_name, child_process):
                 raise talosError("failed to cleanup")
+
+        return terminate_result
 
     def GenerateBControllerCommandLine(self, command_line, browser_config, test_config):
         bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait', 'test_timeout', 'browser_log']
@@ -109,8 +105,6 @@ class FFProcess(object):
 
         return [sys.executable, 'bcontroller.py',
                 '--configFile', browser_config['bcontroller_config']]
-
-        return terminate_result
 
     def addRemoteServerPref(self, profile_dir, server):
         """

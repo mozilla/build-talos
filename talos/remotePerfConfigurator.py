@@ -3,7 +3,6 @@
 import PerfConfigurator as pc
 from PerfConfigurator import Configuration
 import os, sys
-import optparse
 
 class remotePerfConfigurator(pc.PerfConfigurator):
     def __init__(self, options):
@@ -145,7 +144,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
                                       "(have you run fennec at least once?) "
                                       "or you don't have permissions to get it "
                                       "(workaround: extract it from apk locally)")
-              return fileContents.split('\n')
+              return filecontents.split('\n')
 
             master = open(localfilename)
         else:

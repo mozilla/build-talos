@@ -41,9 +41,6 @@
 
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
-
-import os
-import time
 import subprocess
 
 def GetProcessData(pid):
@@ -129,10 +126,6 @@ class CounterManager:
     for counter in counters:
       if counter in self.registeredCounters:
         del self.registeredCounters[counter]
-
-  def getRegisteredCounters(self):
-    """Returns a list of the registered counters."""
-    return keys(self.registeredCounters)
 
   def getCounterValue(self, counterName):
     """Returns the last value of the counter 'counterName'"""
