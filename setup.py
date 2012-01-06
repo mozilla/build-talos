@@ -59,31 +59,3 @@ setup(name='talos',
       # -*- Entry points: -*-
       """,
       )
-
-def install_pageloader():
-    """
-    Obtain pageloader.  The steps by hand are
-    hg clone http://hg.mozilla.org/build/pageloader
-    cd pageloader
-    zip -r pageloader.xpi *
-    mv pageloader.xpi talos/page_load_test/pageloader.xpi
-    """
-
-    # find the destination
-    import talos
-    dirname = os.path.dirname(talos.__file__)
-    dirname = os.path.join(dirname, 'page_load_test')
-    assert os.path.isdir(dirname)
-
-    # download the extension
-    import urllib2
-    url = 'http://hg.mozilla.org/build/pageloader/archive/tip.zip'
-    dest = os.path.join(dirname, 'pageloader.xpi')
-    f = file(dest, 'w')
-    pageloader = urllib2.urlopen(url)
-    f.write(pageloader.read())
-    pageloader.close()
-    f.close()
-
-if 'install' in sys.argv[1:] or 'develop' in sys.argv[1:]:
-    install_pageloader()
