@@ -463,7 +463,6 @@ def test_file(filename, to_screen, amo):
                     'xperf_path'         : yaml_config.get('xperf_path', None),
                     'develop'            : yaml_config.get('develop', False)}
 
-  #normalize paths to work accross platforms
   dm = None
   if (browser_config['remote'] == True):
     if (browser_config['port'] == -1):
@@ -473,6 +472,7 @@ def test_file(filename, to_screen, amo):
         from mozdevice import devicemanagerSUT
         dm = devicemanagerSUT.DeviceManagerSUT(browser_config['host'], browser_config['port'])
 
+  #normalize paths to work accross platforms
   browser_config['browser_path'] = os.path.normpath(browser_config['browser_path'])
   for dir in browser_config['dirs']:
     browser_config['dirs'][dir] = os.path.normpath(browser_config['dirs'][dir])
