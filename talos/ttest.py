@@ -141,7 +141,6 @@ class TTest(object):
     def initializeProfile(self, profile_dir, browser_config):
         if not self._ffsetup.InitializeNewProfile(profile_dir, browser_config):
             raise talosError("failed to initialize browser")
-        time.sleep(browser_config['browser_wait'])
         if self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
             raise talosError("browser failed to close after being initialized") 
 
