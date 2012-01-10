@@ -255,8 +255,7 @@ def send_to_graph(results_server, results_link, machine, date, browser_config, r
 
     #TODO: do we only test ts, if not, can we ensure that we are not trying to uplaod ts_rss, etc...
     if amo and testname == 'ts':
-      sys.path.insert(0, "amo")
-      from amo_api import upload_amo_results
+      from amo.amo_api import upload_amo_results
       upload_amo_results(browser_config['addon_id'], 
                          browser_config['browser_version'],
                          browser_config['process'],
