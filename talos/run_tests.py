@@ -39,12 +39,13 @@
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
 
-import time
-import yaml
-import sys
 import optparse
 import os
 import re
+import sys
+import time
+import urlparse
+import yaml
 
 import utils
 from utils import talosError
@@ -189,7 +190,7 @@ def send_to_csv(csv_dir, results):
           writer.writerow(['RETURN: ' + counterName + ': ' + avg_excluding_max(cd[count_type]),])
 
 def construct_results (machine, testname, browser_config, date, vals, amo):
-  """ 
+  """
   Creates string formated for the collector script of the graph server
   Returns the completed string
   """
@@ -200,7 +201,7 @@ def construct_results (machine, testname, browser_config, date, vals, amo):
   info_format = "%s,%s,%s,%s,%s,%s\n"
   data_string = ""
   data_string += "START\n"
-  if (amo):
+  if amo:
     data_string += "AMO\n"
     #browser_name,browser_version,addon_id
     amo_format= "%s,%s,%s\n"
@@ -221,10 +222,14 @@ def construct_results (machine, testname, browser_config, date, vals, amo):
   data_string += "END"
   return data_string
 
-def send_to_graph(results_server, results_link, machine, date, browser_config, results, amo):
+def send_to_graph(results_url, machine, date, browser_config, results, amo):
   links = ''
   result_strings = []
   result_testnames = []
+
+  # parse the results url
+  results_url_split = urlparse.urlsplit(results_url)
+  results_scheme, results_server, results_path, _, _ = results_url_split
 
   #construct all the strings of data, one string per test and one string  per counter
   for testname in results:
@@ -256,7 +261,7 @@ def send_to_graph(results_server, results_link, machine, date, browser_config, r
     #TODO: do we only test ts, if not, can we ensure that we are not trying to uplaod ts_rss, etc...
     if amo and testname == 'ts':
       from amo.amo_api import upload_amo_results
-      upload_amo_results(browser_config['addon_id'], 
+      upload_amo_results(browser_config['addon_id'],
                          browser_config['browser_version'],
                          browser_config['process'],
                          testname,
@@ -277,17 +282,24 @@ def send_to_graph(results_server, results_link, machine, date, browser_config, r
         result_strings.append(construct_results(machine, counterName, browser_config, date, vals, amo))
         result_testnames.append(counterName)
         utils.stamped_msg("Generating results file: " + counterName, "Stopped")
-    
+
   #send all the strings along to the graph server
   for data_string, testname in zip(result_strings, result_testnames):
     RETRIES = 5
     wait_time = 5
     times = 0
     msg = ""
-    while (times < RETRIES):
+    while times < RETRIES:
       try:
         utils.stamped_msg("Transmitting test: " + testname, "Started")
-        links += process_Request(post_file.post_multipart(results_server, results_link, [("key", "value")], [("filename", "data_string", data_string)]))
+        if results_scheme in ('http', 'https'):
+          links += process_Request(post_file.post_multipart(results_server, results_path, [("key", "value")], [("filename", "data_string", data_string)]))
+        elif results_scheme == 'file':
+          f = file(results_path, 'a')
+          f.write(data_string)
+          f.close()
+        else:
+          raise NotImplementedError("results_url: %s - only http://, https://, and file:// supported" % results_url)
         break
       except talosError, e:
         msg = e.msg
@@ -296,8 +308,8 @@ def send_to_graph(results_server, results_link, machine, date, browser_config, r
       times += 1
       time.sleep(wait_time)
       wait_time += wait_time
-    if times == RETRIES:
-        raise talosError("Graph server unreachable (%d attempts)\n%s" % (RETRIES, msg))
+    else:
+      raise talosError("Graph server unreachable (%d attempts)\n%s" % (RETRIES, msg))
     utils.stamped_msg("Transmitting test: " + testname, "Stopped")
 
   return links
@@ -311,17 +323,17 @@ def results_from_graph(links, results_server, amo):
         continue
       if line.lower() in ('success',):
         print 'RETURN:addon results inserted successfully'
-    
+
   else:
     #take the results from the graph server collection script and put it into a pretty format for the waterfall
     url_format = "http://%s/%s"
     link_format= "<a href=\'%s\'>%s</a>"
     first_results = 'RETURN:<br>'
-    last_results = '' 
-    full_results = '\nRETURN:<p style="font-size:smaller;">Details:<br>'  
+    last_results = ''
+    full_results = '\nRETURN:<p style="font-size:smaller;">Details:<br>'
     lines = links.split('\n')
     for line in lines:
-      if line == "":
+      if not line:
         continue
       linkvalue = -1
       linkdetail = ""
@@ -393,78 +405,70 @@ def browserInfo(browser_config, devicemanager = None):
     browser_config['sourcestamp'] = 'NULL'
   return browser_config
 
-def test_file(filename, to_screen, amo):
+def test_file(filename, to_screen=False, amo=False):
   """Runs the talos tests on the given config file and generates a report.
-  
+
   Args:
     filename: the name of the file to run the tests on
     to_screen: boolean, determine if all results should be outputed directly to stdout
   """
-  
-  browser_config = []
-  tests = []
-  title = ''
-  testdate = ''
-  csv_dir = ''
-  results_server = ''
-  results_link = ''
-  results = {}
-  
+
   # Read in the profile info from the YAML config file
   config_file = open(filename, 'r')
   yaml_config = yaml.load(config_file)
   config_file.close()
-  for item in yaml_config:
-    if item == 'title':
-      title = yaml_config[item]
-    elif item == 'testdate':
-      testdate = yaml_config[item]
-    elif item == 'csv_dir':
-       csv_dir = os.path.normpath(yaml_config[item])
-       if not os.path.exists(csv_dir):
-         print "FAIL: path \"" + csv_dir + "\" does not exist"
-         sys.exit(0)
-    elif item == 'results_server':
-       results_server = yaml_config[item]
-    elif item == 'results_link' :
-       results_link = yaml_config[item]
-  if (results_link != results_server != ''):
-    if not post_file.link_exists(results_server, results_link):
-      print 'WARNING: graph server link does not exist'
-  browser_config = {'preferences'  : yaml_config['preferences'],
-                    'extensions'   : yaml_config['extensions'],
-                    'browser_path' : yaml_config['browser_path'],
-                    'browser_log'  : yaml_config['browser_log'],
-                    'symbols_path' : yaml_config.get('symbols_path', None),
-                    'browser_wait' : yaml_config['browser_wait'],
-                    'process'      : yaml_config['process'],
-                    'extra_args'   : yaml_config['extra_args'],
-                    'branch'       : yaml_config['branch'],
-                    'title'        : yaml_config.get('title', ''),
-                    'buildid'      : yaml_config['buildid'],
-                    'env'          : yaml_config['env'],
-                    'dirs'         : yaml_config.get('dirs', {}),
-                    'bundles'      : yaml_config.get('bundles', {}),
-                    'init_url'     : yaml_config['init_url'],
-                    'child_process'      : yaml_config.get('child_process', 'plugin-container'),
-                    'branch_name'        : yaml_config.get('branch_name', ''),
-                    'test_name_extension': yaml_config.get('test_name_extension', ''),
-                    'sourcestamp'        : yaml_config.get('sourcestamp', 'NULL'),
-                    'repository'         : yaml_config.get('repository', 'NULL'),
-                    'host'               : yaml_config.get('deviceip', ''),
-                    'port'               : yaml_config.get('deviceport', ''),
-                    'webserver'          : yaml_config.get('webserver', ''),
-                    'deviceroot'         : yaml_config.get('deviceroot', ''),
-                    'remote'             : yaml_config.get('remote', False),
-                    'test_timeout'       : yaml_config.get('test_timeout', 1200),
-                    'addon_id'           : yaml_config.get('addon_id', 'NULL'),
-                    'bcontroller_config' : yaml_config.get('bcontroller_config', 'bcontroller.yml'),
-                    'xperf_path'         : yaml_config.get('xperf_path', None),
-                    'develop'            : yaml_config.get('develop', False)}
+  tests = yaml_config['tests']
 
+  # set defaults
+  title = yaml_config.get('title', '')
+  testdate = yaml_config.get('testdate', '')
+  results_url = yaml_config.get('results_url', '')
+  csv_dir = yaml_config.get('csv_dir', '')
+
+  # markup data
+  if csv_dir:
+    csv_dir = os.path.normpath(csv_dir)
+    if not os.path.exists(csv_dir):
+      print 'FAIL: path "%s" does not exist' % csv_dir
+      sys.exit(1)
+  if results_url:
+    results_url_split = urlparse.urlsplit(results_url)
+    results_scheme, results_server, results_path, _, _ = results_url_split
+    if results_scheme in ('http', 'https') and not post_file.link_exists(results_server, results_path):
+      print 'WARNING: graph server link does not exist'
+
+  # set browser_config
+  required = ['preferences', 'extensions',
+              'browser_path', 'browser_log', 'browser_wait',
+              'process', 'extra_args', 'branch', 'buildid', 'env', 'init_url'
+              ]
+  optional = {'addon_id': 'NULL',
+              'bcontroller_config': 'bcontroller.yml',
+              'bundles': {},
+              'branch_name': '',
+              'child_process': 'plugin-container',
+              'develop': False,
+              'deviceroot': '',
+              'dirs': {},
+              'host': yaml_config.get('deviceip', ''), # XXX names should match!
+              'port': yaml_config.get('deviceport', ''), # XXX names should match!
+              'remote': False,
+              'repository': 'NULL',
+              'source_stamp': 'NULL',
+              'symbols_path': None,
+              'test_name_extension': '',
+              'test_timeout': 1200,
+              'webserver': '',
+              'xperf_path': None
+              }
+  browser_config = dict(title=title)
+  browser_config.update(dict([(i, yaml_config[i]) for i in required]))
+  browser_config.update(dict([(i, yaml_config.get(i, j)) for i, j in optional.items()]))
+
+  # get device manager if specified
   dm = None
-  if (browser_config['remote'] == True):
-    if (browser_config['port'] == -1):
+  if browser_config['remote'] == True:
+    if browser_config['port'] == -1:
         from mozdevice import devicemanagerADB
         dm = devicemanagerADB.DeviceManagerADB(browser_config['host'], browser_config['port'])
     else:
@@ -477,25 +481,26 @@ def test_file(filename, to_screen, amo):
     browser_config['dirs'][dir] = os.path.normpath(browser_config['dirs'][dir])
   for bname in browser_config['bundles']:
     browser_config['bundles'][bname] = os.path.normpath(browser_config['bundles'][bname])
-  tests = yaml_config['tests']
-  config_file.close()
-  if (testdate != ''):
+
+  # get test date in seconds since epoch
+  if testdate:
     date = int(time.mktime(time.strptime(testdate, '%a, %d %b %Y %H:%M:%S GMT')))
   else:
-    date = int(time.time()) #TODO get this into own file
+    date = int(time.time())
   utils.debug("using testdate: %d" % date)
   utils.debug("actual date: %d" % int(time.time()))
+
   #pull buildid & sourcestamp from browser
   browser_config = browserInfo(browser_config, devicemanager = dm)
 
-  if (browser_config['remote'] == True):
+  if browser_config['remote'] == True:
     procName = browser_config['browser_path'].split('/')[-1]
-    if (dm.processExist(procName)):
+    if dm.processExist(procName):
       dm.killProcess(procName)
 
+  # setup a webserver, if --develop is specified to PerfConfigurator.py
   httpd = None
   if browser_config['develop'] == True:
-    import urlparse
     scheme = "http://"
     if (browser_config['webserver'].startswith('http://') or
         browser_config['webserver'].startswith('chrome://') or
@@ -514,7 +519,9 @@ def test_file(filename, to_screen, amo):
       httpd.start()
     else:
       print "WARNING: unable to start web server without custom port configured"
-      
+
+  # run the tests
+  results = {}
   utils.startTimer()
   utils.stamped_msg(title, "Started")
   for test in tests:
@@ -526,7 +533,7 @@ def test_file(filename, to_screen, amo):
       utils.debug("Received test results: " + " ".join(browser_dump))
       results[testname] = [browser_dump, counter_dump, print_format]
       # If we're doing CSV, write this test immediately (bug 419367)
-      if csv_dir != '':
+      if csv_dir:
         send_to_csv(csv_dir, {testname : results[testname]})
       if to_screen or amo:
         send_to_csv(None, {testname : results[testname]})
@@ -542,15 +549,16 @@ def test_file(filename, to_screen, amo):
   print "RETURN: cycle time: " + elapsed + "<br>"
   utils.stamped_msg(title, "Stopped")
 
+  # stop the webserver if running
   if browser_config['develop'] == True and httpd:
     httpd.stop()
 
   #process the results
-  if results_server and results_link:
+  if results_url:
     #send results to the graph server
     try:
       utils.stamped_msg("Sending results", "Started")
-      links = send_to_graph(results_server, results_link, title, date, browser_config, results, amo)
+      links = send_to_graph(results_url, title, date, browser_config, results, amo)
       results_from_graph(links, results_server, amo)
       utils.stamped_msg("Completed sending results", "Stopped")
     except talosError, e:
@@ -590,7 +598,7 @@ def main(args=sys.argv[1:]):
   # Read in each config file and run the tests on it.
   for arg in args:
     utils.debug("running test file " + arg)
-    test_file(arg, options.screen, options.amo)
+    test_file(arg, to_screen=options.screen, amo=options.amo)
 
 if __name__=='__main__':
   main()

@@ -26,10 +26,10 @@ defaultTitle = "qm-pxp01"
 class PerfConfigurator(object):
     attributes = ['exePath', 'configPath', 'sampleConfig', 'outputName', 'title',
                   'branch', 'branchName', 'buildid', 'currentDate', 'browserWait',
-                  'verbose', 'testDate', 'useId', 'resultsServer', 'resultsLink',
+                  'verbose', 'testDate', 'useId', 'resultsURL',
                   'activeTests', 'noChrome', 'fast', 'testPrefix', 'extension',
-                  'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID', 
-                  'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint', 
+                  'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID',
+                  'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint',
                   'webServer', 'develop', 'responsiveness', 'rss'];
     masterIniSubpath = "application.ini"
 
@@ -177,14 +177,12 @@ class PerfConfigurator(object):
         if 'testbranch' in line:
             newline = 'branch: ' + self.branch
 
-        #only change the results_server if the user has provided one
+        # run in develop mode if the user has specified
         if 'develop' in line:
             newline = 'develop: %s\n' % self.develop
-        if self.resultsServer and ('results_server' in line):
-            newline = 'results_server: ' + self.resultsServer + '\n'
-        #only change the results_link if the user has provided one
-        if self.resultsLink and ('results_link' in line):
-            newline = 'results_link: ' + self.resultsLink + '\n'
+        #only change the results_url if the user has provided one
+        if self.resultsURL and ('results_url' in line):
+            newline = 'results_url: %s\n' % (self.resultsURL)
         #only change the browser_wait if the user has provided one
         if self.browserWait and ('browser_wait' in line):
             newline = 'browser_wait: ' + str(self.browserWait) + '\n'
@@ -227,7 +225,7 @@ class PerfConfigurator(object):
             printMe, newline = self.convertLine(line, testMode, printMe)
             if printMe:
                 destination.write(newline)
-            if line.startswith('tests :'): 
+            if line.startswith('tests :'):
                 #enter into test writing mode
                 testMode = True
                 printMe = False
@@ -305,7 +303,7 @@ class TalosOptions(optparse.OptionParser):
         defaults = {}
 
         self.add_option("-v", "--verbose",
-                        action = "store_true", dest = "verbose",
+                        action="store_true", dest = "verbose",
                         help = "display verbose output")
         defaults["verbose"] = False
 
@@ -365,14 +363,18 @@ class TalosOptions(optparse.OptionParser):
         defaults["browserWait"] = 5
 
         self.add_option("-s", "--resultsServer",
-                        action = "store", dest = "resultsServer",
-                        help = "Address of the results server")
+                        action="store", dest="resultsServer",
+                        help="Address of the results server [DEPRECATED: use --resultsURL]")
         defaults["resultsServer"] = ''
 
         self.add_option("-l", "--resultsLink",
-                        action = "store", dest = "resultsLink",
-                        help = "Link to the results from this test run")
+                        action="store", dest="resultsLink",
+                        help="Link to the results from this test run [DEPRECATED: use --resultsURL]")
         defaults["resultsLink"] = ''
+
+        self.add_option("--resultsURL", dest="resultsURL",
+                        help="URL of results server")
+        defaults["resultsURL"] = ''
 
         self.add_option("-a", "--activeTests",
                         action = "store", dest = "activeTests",
@@ -474,14 +476,23 @@ class TalosOptions(optparse.OptionParser):
         if not options.activeTests:
             raise Configuration("Active tests should be declared explicitly. Nothing declared with --activeTests.")
 
+        # if resultsServer and resultsLinks are given replace resultsURL from there
+        if options.resultsServer and options.resultsLink:
+            if options.resultsURL:
+                raise Configuration("Can't use resultsServer/resultsLink and resultsURL; use resultsURL instead")
+            options.resultsURL = 'http://%s%s' % (options.resultsServer, options.resultsLink)
+
         if options.develop == True:
-            if options.resultsServer == '':
-                options.resultsServer = ' '
-            if options.resultsLink == '':
-                options.resultsLink = ' '
+            if options.resultsURL == '':
+                options.resultsURL = ' '
 
             if options.webServer == '':
               options.webServer = "localhost:%s" % (findOpenPort('127.0.0.1'))
+
+        # XXX delete deprecated values
+        del options.resultsServer
+        del options.resultsLink
+
         return options
 
 # Used for the --develop option where we dynamically create a webserver
