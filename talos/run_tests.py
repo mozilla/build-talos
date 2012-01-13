@@ -80,7 +80,7 @@ def filesizeformat(bytes):
     bytes /= 1024
   return "%.1fGB" % bytes #has to be GB
 
-def process_tpformat(line):
+def process_tpformat(line, ignore_first=False):
   # each line of the string is of the format i;page_name;median;mean;min;max;time vals\n
   r = line.split(';')
   #skip this line if it isn't the correct format
@@ -92,7 +92,11 @@ def process_tpformat(line):
   else:
      page = r[1]
   try:
-    val = float(r[2])
+    if ignore_first:
+      #array 6:*, is the list of values, we want to ignore the first page load, so we look for 7:*
+      val = float(sorted(r[7:])[len(r[7:])/2])
+    else:
+      val = float(r[2])
   except ValueError:
     print 'WARNING: value error for median in tp'
     val = 0
@@ -250,7 +254,7 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo):
         bd.rstrip('\n')
         page_results = bd.splitlines()
         for line in page_results:
-          val, page = process_tpformat(line)
+          val, page = process_tpformat(line, browser_config['ignore_first'])
           if val > -1 :
             vals.append([val, page])
     else:
@@ -459,7 +463,8 @@ def test_file(filename, to_screen=False, amo=False):
               'test_name_extension': '',
               'test_timeout': 1200,
               'webserver': '',
-              'xperf_path': None
+              'xperf_path': None,
+              'ignore_first': False
               }
   browser_config = dict(title=title)
   browser_config.update(dict([(i, yaml_config[i]) for i in required]))

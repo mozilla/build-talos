@@ -30,7 +30,7 @@ class PerfConfigurator(object):
                   'activeTests', 'noChrome', 'fast', 'testPrefix', 'extension',
                   'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID',
                   'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint',
-                  'webServer', 'develop', 'responsiveness', 'rss'];
+                  'webServer', 'develop', 'responsiveness', 'rss', 'ignore_first'];
     masterIniSubpath = "application.ini"
 
     def _dumpConfiguration(self):
@@ -190,6 +190,8 @@ class PerfConfigurator(object):
             newline = line.replace('True', 'False')
         if 'init_url' in line:
             newline = self.convertUrlToRemote(newline)
+        if 'ignore_first' in line:
+            newline = 'ignore_first: %s\n' % self.ignore_first
 
         if self.extraPrefs != [] and (re.match('^\s*preferences :\s*$', line)): 
             newline = 'preferences :\n'
@@ -460,6 +462,12 @@ class TalosOptions(optparse.OptionParser):
                         action = "store_true", dest = "rss",
                         help = "Collect RSS counters from pageloader instead of the operating system.")  
         defaults["rss"] = False
+
+        self.add_option("--ignoreFirst",
+                        action = "store_true", dest = "ignore_first",
+                        help = "Alternative median calculation from pageloader data.  Use the raw values \
+                                and discard the first page load instead of the highest value.")  
+        defaults["ignore_first"] = False
 
         self.set_defaults(**defaults)
 
