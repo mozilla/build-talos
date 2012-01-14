@@ -67,5 +67,6 @@ function ipcEvent(e) {
 addEventListener("contentEvent", function (e) { ipcEvent(e); }, false, true);
 
 var retVal = sendSyncMessage("chromeEvent", {"type":"getCharPref", "data":"talos.logfile"});
-MozillaFileLogger.init(retVal[0].value);
-
+if (retVal[0]) {
+  MozillaFileLogger.init(retVal[0].value);
+}
