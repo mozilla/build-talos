@@ -10,7 +10,7 @@ except IOError, OSError:
 
 version = "0.0"
 
-dependencies = ['PyYAML', 'mozdevice', 'mozhttpd', 'mozinfo']
+dependencies = ['PyYAML', 'mozdevice', 'mozhttpd >= 0.2', 'mozinfo']
 dependency_links = []
 
 if os.name == 'nt':
