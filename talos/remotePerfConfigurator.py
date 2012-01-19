@@ -5,15 +5,15 @@ from PerfConfigurator import Configuration
 import os, sys
 
 class remotePerfConfigurator(pc.PerfConfigurator):
-    def __init__(self, options):
-        self.__dict__.update(options.__dict__)
+    def __init__(self, **options):
+        self.__dict__.update(options)
         self._remote = False
         if (self.remoteDevice <> '' or self.remotePort == -1):
             self._setupRemote()
-            options.deviceRoot = self.deviceRoot
+            options['deviceRoot'] = self.deviceRoot
 
         #this depends on buildID which requires querying the device
-        pc.PerfConfigurator.__init__(self, options)
+        pc.PerfConfigurator.__init__(self, **options)
         pc.PerfConfigurator.attributes += ['remoteDevice', 'remotePort', 'deviceRoot', 'nativeUI']
 
     def _setupRemote(self):
@@ -202,7 +202,7 @@ def main(argv=sys.argv[1:]):
 
     try:
         options, args = parser.parse_args(argv)
-        configurator = remotePerfConfigurator(options)
+        configurator = remotePerfConfigurator(**options.__dict__)
         configurator.writeConfigFile()
     except Configuration, err:
         print >> sys.stderr, "%s: %s" % (progname, str(err.msg))

@@ -23,6 +23,11 @@ import optparse
 
 defaultTitle = "qm-pxp01"
 
+class Configuration(Exception):
+    def __init__(self, msg):
+        self.msg = "ERROR: " + msg
+
+
 class PerfConfigurator(object):
     attributes = ['exePath', 'configPath', 'sampleConfig', 'outputName', 'title',
                   'branch', 'branchName', 'buildid', 'currentDate', 'browserWait',
@@ -193,34 +198,38 @@ class PerfConfigurator(object):
         if 'ignore_first' in line:
             newline = 'ignore_first: %s\n' % self.ignore_first
 
-        if self.extraPrefs != [] and (re.match('^\s*preferences :\s*$', line)): 
+        if self.extraPrefs and re.match('^\s*preferences :\s*$', line):
             newline = 'preferences :\n'
-            for v in self.extraPrefs:
-                thispref = v.split("=")
-                if len(thispref) < 2:
-                    print "Error: syntax error in --setPref=" + v
-                    sys.exit(1)
-                newline += '  %s: %s\n' % (thispref[0], thispref[1])
+            for pref, value in self.extraPrefs:
+                newline += '  %s: %s\n' % (pref, value)
 
         return printMe, newline
 
     def writeConfigFile(self):
+
+        # read the config file
         try:
             configFile = open(path.join(self.configPath, self.sampleConfig))
         except:
             raise Configuration("unable to find %s, please check your filename for --sampleConfig" % path.join(self.configPath, self.sampleConfig))
-
-        if (self.mozAfterPaint):
-            found = False
-            for p in self.extraPrefs: 
-                if p[0] == 'dom.send_after_paint_to_content':
-                    found = True
-            if not found:
-                self.extraPrefs.append('dom.send_after_paint_to_content=true')
-
-        destination = open(self.outputName, "w")
         config = configFile.readlines()
         configFile.close()
+
+        # fix up the preferences
+        requiredPrefs = []
+        if self.mozAfterPaint:
+            requiredPrefs.append(('dom.send_after_paint_to_content', 'true'))
+        if self.extension:
+            # enable the extensions;
+            # see https://developer.mozilla.org/en/Installing_extensions
+            requiredPrefs.extend([('extensions.enabledScopes', 5),
+                                  ('extensions.autoDisableScopes', 10)])
+        for pref, value in requiredPrefs:
+            if not pref in [i for i, j in self.extraPrefs]:
+                self.extraPrefs.append([pref, value])
+
+        # write the config file
+        destination = open(self.outputName, "w")
         printMe = True
         testMode = False
         for line in config:
@@ -232,19 +241,21 @@ class PerfConfigurator(object):
                 testMode = True
                 printMe = False
         destination.close()
+
+        # print the config file to stdout
         if self.verbose:
             self._dumpConfiguration()
-    
+
     def convertUrlToRemote(self, line):
         """
           For a give url line in the .config file, add a webserver.
-          In addition if there is a .manifest file specified, covert 
+          In addition if there is a .manifest file specified, covert
           and copy that file to the remote device.
         """
-        
+
         if (not self.webServer or self.webServer == 'localhost'):
           return line
-        
+
         #NOTE: line.split() causes this to fail because it splits on the \n and not every single ' '
         parts = line.split(' ')
         newline = ''
@@ -282,11 +293,11 @@ class PerfConfigurator(object):
         for line in manifestData.split('\n'):
             newHandle.write(line.replace('localhost', self.webServer) + "\n")
         newHandle.close()
-        
+
         return manifestName + '.develop'
 
-    def __init__(self, options):
-        self.__dict__.update(options.__dict__)
+    def __init__(self, **options):
+        self.__dict__.update(options)
 
         self.currentDate = self._getCurrentDateString()
         if not self.buildid:
@@ -294,9 +305,11 @@ class PerfConfigurator(object):
         if not self.outputName:
             self.outputName = self.currentDate + "_config.yml"
 
-class Configuration(Exception):
-    def __init__(self, msg):
-        self.msg = "ERROR: " + msg
+        # ensure all preferences are of length 2 (preference, value)
+        badPrefs = [i for i in self.extraPrefs if len(i) != 2]
+        if badPrefs:
+            raise Configuration("Prefs should be of length 2: %s" % badPrefs)
+
 
 class TalosOptions(optparse.OptionParser):
     """Parses Mochitest commandline options."""
@@ -439,7 +452,7 @@ class TalosOptions(optparse.OptionParser):
         self.add_option("--setPref",
                         action = "append", type = "string",
                         dest = "extraPrefs", metavar = "PREF=VALUE",
-                        help = "defines an extra user preference")  
+                        help = "defines an extra user preference")
         defaults["extraPrefs"] = []
 
         self.add_option("--webServer", action="store",
@@ -450,7 +463,7 @@ class TalosOptions(optparse.OptionParser):
         self.add_option("--develop",
                         action = "store_true", dest = "develop",
                         help = "useful for running tests on a developer machine. \
-                                Creates a local webserver and doesn't upload to the graph servers.")  
+                                Creates a local webserver and doesn't upload to the graph servers.")
         defaults["develop"] = False
 
         self.add_option("--responsiveness",
@@ -501,6 +514,12 @@ class TalosOptions(optparse.OptionParser):
         del options.resultsServer
         del options.resultsLink
 
+        # fix up extraPrefs to be a list of 2-tuples
+        options.extraPrefs = [i.split('=', 1) for i in options.extraPrefs]
+        badPrefs = [i for i in options.extraPrefs if len(i) == 1] # ensure len=1
+        if badPrefs:
+            raise Configuration("Use PREF=VALUE for --setPref: %s" % badPrefs)
+
         return options
 
 # Used for the --develop option where we dynamically create a webserver
@@ -523,7 +542,7 @@ def main(argv=sys.argv[1:]):
 
     try:
         options, args = parser.parse_args(argv)
-        configurator = PerfConfigurator(options);
+        configurator = PerfConfigurator(**options.__dict__);
         configurator.writeConfigFile()
     except Configuration, err:
         print >> sys.stderr, progname + ": " + str(err.msg)
