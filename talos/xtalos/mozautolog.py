@@ -1,5 +1,4 @@
 import calendar
-import cPickle
 import datetime
 import gzip
 import re
@@ -7,6 +6,7 @@ import socket
 import StringIO
 import urllib2
 import weakref
+import yaml
 
 
 class AutologProduct(object):
@@ -566,9 +566,9 @@ class RESTfulAutologTestGroup(AutologTestGroup):
 
     # make the HTTP POST
     host = "%s/addtestgroup" % self.restserver
-    req = urllib2.Request(host, cPickle.dumps(data), {'content-type': 'application/python-pickle'})
+    req = urllib2.Request(host, yaml.dump(data), {'content-type': 'text/yaml'})
     response_stream = urllib2.urlopen(req)
-    response = cPickle.loads(response_stream.read())
+    response = yaml.load(response_stream.read())
 
     # Retrieve the testrun, testgroup_id, and testsuite_id's from the
     # HTTP response JSON, and update the related objects with them.  We
@@ -616,7 +616,7 @@ class RESTfulAutologTestGroup(AutologTestGroup):
         gzip_fh.close()
 
         # post the gzipped buffer to the autolog server
-        host = "%s/savelog?id=%s&read_index=%s&write_index=%s&doc_type=%s&server=%s" % \
+        host = "%s/savelog?contenttype=text/yaml&id=%s&read_index=%s&write_index=%s&doc_type=%s&server=%s" % \
                                                   (self.restserver,
                                                    obj.id,
                                                    self.read_index,
@@ -627,7 +627,7 @@ class RESTfulAutologTestGroup(AutologTestGroup):
                               buffer.getvalue(),
                               {'content-type': 'application/gzip'})
         response_stream = urllib2.urlopen(req)
-        response = cPickle.loads(response_stream.read())
+        response = yaml.load(response_stream.read())
         if 'url' in response:
           obj.logurl = response['url']
         buffer.close()
