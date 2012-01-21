@@ -409,6 +409,15 @@ def browserInfo(browser_config, devicemanager = None):
     browser_config['sourcestamp'] = 'NULL'
   return browser_config
 
+def useBaseTestDefaults(base, tests):
+  for test in tests:
+    for item in base:
+      if not item in test:
+        test[item] = base[item]
+        if test[item] is None:
+          test[item] = ''
+  return tests
+
 def test_file(filename, to_screen=False, amo=False):
   """Runs the talos tests on the given config file and generates a report.
 
@@ -422,6 +431,7 @@ def test_file(filename, to_screen=False, amo=False):
   yaml_config = yaml.load(config_file)
   config_file.close()
   tests = yaml_config['tests']
+  tests = useBaseTestDefaults(yaml_config.get('basetest', []), tests)
 
   # set defaults
   title = yaml_config.get('title', '')

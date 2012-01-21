@@ -104,6 +104,12 @@ class PerfConfigurator(object):
                             if self.testPrefix:
                                 line = line.replace(test, '_'.join([self.testPrefix,
                                                                     test]))
+                        if self.responsiveness:
+                            line += "  responsiveness: True\n"
+
+                        if self.noShutdown:
+                            line += "  shutdown : True\n"
+
 
             elif printMe:
                 if 'url' in line and 'url_mod' not in line:
@@ -123,7 +129,10 @@ class PerfConfigurator(object):
                     line = line.replace('-tpchrome ','')
 
                 if self.responsiveness and 'responsiveness' in line:
-                    line = line.replace('False', 'True')
+                    line = ""
+
+                if self.noShutdown and 'shutdown :' in line:
+                    line = ""
 
             return printMe, line
 
@@ -191,8 +200,6 @@ class PerfConfigurator(object):
         #only change the browser_wait if the user has provided one
         if self.browserWait and ('browser_wait' in line):
             newline = 'browser_wait: ' + str(self.browserWait) + '\n'
-        if self.noShutdown and ('shutdown :' in line):
-            newline = line.replace('True', 'False')
         if 'init_url' in line:
             newline = self.convertUrlToRemote(newline)
         if 'ignore_first' in line:
