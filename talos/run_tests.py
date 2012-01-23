@@ -46,6 +46,7 @@ import sys
 import time
 import urlparse
 import yaml
+import PerfConfigurator
 
 import utils
 from utils import talosError
@@ -418,12 +419,13 @@ def useBaseTestDefaults(base, tests):
           test[item] = ''
   return tests
 
-def test_file(filename, to_screen=False, amo=False):
+def test_file(filename, options, defaults):
   """Runs the talos tests on the given config file and generates a report.
 
   Args:
     filename: the name of the file to run the tests on
-    to_screen: boolean, determine if all results should be outputed directly to stdout
+    options: TalosOptions from command line parser
+    defaults: defaults supplied by command line parser
   """
 
   # Read in the profile info from the YAML config file
@@ -432,6 +434,10 @@ def test_file(filename, to_screen=False, amo=False):
   config_file.close()
   tests = yaml_config['tests']
   tests = useBaseTestDefaults(yaml_config.get('basetest', []), tests)
+
+  # Override yaml_config if options are provided
+  options = options.__dict__
+  yaml_config.update(dict([(i,j) for i, j in options.items() if j != defaults[i]]))
 
   # set defaults
   title = yaml_config.get('title', '')
@@ -550,7 +556,7 @@ def test_file(filename, to_screen=False, amo=False):
       # If we're doing CSV, write this test immediately (bug 419367)
       if csv_dir:
         send_to_csv(csv_dir, {testname : results[testname]})
-      if to_screen or amo:
+      if options["to_screen"] or options["amo"]:
         send_to_csv(None, {testname : results[testname]})
     except talosError, e:
       utils.stamped_msg("Failed " + testname, "Stopped")
@@ -573,8 +579,8 @@ def test_file(filename, to_screen=False, amo=False):
     #send results to the graph server
     try:
       utils.stamped_msg("Sending results", "Started")
-      links = send_to_graph(results_url, title, date, browser_config, results, amo)
-      results_from_graph(links, results_server, amo)
+      links = send_to_graph(results_url, title, date, browser_config, results, options["amo"])
+      results_from_graph(links, results_server, options["amo"])
       utils.stamped_msg("Completed sending results", "Stopped")
     except talosError, e:
       utils.stamped_msg("Failed sending results", "Stopped")
@@ -588,20 +594,19 @@ def test_file(filename, to_screen=False, amo=False):
 def main(args=sys.argv[1:]):
 
   # parse command line options
-  parser = optparse.OptionParser()
+  parser = PerfConfigurator.TalosOptions()
   parser.add_option('-d', '--debug', dest='debug',
                     action='store_true', default=False,
                     help="enable debug")
   parser.add_option('-n', '--noisy', dest='noisy',
                     action='store_true', default=False,
                     help="enable noisy output")
-  parser.add_option('-s', '--screen', dest='screen',
+  parser.add_option('-s', '--screen', dest='to_screen',
                     action='store_true', default=False,
                     help="set screen")
-  parser.add_option('--amo', dest='amo',
-                    action='store_true', default=False,
-                    help="set AMO")
+
   options, args = parser.parse_args(args)
+  defaults = parser.defaults
 
   # set variables
   if options.debug:
@@ -613,7 +618,7 @@ def main(args=sys.argv[1:]):
   # Read in each config file and run the tests on it.
   for arg in args:
     utils.debug("running test file " + arg)
-    test_file(arg, to_screen=options.screen, amo=options.amo)
+    test_file(arg, options, defaults)
 
 if __name__=='__main__':
   main()

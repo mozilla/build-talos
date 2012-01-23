@@ -29,9 +29,9 @@ class Configuration(Exception):
 
 
 class PerfConfigurator(object):
-    attributes = ['exePath', 'configPath', 'sampleConfig', 'outputName', 'title',
+    attributes = ['browser_path', 'configPath', 'sampleConfig', 'outputName', 'title',
                   'branch', 'branchName', 'buildid', 'currentDate', 'browserWait',
-                  'verbose', 'testDate', 'useId', 'resultsURL',
+                  'verbose', 'testDate', 'useId', 'results_url',
                   'activeTests', 'noChrome', 'fast', 'testPrefix', 'extension',
                   'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID',
                   'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint',
@@ -51,7 +51,7 @@ class PerfConfigurator(object):
 
     def _getMasterIniContents(self):
         """ Open and read the application.ini from the application directory """
-        master = open(path.join(path.dirname(self.exePath), self.masterIniSubpath))
+        master = open(path.join(path.dirname(self.browser_path), self.masterIniSubpath))
         data = master.read()
         master.close()
         return data.split('\n')
@@ -67,7 +67,7 @@ class PerfConfigurator(object):
             if match:
                 return match.group(1)
         raise Configuration("BuildID not found in " 
-          + path.join(path.dirname(self.exePath), self.masterIniSubpath))
+          + path.join(path.dirname(self.browser_path), self.masterIniSubpath))
 
     def _getTimeFromTimeStamp(self):
         if len(self.testDate) == 14: 
@@ -140,11 +140,11 @@ class PerfConfigurator(object):
         if 'test_timeout:' in line:
             newline = 'test_timeout: ' + str(self.test_timeout) + '\n'
         if 'browser_path:' in line:
-            newline = 'browser_path: ' + self.exePath + '\n'
+            newline = 'browser_path: ' + self.browser_path + '\n'
         if 'xperf_path:' in line:
             newline = 'xperf_path: %s\n' % self.xperf_path
         if 'browser_log:' in line:
-            newline = 'browser_log: ' + self.logFile + '\n'
+            newline = 'browser_log: ' + self.browser_log + '\n'
         if 'webserver:' in line:
            newline = 'webserver: %s\n' % self.webServer
         if 'title:' in line:
@@ -195,8 +195,8 @@ class PerfConfigurator(object):
         if 'develop' in line:
             newline = 'develop: %s\n' % self.develop
         #only change the results_url if the user has provided one
-        if self.resultsURL and ('results_url' in line):
-            newline = 'results_url: %s\n' % (self.resultsURL)
+        if self.results_url and ('results_url' in line):
+            newline = 'results_url: %s\n' % (self.results_url)
         #only change the browser_wait if the user has provided one
         if self.browserWait and ('browser_wait' in line):
             newline = 'browser_wait: ' + str(self.browserWait) + '\n'
@@ -330,9 +330,9 @@ class TalosOptions(optparse.OptionParser):
         defaults["verbose"] = False
 
         self.add_option("-e", "--executablePath",
-                        action = "store", dest = "exePath",
+                        action = "store", dest = "browser_path",
                         help = "path to executable we are testing")
-        defaults["exePath"] = ''
+        defaults["browser_path"] = ''
 
         self.add_option("-c", "--configPath",
                         action = "store", dest = "configPath",
@@ -374,7 +374,7 @@ class TalosOptions(optparse.OptionParser):
                         help = "Use the buildid as the testdate")
         defaults["useId"] = False
 
-        self.add_option("-d", "--testDate",
+        self.add_option("--testDate",
                         action = "store", dest = "testDate",
                         help = "Test date for the test run")
         defaults["testDate"] = ''
@@ -384,7 +384,7 @@ class TalosOptions(optparse.OptionParser):
                         help = "Amount of time allowed for the browser to cleanly close")
         defaults["browserWait"] = 5
 
-        self.add_option("-s", "--resultsServer",
+        self.add_option("--resultsServer",
                         action="store", dest="resultsServer",
                         help="Address of the results server [DEPRECATED: use --resultsURL]")
         defaults["resultsServer"] = ''
@@ -394,16 +394,16 @@ class TalosOptions(optparse.OptionParser):
                         help="Link to the results from this test run [DEPRECATED: use --resultsURL]")
         defaults["resultsLink"] = ''
 
-        self.add_option("--resultsURL", dest="resultsURL",
+        self.add_option("--results_url", dest="results_url",
                         help="URL of results server")
-        defaults["resultsURL"] = ''
+        defaults["results_url"] = ''
 
         self.add_option("-a", "--activeTests",
                         action = "store", dest = "activeTests",
                         help = "List of tests to run, separated by ':' (ex. ts:tp4:tsvg)")
         defaults["activeTests"] = ''
 
-        self.add_option("-n", "--noChrome",
+        self.add_option("--noChrome",
                         action = "store_true", dest = "noChrome",
                         help = "do not run tests as chrome")
         defaults["noChrome"] = False
@@ -444,9 +444,9 @@ class TalosOptions(optparse.OptionParser):
         defaults["test_timeout"] = 1200
 
         self.add_option("--logFile",
-                        action = "store", dest = "logFile",
+                        action = "store", dest = "browser_log",
                         help = "Local logfile to store the output from the browser in")
-        defaults["logFile"] = "browser_output.txt"
+        defaults["browser_log"] = "browser_output.txt"
         self.add_option("--addonID",
                         action = "store", dest = "addonID",
                         help = "ID of the extension being tested")
@@ -488,6 +488,16 @@ class TalosOptions(optparse.OptionParser):
                         help = "Alternative median calculation from pageloader data.  Use the raw values \
                                 and discard the first page load instead of the highest value.")  
         defaults["ignore_first"] = False
+        
+        self.add_option("--amo",
+                        action = "store_true", dest = "amo",
+                        help = "set amo")
+        defaults["amo"] = False
+
+        self.add_option("--csvDir", dest="csv_dir",
+                        action="store", default="",
+                        help="specify csv output file")
+        defaults["csv_dir"] = ""
 
         self.set_defaults(**defaults)
 
@@ -497,22 +507,16 @@ class TalosOptions(optparse.OptionParser):
         return options, args
 
     def verifyCommandLine(self, args, options):
-        if args:
-            raise Configuration("Configurator does not take command line arguments, only options (arguments were: %s)" % (",".join(args)))
 
-        # ensure tests are supplied
-        if not options.activeTests:
-            raise Configuration("Active tests should be declared explicitly. Nothing declared with --activeTests.")
-
-        # if resultsServer and resultsLinks are given replace resultsURL from there
+        # if resultsServer and resultsLinks are given replace results_url from there
         if options.resultsServer and options.resultsLink:
-            if options.resultsURL:
+            if options.results_url:
                 raise Configuration("Can't use resultsServer/resultsLink and resultsURL; use resultsURL instead")
-            options.resultsURL = 'http://%s%s' % (options.resultsServer, options.resultsLink)
+            options.results_url = 'http://%s%s' % (options.resultsServer, options.resultsLink)
 
         if options.develop == True:
-            if options.resultsURL == '':
-                options.resultsURL = ' '
+            if options.results_url == '':
+                options.results_url = ' '
 
             if options.webServer == '':
               options.webServer = "localhost:%s" % (findOpenPort('127.0.0.1'))
@@ -549,6 +553,11 @@ def main(argv=sys.argv[1:]):
 
     try:
         options, args = parser.parse_args(argv)
+        if args:
+            raise Configuration("Configurator does not take command line arguments, only options (arguments were: %s)" % (",".join(args)))
+        # ensure tests are supplied
+        if not options.activeTests:
+            raise Configuration("Active tests should be declared explicitly. Nothing declared with --activeTests.")
         configurator = PerfConfigurator(**options.__dict__);
         configurator.writeConfigFile()
     except Configuration, err:
