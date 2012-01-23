@@ -515,11 +515,8 @@ class TalosOptions(optparse.OptionParser):
             options.results_url = 'http://%s%s' % (options.resultsServer, options.resultsLink)
 
         if options.develop == True:
-            if options.results_url == '':
-                options.results_url = ' '
-
             if options.webServer == '':
-              options.webServer = "localhost:%s" % (findOpenPort('127.0.0.1'))
+                options.webServer = "localhost:%s" % (findOpenPort('127.0.0.1'))
 
         # XXX delete deprecated values
         del options.resultsServer
