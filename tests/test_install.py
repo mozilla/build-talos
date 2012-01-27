@@ -34,14 +34,14 @@ class TalosInstallation(unittest.TestCase):
             python = self.create_virtualenv(tempdir)
 
             # ensure we can't import Talos
-            self.assertCall([python, '-c', 'import talos'], success=False)
+            self.assertCall([python, '-c', 'import talos'], success=False, cwd=tempdir)
 
             # install Talos into the virtualenv
             self.assertCall([python, setup_py, 'install'], cwd=home)
 
             # ensure we can import Talos
-            self.assertCall([python, '-c', 'import talos'])
-            self.assertCall([python, '-c', 'from talos import run_tests'])
+            self.assertCall([python, '-c', 'import talos'], cwd=tempdir)
+            self.assertCall([python, '-c', 'from talos import run_tests'], cwd=tempdir)
 
         finally:
             # cleanup
