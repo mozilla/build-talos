@@ -58,8 +58,8 @@ class remotePerfConfigurator(pc.PerfConfigurator):
                 parts = line.split(':')
                 if (parts[1] != None and parts[1].strip() == ''):
                     lfile = os.path.join(os.getcwd(), 'browser_output.txt')
-                elif (self.logFile != 'browser_output.txt'):
-                    lfile = self.logFile
+                elif self.browser_log != 'browser_output.txt':
+                    lfile = self.browser_log
                 else:
                     lfile = parts[1].strip().strip("'")
                 lfile = self.deviceRoot + '/' + lfile.split('/')[-1]
@@ -129,12 +129,12 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         """ Open and read the application.ini on the device under test """
         if (self._remote == True):
             localfilename = "remoteapp.ini"
-            
+
             #we need a better OS detection method, but for now this is how we work on android
-            if (self.exePath.startswith('org.mozilla.f')):
-              remoteFile = '/data/data/' + self.exePath + '/' + self.masterIniSubpath            
+            if self.browser_path.startswith('org.mozilla.f'):
+              remoteFile = '/data/data/' + self.browser_path + '/' + self.masterIniSubpath
             else:
-              parts = self.exePath.split('/')
+              parts = self.browser_path.split('/')
               remoteFile = '/'.join(parts[0:-1]) + '/' + self.masterIniSubpath
             if (not os.path.isfile(localfilename)):
               filecontents = self.testAgent.getFile(remoteFile, localfilename)

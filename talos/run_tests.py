@@ -47,11 +47,12 @@ import time
 import urlparse
 import yaml
 import PerfConfigurator
-
 import utils
 from utils import talosError
 import post_file
 from ttest import TTest
+from filter import ignore_first, median
+from results import PageloaderResults
 
 def shortName(name):
   names = {"Working Set": "memset",
@@ -80,28 +81,6 @@ def filesizeformat(bytes):
       return "%.1f%s" % (bytes, f)
     bytes /= 1024
   return "%.1fGB" % bytes #has to be GB
-
-def process_tpformat(line, ignore_first=False):
-  # each line of the string is of the format i;page_name;median;mean;min;max;time vals\n
-  r = line.split(';')
-  #skip this line if it isn't the correct format
-  if len(r) == 1:
-      return -1, ''
-  r[1] = r[1].rstrip('/')
-  if r[1].find('/') > -1 :
-     page = r[1].split('/')[0]
-  else:
-     page = r[1]
-  try:
-    if ignore_first:
-      #array 6:*, is the list of values, we want to ignore the first page load, so we look for 7:*
-      val = float(sorted(r[7:])[len(r[7:])/2])
-    else:
-      val = float(r[2])
-  except ValueError:
-    print 'WARNING: value error for median in tp'
-    val = 0
-  return val, page
 
 def process_Request(post):
   links = ""
@@ -252,12 +231,13 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo):
       #tpformat results
       fullname += browser_config['test_name_extension']
       for bd in browser_dump:
-        bd.rstrip('\n')
-        page_results = bd.splitlines()
-        for line in page_results:
-          val, page = process_tpformat(line, browser_config['ignore_first'])
-          if val > -1 :
-            vals.append([val, page])
+        page_results = PageloaderResults(bd)
+        if browser_config['ignore_first']:
+            newvals = page_results.filter(ignore_first, median)
+        else:
+            newvals = page_results.median()
+        newvals = [[val, page] for val, page in newvals if val > -1]
+        vals.extend(newvals)
     else:
       raise talosError("Unknown print format in send_to_graph")
     result_strings.append(construct_results(machine, fullname, browser_config, date, vals, amo))
