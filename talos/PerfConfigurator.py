@@ -32,7 +32,7 @@ class PerfConfigurator(object):
     attributes = ['browser_path', 'configPath', 'sampleConfig', 'outputName', 'title',
                   'branch', 'branchName', 'buildid', 'currentDate', 'browserWait',
                   'verbose', 'testDate', 'useId', 'results_url',
-                  'activeTests', 'noChrome', 'fast', 'testPrefix', 'extension',
+                  'activeTests', 'noChrome', 'fast', 'testPrefix', 'extensions',
                   'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID',
                   'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint',
                   'webServer', 'develop', 'responsiveness', 'rss', 'ignore_first'];
@@ -158,7 +158,7 @@ class PerfConfigurator(object):
             if self.addonID:
                 newline += '\n'
                 newline += 'addon_id: "%s"\n' % self.addonID
-            if self.branchName: 
+            if self.branchName:
                 newline += '\n'
                 newline += 'branch_name: %s\n' % self.branchName
             if self.noChrome and not self.mozAfterPaint:
@@ -173,8 +173,8 @@ class PerfConfigurator(object):
 
             if self.symbolsPath:
                 newline += '\nsymbols_path: %s\n' % self.symbolsPath
-        if self.extension and ('extensions : {}' in line):
-            newline = 'extensions: ' + '\n- ' + self.extension
+        if self.extensions and ('extensions : {}' in line):
+            newline = 'extensions:\n' + '\n'.join([(' - %s' % extension) for extension in self.extensions])
         if 'buildid:' in line:
             newline = 'buildid: \'%s\'\n' % str(self.buildid)
 
@@ -226,7 +226,7 @@ class PerfConfigurator(object):
         requiredPrefs = []
         if self.mozAfterPaint:
             requiredPrefs.append(('dom.send_after_paint_to_content', 'true'))
-        if self.extension:
+        if self.extensions:
             # enable the extensions;
             # see https://developer.mozilla.org/en/Installing_extensions
             requiredPrefs.extend([('extensions.enabledScopes', 5),
@@ -418,10 +418,9 @@ class TalosOptions(optparse.OptionParser):
                         help = "the prefix for the test we are running")
         defaults["testPrefix"] = ''
 
-        self.add_option("--extension",
-                        action = "store", dest = "extension",
-                        help = "Extension to install while running")
-        defaults["extension"] = ''
+        self.add_option("--extension", dest="extensions", action="append",
+                        help="Extension to install while running")
+        defaults["extension"] = []
 
         self.add_option("--fast",
                         action = "store_true", dest = "fast",
