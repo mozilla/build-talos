@@ -30,12 +30,12 @@ class Configuration(Exception):
 
 class PerfConfigurator(object):
     attributes = ['browser_path', 'configPath', 'sampleConfig', 'outputName', 'title',
-                  'branch', 'branchName', 'buildid', 'currentDate', 'browserWait',
-                  'verbose', 'testDate', 'useId', 'results_url',
+                  'branch', 'branch_name', 'buildid', 'currentDate', 'browser_wait',
+                  'verbose', 'testdate', 'useId', 'results_url',
                   'activeTests', 'noChrome', 'fast', 'testPrefix', 'extensions',
-                  'masterIniSubpath', 'test_timeout', 'symbolsPath', 'addonID',
+                  'masterIniSubpath', 'test_timeout', 'symbols_path', 'addon_id',
                   'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint',
-                  'webServer', 'develop', 'responsiveness', 'rss', 'ignore_first'];
+                  'webserver', 'develop', 'responsiveness', 'rss', 'ignore_first'];
     masterIniSubpath = "application.ini"
 
     def _dumpConfiguration(self):
@@ -70,12 +70,12 @@ class PerfConfigurator(object):
           + path.join(path.dirname(self.browser_path), self.masterIniSubpath))
 
     def _getTimeFromTimeStamp(self):
-        if len(self.testDate) == 14: 
-          buildIdTime = time.strptime(self.testDate, "%Y%m%d%H%M%S")
-        elif len(self.testDate) == 12: 
-          buildIdTime = time.strptime(self.testDate, "%Y%m%d%H%M")
+        if len(self.testdate) == 14: 
+          buildIdTime = time.strptime(self.testdate, "%Y%m%d%H%M%S")
+        elif len(self.testdate) == 12: 
+          buildIdTime = time.strptime(self.testdate, "%Y%m%d%H%M")
         else:
-          buildIdTime = time.strptime(self.testDate, "%Y%m%d%H")
+          buildIdTime = time.strptime(self.testdate, "%Y%m%d%H")
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", buildIdTime)
 
     def _getTimeFromBuildId(self):
@@ -146,21 +146,21 @@ class PerfConfigurator(object):
         if 'browser_log:' in line:
             newline = 'browser_log: ' + self.browser_log + '\n'
         if 'webserver:' in line:
-           newline = 'webserver: %s\n' % self.webServer
+           newline = 'webserver: %s\n' % self.webserver
         if 'title:' in line:
             newline = 'title: ' + self.title + '\n'
-            if self.testDate:
+            if self.testdate:
                 newline += '\n'
                 newline += 'testdate: "%s"\n' % self._getTimeFromTimeStamp()
             elif self.useId:
                 newline += '\n'
                 newline += 'testdate: "%s"\n' % self._getTimeFromBuildId()
-            if self.addonID:
+            if self.addon_id:
                 newline += '\n'
-                newline += 'addon_id: "%s"\n' % self.addonID
-            if self.branchName:
+                newline += 'addon_id: "%s"\n' % self.addon_id
+            if self.branch_name:
                 newline += '\n'
-                newline += 'branch_name: %s\n' % self.branchName
+                newline += 'branch_name: %s\n' % self.branch_name
             if self.noChrome and not self.mozAfterPaint:
                 newline += '\n'
                 newline += "test_name_extension: _nochrome\n"
@@ -171,8 +171,8 @@ class PerfConfigurator(object):
                 newline += '\n'
                 newline += "test_name_extension: _paint\n"
 
-            if self.symbolsPath:
-                newline += '\nsymbols_path: %s\n' % self.symbolsPath
+            if self.symbols_path:
+                newline += '\nsymbols_path: %s\n' % self.symbols_path
         if self.extensions and ('extensions : {}' in line):
             newline = 'extensions:\n' + '\n'.join([(' - %s' % extension) for extension in self.extensions])
         if 'buildid:' in line:
@@ -198,8 +198,8 @@ class PerfConfigurator(object):
         if self.results_url and ('results_url' in line):
             newline = 'results_url: %s\n' % (self.results_url)
         #only change the browser_wait if the user has provided one
-        if self.browserWait and ('browser_wait' in line):
-            newline = 'browser_wait: ' + str(self.browserWait) + '\n'
+        if self.browser_wait and ('browser_wait' in line):
+            newline = 'browser_wait: ' + str(self.browser_wait) + '\n'
         if 'init_url' in line:
             newline = self.convertUrlToRemote(newline)
         if 'ignore_first' in line:
@@ -260,7 +260,7 @@ class PerfConfigurator(object):
           and copy that file to the remote device.
         """
 
-        if (not self.webServer or self.webServer == 'localhost'):
+        if (not self.webserver or self.webserver == 'localhost'):
           return line
 
         #NOTE: line.split() causes this to fail because it splits on the \n and not every single ' '
@@ -271,7 +271,7 @@ class PerfConfigurator(object):
         # winopen.xul is handled in remotePerfConfigurator.py
         for part in parts:
             if '.html' in part:
-                newline += 'http://' + self.webServer + '/' + part
+                newline += 'http://' + self.webserver + '/' + part
             elif '.manifest' in part:
                 newline += self.buildRemoteManifest(part) + ' '
             else:
@@ -298,7 +298,7 @@ class PerfConfigurator(object):
 
         newHandle = open(manifestName + '.develop', 'w')
         for line in manifestData.split('\n'):
-            newHandle.write(line.replace('localhost', self.webServer) + "\n")
+            newHandle.write(line.replace('localhost', self.webserver) + "\n")
         newHandle.close()
 
         return manifestName + '.develop'
@@ -350,9 +350,9 @@ class TalosOptions(optparse.OptionParser):
         defaults["title"] = defaultTitle
 
         self.add_option("--branchName",
-                        action = "store", dest = "branchName",
+                        action = "store", dest = "branch_name",
                         help = "Name of the branch we are testing on")
-        defaults["branchName"] = ''
+        defaults["branch_name"] = ''
 
         self.add_option("-b", "--branch",
                         action = "store", dest = "branch",
@@ -375,14 +375,14 @@ class TalosOptions(optparse.OptionParser):
         defaults["useId"] = False
 
         self.add_option("--testDate",
-                        action = "store", dest = "testDate",
+                        action = "store", dest = "testdate",
                         help = "Test date for the test run")
-        defaults["testDate"] = ''
+        defaults["testdate"] = ''
 
         self.add_option("-w", "--browserWait",
-                        action = "store", type="int", dest = "browserWait",
+                        action = "store", type="int", dest = "browser_wait",
                         help = "Amount of time allowed for the browser to cleanly close")
-        defaults["browserWait"] = 5
+        defaults["browser_wait"] = 5
 
         self.add_option("--resultsServer",
                         action="store", dest="resultsServer",
@@ -420,7 +420,7 @@ class TalosOptions(optparse.OptionParser):
 
         self.add_option("--extension", dest="extensions", action="append",
                         help="Extension to install while running")
-        defaults["extension"] = []
+        defaults["extensions"] = []
 
         self.add_option("--fast",
                         action = "store_true", dest = "fast",
@@ -428,9 +428,9 @@ class TalosOptions(optparse.OptionParser):
         defaults["fast"] = False
 
         self.add_option("--symbolsPath",
-                        action = "store", dest = "symbolsPath",
+                        action = "store", dest = "symbols_path",
                         help = "Path to the symbols for the build we are testing")
-        defaults["symbolsPath"] = ''
+        defaults["symbols_path"] = ''
 
         self.add_option("--xperf_path",
                         action = "store", dest = "xperf_path",
@@ -447,9 +447,9 @@ class TalosOptions(optparse.OptionParser):
                         help = "Local logfile to store the output from the browser in")
         defaults["browser_log"] = "browser_output.txt"
         self.add_option("--addonID",
-                        action = "store", dest = "addonID",
+                        action = "store", dest = "addon_id",
                         help = "ID of the extension being tested")
-        defaults["addonID"] = ''
+        defaults["addon_id"] = ''
         self.add_option("--noShutdown",
                         action = "store_true", dest = "noShutdown",
                         help = "Record time browser takes to shutdown after testing")
@@ -462,9 +462,9 @@ class TalosOptions(optparse.OptionParser):
         defaults["extraPrefs"] = []
 
         self.add_option("--webServer", action="store",
-                    type = "string", dest = "webServer",
+                    type = "string", dest = "webserver",
                     help = "IP address of the webserver hosting the talos files")
-        defaults["webServer"] = ''
+        defaults["webserver"] = ''
 
         self.add_option("--develop",
                         action = "store_true", dest = "develop",
@@ -514,8 +514,8 @@ class TalosOptions(optparse.OptionParser):
             options.results_url = 'http://%s%s' % (options.resultsServer, options.resultsLink)
 
         if options.develop == True:
-            if options.webServer == '':
-                options.webServer = "localhost:%s" % (findOpenPort('127.0.0.1'))
+            if options.webserver == '':
+                options.webserver = "localhost:%s" % (findOpenPort('127.0.0.1'))
 
         # XXX delete deprecated values
         del options.resultsServer

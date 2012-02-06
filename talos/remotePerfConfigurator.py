@@ -8,29 +8,29 @@ class remotePerfConfigurator(pc.PerfConfigurator):
     def __init__(self, **options):
         self.__dict__.update(options)
         self._remote = False
-        if (self.remoteDevice <> '' or self.remotePort == -1):
+        if (self.deviceip <> '' or self.deviceport == -1):
             self._setupRemote()
-            options['deviceRoot'] = self.deviceRoot
+            options['deviceroot'] = self.deviceroot
 
         #this depends on buildID which requires querying the device
         pc.PerfConfigurator.__init__(self, **options)
-        pc.PerfConfigurator.attributes += ['remoteDevice', 'remotePort', 'deviceRoot', 'nativeUI']
+        pc.PerfConfigurator.attributes += ['deviceip', 'deviceport', 'deviceroot', 'nativeUI']
 
     def _setupRemote(self):
         try:
-            if self.remotePort == -1:
+            if self.deviceport == -1:
                 from mozdevice import devicemanagerADB
-                self.testAgent = devicemanagerADB.DeviceManagerADB(self.remoteDevice, self.remotePort)
+                self.testAgent = devicemanagerADB.DeviceManagerADB(self.deviceip, self.deviceport)
             else:
                 from mozdevice import devicemanagerSUT
-                self.testAgent = devicemanagerSUT.DeviceManagerSUT(self.remoteDevice, self.remotePort)
+                self.testAgent = devicemanagerSUT.DeviceManagerSUT(self.deviceip, self.deviceport)
 
-            self.deviceRoot = self.testAgent.getDeviceRoot()
+            self.deviceroot = self.testAgent.getDeviceRoot()
         except:
-            raise Configuration("Unable to connect to remote device '%s'" % self.remoteDevice)
+            raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
 
-        if (self.deviceRoot is None):
-            raise Configuration("Unable to connect to remote device '%s'" % self.remoteDevice)
+        if (self.deviceroot is None):
+            raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
 
         self._remote = True
 
@@ -47,11 +47,11 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
         if printMe:
             if 'deviceip:' in line:
-               newline = 'deviceip: %s\n' % self.remoteDevice
+               newline = 'deviceip: %s\n' % self.deviceip
             if 'deviceroot:' in line:
-                newline = 'deviceroot: %s\n' % self.deviceRoot
+                newline = 'deviceroot: %s\n' % self.deviceroot
             if 'deviceport:' in line:
-                newline = 'deviceport: %s\n' % self.remotePort
+                newline = 'deviceport: %s\n' % self.deviceport
             if 'remote:' in line:
                 newline = 'remote: %s\n' % self._remote
             if 'talos.logfile:' in line:
@@ -62,7 +62,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
                     lfile = self.browser_log
                 else:
                     lfile = parts[1].strip().strip("'")
-                lfile = self.deviceRoot + '/' + lfile.split('/')[-1]
+                lfile = self.deviceroot + '/' + lfile.split('/')[-1]
                 newline = '%s: %s\n' % (parts[0], lfile)
 
         return printMe, newline
@@ -81,7 +81,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
                  'startup_test/twinopen/winopen.js',
                  'startup_test/twinopen/child-window.html']
 
-        talosRoot = self.deviceRoot + '/talos/'
+        talosRoot = self.deviceroot + '/talos/'
         for file in files:
             if self.testAgent.pushFile(file, talosRoot + file) == False:
                 raise Configuration("Unable to copy twinopen file "
@@ -102,21 +102,21 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         for part in parts:
             if 'winopen.xul' in part:
                 self.buildRemoteTwinopen()
-                newline += 'file://' + self.deviceRoot + '/talos/' + part
+                newline += 'file://' + self.deviceroot + '/talos/' + part
             else:
                 newline += part
                 if (part <> parts[-1]):
                     newline += ' '
 
         #take care of tpan/tzoom tests
-        newline = newline.replace('webServer=', 'webServer=' + self.webServer);
+        newline = newline.replace('webServer=', 'webServer=' + self.webserver);
         return newline
 
     def buildRemoteManifest(self, manifestName):
         """
            Push the manifest name to the remote device.
         """
-        remoteName = self.deviceRoot
+        remoteName = self.deviceroot
         newManifestName = pc.PerfConfigurator.buildRemoteManifest(self, manifestName)
 
         remoteName += '/' + os.path.basename(manifestName)
@@ -161,19 +161,19 @@ class remoteTalosOptions(pc.TalosOptions):
         pc.TalosOptions.__init__(self)
 
         self.add_option("-r", "--remoteDevice", action="store",
-                    type = "string", dest = "remoteDevice",
+                    type = "string", dest = "deviceip",
                     help = "Device IP (when using SUTAgent)")
-        defaults["remoteDevice"] = ''
+        defaults["deviceip"] = ''
 
         self.add_option("-p", "--remotePort", action="store",
-                    type="int", dest = "remotePort",
+                    type="int", dest = "deviceport",
                     help = "SUTAgent port (defaults to 20701, specify -1 to use ADB)")
-        defaults["remotePort"] = 20701
+        defaults["deviceport"] = 20701
 
         self.add_option("--deviceRoot", action="store",
-                    type = "string", dest = "deviceRoot",
+                    type = "string", dest = "deviceroot",
                     help = "path on the device that will hold files and the profile")
-        defaults["deviceRoot"] = ''
+        defaults["deviceroot"] = ''
 
         self.add_option("--nativeUI", action = "store_true", dest = "nativeUI",
                     help = "Run tests on Fennec with a Native Java UI instead of the XUL UI")
@@ -186,12 +186,12 @@ class remoteTalosOptions(pc.TalosOptions):
         options = pc.TalosOptions.verifyCommandLine(self, args, options)
 
         if options.develop:
-            if options.webServer.startswith('localhost'):
-                options.webServer = pc.getLanIp()
+            if options.webserver.startswith('localhost'):
+                options.webserver = pc.getLanIp()
 
         #webServer can be used without remoteDevice, but is required when using remoteDevice
-        if (options.remoteDevice != '' or options.deviceRoot != ''):
-            if (options.webServer == 'localhost'  or options.remoteDevice == ''):
+        if (options.deviceip != '' or options.deviceroot != ''):
+            if (options.webserver == 'localhost'  or options.deviceip == ''):
                 raise Configuration("When running Talos on a remote device, you need to provide a webServer and optionally a remotePort")
 
         return options
