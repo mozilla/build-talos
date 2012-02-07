@@ -193,6 +193,22 @@ class TTest(object):
             else:
                 raise talosError("crash during run (stack found)")
 
+    def setupRobocopTests(self, browser_config, profile_dir):
+        deviceRoot = self._ffprocess.testAgent.getDeviceRoot()
+        fHandle = open("robotium.config", "w")
+        fHandle.write("profile=%s\n" % profile_dir)
+
+        remoteLog = deviceRoot + "/" + browser_config['browser_log']
+        fHandle.write("logfile=%s\n" % remoteLog)
+        fHandle.write("host=http://%s\n" % browser_config['webserver'])
+        fHandle.close()
+
+        # Note, we are pushing to /sdcard since we have this location hard coded in robocop
+        self._ffprocess.testAgent.removeFile("/sdcard/fennec_ids.txt")
+        self._ffprocess.testAgent.removeFile("/sdcard/robotium.config")
+        self._ffprocess.testAgent.removeFile(remoteLog)
+        self._ffprocess.testAgent.pushFile("robotium.config", "/sdcard/robotium.config")
+        self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'], "/sdcard/fennec_ids.txt")
 
     def runTest(self, browser_config, test_config):
         """
@@ -247,6 +263,9 @@ class TTest(object):
                 os.chmod(browser_config['browser_log'], 0777)
                 os.remove(browser_config['browser_log'])
             self.initializeProfile(profile_dir, browser_config)
+
+            if browser_config['fennecIDs']:
+                self.setupRobocopTests(browser_config, profile_dir)
     
             utils.debug("initialized " + browser_config['process'])
             if test_config['shutdown']:

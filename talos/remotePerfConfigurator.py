@@ -6,7 +6,7 @@ import os, sys
 
 class remotePerfConfigurator(pc.PerfConfigurator):
 
-    replacements = pc.PerfConfigurator.replacements + ['deviceip', 'deviceroot', 'deviceport']
+    replacements = pc.PerfConfigurator.replacements + ['deviceip', 'deviceroot', 'deviceport', 'fennecIDs']
 
     def __init__(self, **options):
         self.__dict__.update(options)
@@ -17,7 +17,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
         #this depends on buildID which requires querying the device
         pc.PerfConfigurator.__init__(self, **options)
-        pc.PerfConfigurator.attributes += ['deviceip', 'deviceport', 'deviceroot', 'nativeUI']
+        pc.PerfConfigurator.attributes += ['deviceip', 'deviceport', 'deviceroot', 'nativeUI', 'fennecIDs']
 
     def _setupRemote(self):
         try:
@@ -105,8 +105,11 @@ class remotePerfConfigurator(pc.PerfConfigurator):
                 if (part <> parts[-1]):
                     newline += ' '
 
-        #take care of tpan/tzoom tests
+        # Take care of tpan/tzoom tests
         newline = newline.replace('webServer=', 'webServer=' + self.webserver);
+
+        # Take care of the robocop based tests
+        newline = newline.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.browser_path)
         return newline
 
     def buildRemoteManifest(self, manifestName):
@@ -176,6 +179,10 @@ class remoteTalosOptions(pc.TalosOptions):
                     help = "Run tests on Fennec with a Native Java UI instead of the XUL UI")
         defaults["nativeUI"] = False
 
+        self.add_option("--fennecIDs", action = "store", dest = "fennecIDs",
+                    help = "Location of the fennec_ids.txt map file, used for robocop based tests")
+        defaults["fennecIDs"] = ''
+
         defaults["sampleConfig"] = 'remote.config'
         self.set_defaults(**defaults)
 
@@ -190,6 +197,9 @@ class remoteTalosOptions(pc.TalosOptions):
         if (options.deviceip != '' or options.deviceroot != ''):
             if (options.webserver == 'localhost'  or options.deviceip == ''):
                 raise Configuration("When running Talos on a remote device, you need to provide a webServer and optionally a remotePort")
+
+        if options.fennecIDs and not os.path.exists(options.fennecIDs):
+            raise Configuration("Unable to find fennec_ids.txt, please ensure this file exists: %s" % options.fennecIDs)
 
         return options
 

@@ -85,6 +85,10 @@ class RemoteProcess(FFProcess):
         url: String containing url to start with.
         """
 
+        # For the robocop tests they use 'am instrument ...' and do not launch fennec or a url proper
+        if url.startswith('am instrument'):
+            return url
+
         profile_arg = ''
         if profile_dir:
             profile_arg = '-profile %s' % profile_dir

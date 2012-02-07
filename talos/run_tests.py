@@ -453,6 +453,7 @@ def test_file(filename, options, defaults):
               'host': yaml_config.get('deviceip', ''), # XXX names should match!
               'port': yaml_config.get('deviceport', ''), # XXX names should match!
               'remote': False,
+              'fennecIDs': '',
               'repository': 'NULL',
               'source_stamp': 'NULL',
               'symbols_path': None,
