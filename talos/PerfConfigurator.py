@@ -38,6 +38,9 @@ class PerfConfigurator(object):
                   'webserver', 'develop', 'responsiveness', 'rss', 'ignore_first'];
     masterIniSubpath = "application.ini"
 
+    # items that can be simply replaced on output
+    replacements = ['test_timeout', 'browser_path', 'xperf_path', 'browser_log', 'webserver', 'buildid', 'develop', 'ignore_first']
+
     def _dumpConfiguration(self):
         """dump class configuration for convenient pickup or perusal"""
         print "Writing configuration:"
@@ -66,26 +69,23 @@ class PerfConfigurator(object):
             match = re.match(reBuildid, line)
             if match:
                 return match.group(1)
-        raise Configuration("BuildID not found in " 
+        raise Configuration("BuildID not found in "
           + path.join(path.dirname(self.browser_path), self.masterIniSubpath))
 
-    def _getTimeFromTimeStamp(self):
-        if len(self.testdate) == 14: 
-          buildIdTime = time.strptime(self.testdate, "%Y%m%d%H%M%S")
-        elif len(self.testdate) == 12: 
-          buildIdTime = time.strptime(self.testdate, "%Y%m%d%H%M")
+    def _getTime(self, timestamp):
+        if len(timestamp) == 14:
+          buildIdTime = time.strptime(timestamp, "%Y%m%d%H%M%S")
+        elif len(timestamp) == 12:
+          buildIdTime = time.strptime(timestamp, "%Y%m%d%H%M")
         else:
-          buildIdTime = time.strptime(self.testdate, "%Y%m%d%H")
+          buildIdTime = time.strptime(timestamp, "%Y%m%d%H")
         return time.strftime("%a, %d %b %Y %H:%M:%S GMT", buildIdTime)
 
+    def _getTimeFromTimeStamp(self):
+        return self._getTime(self.testDate)
+
     def _getTimeFromBuildId(self):
-        if len(self.buildid) == 14: 
-          buildIdTime = time.strptime(self.buildid, "%Y%m%d%H%M%S")
-        elif len(self.buildid) == 12: 
-          buildIdTime = time.strptime(self.buildid, "%Y%m%d%H%M")
-        else:
-          buildIdTime = time.strptime(self.buildid, "%Y%m%d%H")
-        return time.strftime("%a, %d %b %Y %H:%M:%S GMT", buildIdTime)
+        return self._getTime(self.buildid)
 
     def convertLine(self, line, testMode, printMe):
 
@@ -136,17 +136,14 @@ class PerfConfigurator(object):
 
             return printMe, line
 
+        def writeList(thelist):
+            """write a list in YAML"""
+            return '\n'.join([(' - %s' % item) for item in thelist])
+
         newline = line
-        if 'test_timeout:' in line:
-            newline = 'test_timeout: ' + str(self.test_timeout) + '\n'
-        if 'browser_path:' in line:
-            newline = 'browser_path: ' + self.browser_path + '\n'
-        if 'xperf_path:' in line:
-            newline = 'xperf_path: %s\n' % self.xperf_path
-        if 'browser_log:' in line:
-            newline = 'browser_log: ' + self.browser_log + '\n'
-        if 'webserver:' in line:
-           newline = 'webserver: %s\n' % self.webserver
+        for item in self.replacements:
+            if ('%s:' % item) in line:
+                newline = '%s: %s\n' % (item, getattr(self, item))
         if 'title:' in line:
             newline = 'title: ' + self.title + '\n'
             if self.testdate:
@@ -173,10 +170,8 @@ class PerfConfigurator(object):
 
             if self.symbols_path:
                 newline += '\nsymbols_path: %s\n' % self.symbols_path
-        if self.extensions and ('extensions : {}' in line):
-            newline = 'extensions:\n' + '\n'.join([(' - %s' % extension) for extension in self.extensions])
-        if 'buildid:' in line:
-            newline = 'buildid: \'%s\'\n' % str(self.buildid)
+        if self.extensions and ('extensions: {}' in line):
+            newline = 'extensions:\n' + writeList(self.extensions)
 
         if 'talos.logfile:' in line:
             parts = line.split(':')
@@ -191,9 +186,6 @@ class PerfConfigurator(object):
         if 'testbranch' in line:
             newline = 'branch: ' + self.branch
 
-        # run in develop mode if the user has specified
-        if 'develop' in line:
-            newline = 'develop: %s\n' % self.develop
         #only change the results_url if the user has provided one
         if self.results_url and ('results_url' in line):
             newline = 'results_url: %s\n' % (self.results_url)
@@ -202,11 +194,9 @@ class PerfConfigurator(object):
             newline = 'browser_wait: ' + str(self.browser_wait) + '\n'
         if 'init_url' in line:
             newline = self.convertUrlToRemote(newline)
-        if 'ignore_first' in line:
-            newline = 'ignore_first: %s\n' % self.ignore_first
 
-        if self.extraPrefs and re.match('^\s*preferences :\s*$', line):
-            newline = 'preferences :\n'
+        if self.extraPrefs and re.match('^\s*preferences:\s*$', line):
+            newline = 'preferences:\n'
             for pref, value in self.extraPrefs:
                 newline += '  %s: %s\n' % (pref, value)
 
@@ -467,8 +457,8 @@ class TalosOptions(optparse.OptionParser):
         defaults["webserver"] = ''
 
         self.add_option("--develop",
-                        action = "store_true", dest = "develop",
-                        help = "useful for running tests on a developer machine. \
+                        action="store_true", dest="develop",
+                        help="useful for running tests on a developer machine. \
                                 Creates a local webserver and doesn't upload to the graph servers.")
         defaults["develop"] = False
 

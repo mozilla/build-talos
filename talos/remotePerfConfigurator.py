@@ -5,6 +5,9 @@ from PerfConfigurator import Configuration
 import os, sys
 
 class remotePerfConfigurator(pc.PerfConfigurator):
+
+    replacements = pc.PerfConfigurator.replacements + ['deviceip', 'deviceroot', 'deviceport']
+
     def __init__(self, **options):
         self.__dict__.update(options)
         self._remote = False
@@ -29,7 +32,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         except:
             raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
 
-        if (self.deviceroot is None):
+        if self.deviceroot is None:
             raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
 
         self._remote = True
@@ -38,7 +41,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         pc.PerfConfigurator._dumpConfiguration(self)
 
     def convertLine(self, line, testMode, printMe):
-        # For NativeUI Fennec, we are working around bug 708793 and uploading a 
+        # For NativeUI Fennec, we are working around bug 708793 and uploading a
         # unique machine name (defined via title) with a .n.  Currently a machine name
         # is a 1:1 mapping with the OS+hardware
         if self.nativeUI and not self.title.endswith(".n"):
@@ -46,12 +49,6 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         printMe, newline = pc.PerfConfigurator.convertLine(self, line, testMode, printMe)
 
         if printMe:
-            if 'deviceip:' in line:
-               newline = 'deviceip: %s\n' % self.deviceip
-            if 'deviceroot:' in line:
-                newline = 'deviceroot: %s\n' % self.deviceroot
-            if 'deviceport:' in line:
-                newline = 'deviceport: %s\n' % self.deviceport
             if 'remote:' in line:
                 newline = 'remote: %s\n' % self._remote
             if 'talos.logfile:' in line:
