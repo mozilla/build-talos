@@ -399,7 +399,7 @@ def useBaseTestDefaults(base, tests):
           test[item] = ''
   return tests
 
-def test_file(filename, options, defaults):
+def test_file(filename, options, parsed):
   """Runs the talos tests on the given config file and generates a report.
 
   Args:
@@ -417,7 +417,7 @@ def test_file(filename, options, defaults):
 
   # Override yaml_config if options are provided
   options = options.__dict__
-  yaml_config.update(dict([(i,j) for i, j in options.items() if j != defaults[i]]))
+  yaml_config.update(dict([(i,j) for i, j in options.items() if i in parsed]))
 
   # set defaults
   title = yaml_config.get('title', '')
@@ -587,7 +587,6 @@ def main(args=sys.argv[1:]):
                     help="set screen")
 
   options, args = parser.parse_args(args)
-  defaults = parser.defaults
 
   # set variables
   if options.debug:
@@ -599,7 +598,7 @@ def main(args=sys.argv[1:]):
   # Read in each config file and run the tests on it.
   for arg in args:
     utils.debug("running test file " + arg)
-    test_file(arg, options, defaults)
+    test_file(arg, options, parser.parsed)
 
 if __name__=='__main__':
   main()

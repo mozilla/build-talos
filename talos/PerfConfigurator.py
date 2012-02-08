@@ -309,9 +309,18 @@ class PerfConfigurator(object):
 
 
 class TalosOptions(optparse.OptionParser):
-    """Parses Mochitest commandline options."""
+    """Parses Talos commandline options."""
+
+    class TalosOption(optparse.Option):
+        def take_action(self, action, dest, opt, value, values, parser):
+            """add the parsed option to the set of things parsed"""
+            optparse.Option.take_action(self, action, dest, opt, value, values, parser)
+            parser.parsed.add(dest)
+
     def __init__(self, **kwargs):
+        kwargs['option_class'] = self.TalosOption
         optparse.OptionParser.__init__(self, **kwargs)
+        self.parsed = set() # parsed arguments
         defaults = {}
 
         self.add_option("-v", "--verbose",
@@ -469,28 +478,29 @@ class TalosOptions(optparse.OptionParser):
 
         self.add_option("--rss",
                         action = "store_true", dest = "rss",
-                        help = "Collect RSS counters from pageloader instead of the operating system.")  
+                        help = "Collect RSS counters from pageloader instead of the operating system.")
         defaults["rss"] = False
 
         self.add_option("--ignoreFirst",
                         action = "store_true", dest = "ignore_first",
                         help = "Alternative median calculation from pageloader data.  Use the raw values \
-                                and discard the first page load instead of the highest value.")  
+                                and discard the first page load instead of the highest value.")
         defaults["ignore_first"] = False
-        
+
         self.add_option("--amo",
                         action = "store_true", dest = "amo",
                         help = "set amo")
         defaults["amo"] = False
 
         self.add_option("--csvDir", dest="csv_dir",
-                        action="store", default="",
+                        action="store",
                         help="specify csv output file")
         defaults["csv_dir"] = ""
 
         self.set_defaults(**defaults)
 
     def parse_args(self, args=None, values=None):
+        self.parsed = set() # reset parsed args
         options, args = optparse.OptionParser.parse_args(self, args=args, values=values)
         options = self.verifyCommandLine(args, options)
         return options, args

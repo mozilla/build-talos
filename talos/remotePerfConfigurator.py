@@ -149,7 +149,6 @@ class remotePerfConfigurator(pc.PerfConfigurator):
             master = open(localfilename)
         else:
             return pc.PerfConfigurator._getMasterIniContents(self)
-            
         data = master.read()
         master.close()
         return data.split('\n')
@@ -157,8 +156,8 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 class remoteTalosOptions(pc.TalosOptions):
 
     def __init__(self, **kwargs):
+        pc.TalosOptions.__init__(self, **kwargs)
         defaults = {}
-        pc.TalosOptions.__init__(self)
 
         self.add_option("-r", "--remoteDevice", action="store",
                     type = "string", dest = "deviceip",
