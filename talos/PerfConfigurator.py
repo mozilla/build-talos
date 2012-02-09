@@ -29,14 +29,25 @@ class Configuration(Exception):
 
 
 class PerfConfigurator(object):
-    attributes = ['browser_path', 'configPath', 'sampleConfig', 'outputName', 'title',
-                  'branch', 'branch_name', 'buildid', 'currentDate', 'browser_wait',
-                  'verbose', 'testdate', 'useId', 'results_url',
-                  'activeTests', 'noChrome', 'fast', 'testPrefix', 'extensions',
-                  'masterIniSubpath', 'test_timeout', 'symbols_path', 'addon_id',
-                  'noShutdown', 'extraPrefs', 'xperf_path', 'mozAfterPaint',
-                  'webserver', 'develop', 'responsiveness', 'rss', 'ignore_first'];
+
     masterIniSubpath = "application.ini"
+
+    def __init__(self, **options):
+        self.__dict__.update(options)
+
+        # use attributes from the options dict
+        self.attributes = options.keys() + ['currentDate', 'masterIniSubpath']
+
+        self.currentDate = self._getCurrentDateString()
+        if not self.buildid:
+            self.buildid = self._getCurrentBuildId()
+        if not self.outputName:
+            self.outputName = self.currentDate + "_config.yml"
+
+        # ensure all preferences are of length 2 (preference, value)
+        badPrefs = [i for i in self.extraPrefs if len(i) != 2]
+        if badPrefs:
+            raise Configuration("Prefs should be of length 2: %s" % badPrefs)
 
     # items that can be simply replaced on output
     replacements = ['test_timeout', 'browser_path', 'xperf_path', 'browser_log', 'webserver', 'buildid', 'develop', 'ignore_first']
@@ -292,20 +303,6 @@ class PerfConfigurator(object):
         newHandle.close()
 
         return manifestName + '.develop'
-
-    def __init__(self, **options):
-        self.__dict__.update(options)
-
-        self.currentDate = self._getCurrentDateString()
-        if not self.buildid:
-            self.buildid = self._getCurrentBuildId()
-        if not self.outputName:
-            self.outputName = self.currentDate + "_config.yml"
-
-        # ensure all preferences are of length 2 (preference, value)
-        badPrefs = [i for i in self.extraPrefs if len(i) != 2]
-        if badPrefs:
-            raise Configuration("Prefs should be of length 2: %s" % badPrefs)
 
 
 class TalosOptions(optparse.OptionParser):

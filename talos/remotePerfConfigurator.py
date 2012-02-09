@@ -17,7 +17,6 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
         #this depends on buildID which requires querying the device
         pc.PerfConfigurator.__init__(self, **options)
-        pc.PerfConfigurator.attributes += ['deviceip', 'deviceport', 'deviceroot', 'nativeUI', 'fennecIDs']
 
     def _setupRemote(self):
         try:
@@ -36,9 +35,6 @@ class remotePerfConfigurator(pc.PerfConfigurator):
             raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
 
         self._remote = True
-
-    def _dumpConfiguration(self):
-        pc.PerfConfigurator._dumpConfiguration(self)
 
     def convertLine(self, line, testMode, printMe):
         # For NativeUI Fennec, we are working around bug 708793 and uploading a
