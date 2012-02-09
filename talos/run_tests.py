@@ -575,6 +575,7 @@ def test_file(filename, options, parsed):
 def main(args=sys.argv[1:]):
 
   # parse command line options
+  usage = "%prog [options] manifest.yml [manifest.yml ...]"
   parser = PerfConfigurator.TalosOptions()
   parser.add_option('-d', '--debug', dest='debug',
                     action='store_true', default=False,
@@ -587,6 +588,11 @@ def main(args=sys.argv[1:]):
                     help="set screen")
 
   options, args = parser.parse_args(args)
+
+  # if no arguments print help
+  if not args:
+      parser.print_help()
+      return
 
   # set variables
   if options.debug:
