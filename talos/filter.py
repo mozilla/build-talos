@@ -30,5 +30,7 @@ def ignore_first(series):
     """
     ignore first datapoint
     """
+    if len(series) <= 1:
+        return series
     return series[1:]
 
