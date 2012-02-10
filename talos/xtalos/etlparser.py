@@ -79,7 +79,7 @@ class XPerfAutoLog(object):
       machine = self.yaml_config['title'],
       starttime = int(time.time()),
       builder = '%s_%s-opt_test-%s' % (self.yaml_config['title'], os, testname),
-      restserver = 'http://10.2.76.100/autologserver'
+      restserver = 'http://10.2.74.141/autologserver'
     )
   
     self.testGroup.set_primary_product(
