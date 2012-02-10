@@ -398,6 +398,39 @@ def useBaseTestDefaults(base, tests):
         if test[item] is None:
           test[item] = ''
   return tests
+  
+def buildCommandLine(test, options):
+  
+  # override with values from command line
+  for item in test:
+    if options.get(item):
+      test[item] = options[item]
+
+  # sanity check pageloader values
+  if test['tpcycles'] not in range(1, 1000):
+    raise talosError('pageloader cycles must be int 1 to 1,000')
+  if test['tpformat'] not in ('js', 'jsfull', 'text', 'tinderbox'):
+    raise talosError('pageloader format not recognized. valid ' +
+                     'formats are: js, jsfull, text, and tinderbox')
+  if test['tpdelay'] and test['tpdelay'] not in range(1, 10000):
+    raise talosError('pageloader delay must be int 1 to 10,000')
+
+  # build pageloader command from options
+  url = '-tp %s' % test['tpmanifest']
+  if test['tpchrome']:
+    url += ' -tpchrome'
+  if test['tpmozafterpaint']:
+    url += ' -tpmozafterpaint'
+  if test['tpnoisy']:
+    url += ' -tpnoisy'
+  url += ' -tpformat %(tpformat)s -tpcycles %(tpcycles)s' % test
+  if test['rss']:
+    url += ' -rss'
+  if test['tprender']:
+    url += ' -tprender'
+  if test['tpdelay']:
+    url += ' -tpdelay %s' % test['tpdelay']
+  return url
 
 def test_file(filename, options, parsed):
   """Runs the talos tests on the given config file and generates a report.
@@ -418,6 +451,11 @@ def test_file(filename, options, parsed):
   # Override yaml_config if options are provided
   options = options.__dict__
   yaml_config.update(dict([(i,j) for i, j in options.items() if i in parsed]))
+
+  # Build command line from config
+  for test in tests:
+    if not test['url']:
+      test['url'] = buildCommandLine(test, options)
 
   # set defaults
   title = yaml_config.get('title', '')

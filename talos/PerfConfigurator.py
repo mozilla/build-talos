@@ -121,29 +121,42 @@ class PerfConfigurator(object):
                         if self.noShutdown:
                             line += "  shutdown : True\n"
 
+                        if self.noChrome:
+                            line += "  tpchrome: False\n"
+                            
+                        if self.mozAfterPaint:
+                            line += "  tpmozafterpaint: True\n"
+
+                        if self.tpcycles:
+                            line = "  tpcycles: %s\n" % self.tpcycles
+
+                        if self.rss:
+                            line += "  rss: True\n"
+
+                        if self.tpdelay:
+                            line += "  tpdelay: %s\n" % self.tpdelay
 
             elif printMe:
                 if 'url' in line and 'url_mod' not in line:
                     line = self.convertUrlToRemote(line)
-
-                # HACK: we are depending on -tpchrome to be in the cli options
-                # in order to run mozafterpaint
-                if self.mozAfterPaint and '-tpchrome' in line:
-                    line = line.replace('-tpchrome ','-tpchrome -tpmozafterpaint ')
-
-                if self.rss and '-tpchrome' in line:
-                    line = line.replace('-tpchrome ','-rss -tpchrome ')
-                    newline = line
-
-                if self.noChrome:
-                    # if noChrome is True remove --tpchrome option
-                    line = line.replace('-tpchrome ','')
 
                 if self.responsiveness and 'responsiveness' in line:
                     line = ""
 
                 if self.noShutdown and 'shutdown :' in line:
                     line = ""
+                
+                if self.tpcycles and 'tpcycles' in line:
+                    line = ""
+                        
+                if "tpmanifest:" in line:
+                    if self.tpmanifest:
+                        line = "  tpmanifest: %s" % self.tpmanifest
+                    # if --develop flag specified, generate .develop manifest
+                    # and change manifest name in generated config file
+                    if self.develop:
+                        self.buildRemoteManifest(line.split(":")[1].strip())
+                        line = line.strip("\n") + ".develop\n"
 
             return printMe, line
 
@@ -273,8 +286,6 @@ class PerfConfigurator(object):
         for part in parts:
             if '.html' in part:
                 newline += 'http://' + self.webserver + '/' + part
-            elif '.manifest' in part:
-                newline += self.buildRemoteManifest(part) + ' '
             else:
                 newline += part
                 if (part <> parts[-1]):
@@ -493,6 +504,20 @@ class TalosOptions(optparse.OptionParser):
                         action="store",
                         help="specify csv output file")
         defaults["csv_dir"] = ""
+        
+        self.add_option('--tpmanifest',
+                        action='store', dest='tpmanifest',
+                        help="manifest file to test")
+        defaults["tpmanifest"] = ""
+        self.add_option('--tpcycles', type='int',
+                        action='store', dest='tpcycles',
+                        help="number of pageloader cycles to run")
+        defaults["tpcycles"] = None
+        self.add_option('--tpdelay', type='int',
+                        action='store', dest='tpdelay',
+                        help="length of pageloader delay")
+        defaults["tpdelay"] = None
+        
 
         self.set_defaults(**defaults)
 
