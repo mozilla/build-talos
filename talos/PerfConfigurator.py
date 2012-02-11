@@ -32,6 +32,9 @@ class PerfConfigurator(object):
 
     masterIniSubpath = "application.ini"
 
+    # items that can be simply replaced on output
+    replacements = ['test_timeout', 'browser_path', 'xperf_path', 'browser_log', 'webserver', 'buildid', 'develop', 'ignore_first']
+
     def __init__(self, **options):
         self.__dict__.update(options)
 
@@ -49,8 +52,6 @@ class PerfConfigurator(object):
         if badPrefs:
             raise Configuration("Prefs should be of length 2: %s" % badPrefs)
 
-    # items that can be simply replaced on output
-    replacements = ['test_timeout', 'browser_path', 'xperf_path', 'browser_log', 'webserver', 'buildid', 'develop', 'ignore_first']
 
     def _dumpConfiguration(self):
         """dump class configuration for convenient pickup or perusal"""
@@ -145,10 +146,10 @@ class PerfConfigurator(object):
 
                 if self.noShutdown and 'shutdown :' in line:
                     line = ""
-                
+
                 if self.tpcycles and 'tpcycles' in line:
                     line = ""
-                        
+
                 if "tpmanifest:" in line:
                     if self.tpmanifest:
                         line = "  tpmanifest: %s" % self.tpmanifest
@@ -165,10 +166,9 @@ class PerfConfigurator(object):
             return '\n'.join([(' - %s' % item) for item in thelist])
 
         newline = line
-        for item in self.replacements:
-            if ('%s:' % item) in line:
-                newline = '%s: %s\n' % (item, getattr(self, item))
+
         if 'title:' in line:
+            # write title block
             newline = 'title: ' + self.title + '\n'
             if self.testdate:
                 newline += '\n'
@@ -182,20 +182,27 @@ class PerfConfigurator(object):
             if self.branch_name:
                 newline += '\n'
                 newline += 'branch_name: %s\n' % self.branch_name
-            if self.noChrome and not self.mozAfterPaint:
+            if self.noChrome or self.mozAfterPaint:
                 newline += '\n'
-                newline += "test_name_extension: _nochrome\n"
-            elif self.noChrome and self.mozAfterPaint:
+                newline += "test_name_extension: "
+                if self.noChrome:
+                    newline += '_nochrome'
+                if self.mozAfterPaint:
+                    newline += '_paint'
                 newline += '\n'
-                newline += "test_name_extension: _nochrome_paint\n"
-            elif not self.noChrome and self.mozAfterPaint:
-                newline += '\n'
-                newline += "test_name_extension: _paint\n"
 
             if self.symbols_path:
                 newline += '\nsymbols_path: %s\n' % self.symbols_path
+
+        for item in self.replacements:
+            if ('%s:' % item) in line:
+                newline = '%s: %s\n' % (item, getattr(self, item))
+
         if self.extensions and ('extensions: {}' in line):
-            newline = 'extensions:\n' + writeList(self.extensions)
+            newline = 'extensions:\n%s\n' % writeList(self.extensions)
+
+        if self.filters and ('filters:' in line):
+            newline = 'filters:\n%s\n' % writeList(self.filters)
 
         if 'talos.logfile:' in line:
             parts = line.split(':')
@@ -492,8 +499,13 @@ class TalosOptions(optparse.OptionParser):
         self.add_option("--ignoreFirst",
                         action = "store_true", dest = "ignore_first",
                         help = "Alternative median calculation from pageloader data.  Use the raw values \
-                                and discard the first page load instead of the highest value.")
+                                and discard the first page load instead of the highest value. [DEPRECATED: use `--filter ignore_first --filter median`]")
         defaults["ignore_first"] = False
+
+        self.add_option("--filter",
+                        action="append", dest='filters',
+                        help="filters to apply to the data from talos.filters [DEFAULT: ignore_max, median]")
+        defaults["filters"] = None # added in verifyCommandLine
 
         self.add_option("--amo",
                         action = "store_true", dest = "amo",
@@ -504,7 +516,7 @@ class TalosOptions(optparse.OptionParser):
                         action="store",
                         help="specify csv output file")
         defaults["csv_dir"] = ""
-        
+
         self.add_option('--tpmanifest',
                         action='store', dest='tpmanifest',
                         help="manifest file to test")
@@ -517,7 +529,7 @@ class TalosOptions(optparse.OptionParser):
                         action='store', dest='tpdelay',
                         help="length of pageloader delay")
         defaults["tpdelay"] = None
-        
+
 
         self.set_defaults(**defaults)
 
@@ -542,6 +554,12 @@ class TalosOptions(optparse.OptionParser):
         # XXX delete deprecated values
         del options.resultsServer
         del options.resultsLink
+
+        # XXX convert --ignoreFirst to the appropriate set of filters
+        if options.ignore_first:
+            if options.filters:
+                raise Configuration("Can't use --ignoreFirst and --filter; use --filter instead")
+            options.filters = ['ignore_first', 'median']
 
         # fix up extraPrefs to be a list of 2-tuples
         options.extraPrefs = [i.split('=', 1) for i in options.extraPrefs]

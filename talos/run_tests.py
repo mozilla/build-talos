@@ -38,7 +38,7 @@
 
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
-
+import filter
 import optparse
 import os
 import re
@@ -51,7 +51,6 @@ import utils
 from utils import talosError
 import post_file
 from ttest import TTest
-from filter import ignore_first, median
 from results import PageloaderResults
 
 def shortName(name):
@@ -87,8 +86,9 @@ def process_Request(post):
   lines = post.split('\n')
   for line in lines:
     if line.find("RETURN\t") > -1:
-        links += line.replace("RETURN\t", "") + '\n'
-    utils.debug("process_Request line: " + line.replace("RETURN\t", ""))
+        line = line.replace("RETURN\t", "")
+        links +=  line+ '\n'
+    utils.debug("process_Request line: " + line)
   if not links:
     raise talosError("send failed, graph server says:\n" + post)
   return links
@@ -97,19 +97,14 @@ def responsiveness_Metric(val_list):
   s = sum([int(x)*int(x) / 1000000.0 for x in val_list])
   return str(round(s))
 
-def send_to_csv(csv_dir, results):
+def send_to_csv(csv_dir, results, filters):
   import csv
-  def avg_excluding_max(val_list):
-    """return float rounded to two decimal places, converted to string
-       calculates the average value in the list exluding the max value"""
-    i = len(val_list)
-    total = sum(float(v) for v in val_list)
-    maxval = max(float(v) for v in val_list)
-    if total > maxval:
-      avg = str(round((total - maxval)/(i-1), 2))
-    else:
-      avg = str(round(total, 2))
-    return avg
+
+  def write_return(writer, res, value):
+    writer.writerow(['RETURN: %s: %s' % (res , value)])
+  def write_return_value(writer, res, data, callback=lambda x: x):
+    data = [float(d) for d in data] # ensure floats
+    write_return(writer, res, callback(round(filter.apply(data, filters), 2)))
 
   for res in results:
     browser_dump, counter_dump, print_format = results[res]
@@ -127,7 +122,7 @@ def send_to_csv(csv_dir, results):
           writer.writerow([i, v])
           i += 1
           res_list.append(v)
-      writer.writerow(['RETURN: ' + res + ': ' + avg_excluding_max(res_list),])
+      write_return_value(writer, res, res_list)
     elif print_format == 'tpformat':
       writer.writerow(['i', 'page', 'median', 'mean', 'min' , 'max', 'runs'])
       for bd in browser_dump:
@@ -148,7 +143,7 @@ def send_to_csv(csv_dir, results):
           res_list.append(r[2])
           writer.writerow([i, page, r[2], r[3], r[4], r[5], '|'.join(r[6:])])
           i += 1
-        writer.writerow(['RETURN: ' + res + ': ' + avg_excluding_max(res_list), ])
+        write_return_value(writer, res, res_list)
     else:
       raise talosError("Unknown print format in send_to_csv")
     for cd in counter_dump:
@@ -167,13 +162,13 @@ def send_to_csv(csv_dir, results):
           writer.writerow([i, val])
           i += 1
         if isMemoryMetric(shortName(count_type)):
-          writer.writerow(['RETURN: ' + counterName + ': ' + filesizeformat(avg_excluding_max(cd[count_type])),])
+          write_return_value(writer, counterName, cd[count_type], filesizeformat)
         elif count_type == 'responsiveness':
-          writer.writerow(['RETURN: ' + counterName + ': ' + responsiveness_Metric(cd[count_type]),])
+          write_return(writer, counterName, responsiveness_Metric(cd[count_type]))
         else:
-          writer.writerow(['RETURN: ' + counterName + ': ' + avg_excluding_max(cd[count_type]),])
+          write_return_value(writer, counterName, cd[count_type])
 
-def construct_results (machine, testname, browser_config, date, vals, amo):
+def construct_results(machine, testname, browser_config, date, vals, amo):
   """
   Creates string formated for the collector script of the graph server
   Returns the completed string
@@ -206,7 +201,9 @@ def construct_results (machine, testname, browser_config, date, vals, amo):
   data_string += "END"
   return data_string
 
-def send_to_graph(results_url, machine, date, browser_config, results, amo):
+def send_to_graph(results_url, machine, date, browser_config, results, amo, filters):
+  """send the results to a graphserver or file URL"""
+
   links = ''
   result_strings = []
   result_testnames = []
@@ -232,10 +229,7 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo):
       fullname += browser_config['test_name_extension']
       for bd in browser_dump:
         page_results = PageloaderResults(bd)
-        if browser_config['ignore_first']:
-            newvals = page_results.filter(ignore_first, median)
-        else:
-            newvals = page_results.median()
+        newvals = page_results.filter(*filters)
         newvals = [[val, page] for val, page in newvals if val > -1]
         vals.extend(newvals)
     else:
@@ -475,6 +469,19 @@ def test_file(filename, options, parsed):
     if results_scheme in ('http', 'https') and not post_file.link_exists(results_server, results_path):
       print 'WARNING: graph server link does not exist'
 
+  # data filters
+  filters = yaml_config.get('filters')
+  if not filters:
+      # default filters
+      if yaml_config.get('ignore_first'):
+          filters = ['ignore_first', 'median']
+      else:
+          filters = ['ignore_max', 'median']
+  try:
+      filters = filter.filters(*filters)
+  except AssertionError, e:
+      raise talosError(str(e))
+
   # set browser_config
   required = ['preferences', 'extensions',
               'browser_path', 'browser_log', 'browser_wait',
@@ -499,7 +506,6 @@ def test_file(filename, options, parsed):
               'test_timeout': 1200,
               'webserver': '',
               'xperf_path': None,
-              'ignore_first': False
               }
   browser_config = dict(title=title)
   browser_config.update(dict([(i, yaml_config[i]) for i in required]))
@@ -573,10 +579,16 @@ def test_file(filename, options, parsed):
       utils.debug("Received test results: " + " ".join(browser_dump))
       results[testname] = [browser_dump, counter_dump, print_format]
       # If we're doing CSV, write this test immediately (bug 419367)
+
+      # use filters to approximate what graphserver does:
+      # https://github.com/mozilla/graphs/blob/master/server/pyfomatic/collect.py#L212
+      # ultimately, this should not be in Talos:
+      # https://bugzilla.mozilla.org/show_bug.cgi?id=721902
+      csv_filters = [filter.ignore_max, filter.mean]
       if csv_dir:
-        send_to_csv(csv_dir, {testname : results[testname]})
+        send_to_csv(csv_dir, {testname : results[testname]}, csv_filters)
       if options["to_screen"] or options["amo"]:
-        send_to_csv(None, {testname : results[testname]})
+        send_to_csv(None, {testname : results[testname]}, csv_filters)
     except talosError, e:
       utils.stamped_msg("Failed " + testname, "Stopped")
       print 'FAIL: Busted: ' + testname
@@ -598,7 +610,7 @@ def test_file(filename, options, parsed):
     #send results to the graph server
     try:
       utils.stamped_msg("Sending results", "Started")
-      links = send_to_graph(results_url, title, date, browser_config, results, options["amo"])
+      links = send_to_graph(results_url, title, date, browser_config, results, options["amo"], filters)
       results_from_graph(links, results_server, options["amo"])
       utils.stamped_msg("Completed sending results", "Stopped")
     except talosError, e:
@@ -623,7 +635,7 @@ def main(args=sys.argv[1:]):
                     help="enable noisy output")
   parser.add_option('-s', '--screen', dest='to_screen',
                     action='store_true', default=False,
-                    help="set screen")
+                    help="output CSV to screen")
 
   options, args = parser.parse_args(args)
 
