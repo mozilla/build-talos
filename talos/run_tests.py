@@ -341,6 +341,8 @@ def results_from_graph(links, results_server, amo):
 def browserInfo(browser_config, devicemanager = None):
   """Get the buildid and sourcestamp from the application.ini (if it exists)
   """
+  import ConfigParser
+  config = ConfigParser.RawConfigParser()
   appIniFileName = "application.ini"
   appIniPath = os.path.join(os.path.dirname(browser_config['browser_path']), appIniFileName)
   if os.path.isfile(appIniPath) or devicemanager != None:
@@ -351,32 +353,15 @@ def browserInfo(browser_config, devicemanager = None):
         remoteAppIni = browser_config['deviceroot'] + '/' + appIniFileName
       if (not os.path.isfile('remoteapp.ini')):
         devicemanager.getFile(remoteAppIni, 'remoteapp.ini')
-      appIni = open('remoteapp.ini')
+      config.read('remoteapp.ini')
     else:
-      appIni = open(appIniPath)
-    appIniContents = appIni.readlines()
-    appIni.close()
-    reSourceStamp = re.compile('SourceStamp\s*=\s*(.*)$')
-    reRepository = re.compile('SourceRepository\s*=\s*(.*)$')
-    reBuildID = re.compile('BuildID\s*=\s*(.*)$')
-    reName = re.compile('Name\s*=\s*(.*)$')
-    reVersion = re.compile('Version\s*=\s*(.*)$')
-    for line in appIniContents:
-      match = re.match(reBuildID, line)
-      if match:
-        browser_config['buildid'] = match.group(1)
-      match = re.match(reRepository, line)
-      if match:
-          browser_config['repository'] = match.group(1)
-      match = re.match(reSourceStamp, line)
-      if match:
-          browser_config['sourcestamp'] = match.group(1)
-      match = re.match(reName, line)
-      if match:
-          browser_config['browser_name'] = match.group(1)
-      match = re.match(reVersion, line)
-      if match:
-          browser_config['browser_version'] = match.group(1)
+      config.read(appIniPath)
+
+    browser_config['buildid'] = config.get('App', 'BuildID')
+    browser_config['repository'] = config.get('App', 'SourceRepository')
+    browser_config['sourcestamp'] = config.get('App', 'SourceStamp')
+    browser_config['browser_name'] = config.get('App', 'Name')
+    browser_config['browser_version'] = config.get('App', 'Version')
   if ('repository' in browser_config) and ('sourcestamp' in browser_config):
     print 'RETURN:<a href = "' + browser_config['repository'] + '/rev/' + browser_config['sourcestamp'] + '">rev:' + browser_config['sourcestamp'] + '</a>'
   else:
