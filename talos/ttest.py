@@ -179,7 +179,11 @@ class TTest(object):
             utils.noisy("Found crashdump: " + dump)
             if browser_config['symbols_path']:
                 nullfd = open(os.devnull, 'w')
-                subprocess.call([stackwalkbin, dump, browser_config['symbols_path']], stderr=nullfd)
+                cmd = [stackwalkbin, dump, browser_config['symbols_path']]
+                try:
+                    subprocess.call(cmd, stderr=nullfd)
+                except:
+                    raise talosError("error executing: '%s'" % subprocess.list2cmdline(cmd))
                 nullfd.close()
             os.remove(dump)
             found = True
@@ -288,10 +292,11 @@ class TTest(object):
 
                 # Execute the test's head script if there is one
                 if 'head' in test_config:
+                    cmd = [sys.executable, test_config['head']]
                     try:
-                        subprocess.call([sys.executable, test_config['head']])
+                        subprocess.call(cmd)
                     except:
-                        raise talosError("error executing head script: %s" % sys.exc_info()[0])
+                        raise talosError("error executing head script '%s': %s" % (subprocess.list2cmdline(cmd), sys.exc_info()[0]))
 
                 # Run the test 
                 browser_results = ""
@@ -313,7 +318,10 @@ class TTest(object):
                     b_log = browser_config['deviceroot'] + '/' + browser_config['browser_log']
 
                 b_cmd = self._ffprocess.GenerateBControllerCommandLine(command_line, browser_config, test_config)
-                process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
+                try:
+                    process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
+                except:
+                    raise talosError("error executing browser command line '%s': %s" % (subprocess.list2cmdline(cmd), sys.exc_info()[0]))
 
                 #give browser a chance to open
                 # this could mean that we are losing the first couple of data points

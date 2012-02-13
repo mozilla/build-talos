@@ -88,11 +88,15 @@ class LinuxProcess(FFProcess):
         processExclusionList = ['bcontroller.py']
   
         command = ['ps', 'ax']
-        handle = subprocess.Popen(command, stdout=subprocess.PIPE)
+        try:
+            handle = subprocess.Popen(command, stdout=subprocess.PIPE)
 
-        # wait for the process to terminate
-        handle.wait()
-        data = handle.stdout.read()
+            # wait for the process to terminate
+            handle.wait()
+            data = handle.stdout.read()
+        except:
+            print "Error running '%s'." % subprocess.list2cmdline(command)
+            raise
   
         # find all matching processes and add them to the list
         for line in data.splitlines():

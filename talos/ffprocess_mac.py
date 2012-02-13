@@ -92,11 +92,15 @@ class MacProcess(FFProcess):
         matchingPids = []
 
         command = ['ps -Acj']
-        handle = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+        try:
+            handle = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
 
-        # wait for the process to terminate
-        handle.wait()
-        data = handle.stdout.readlines()
+            # wait for the process to terminate
+            handle.wait()
+            data = handle.stdout.readlines()
+        except:
+            print "Error running '%s'." % subprocess.list2cmdline(command)
+            raise
 
         # find all matching processes and add them to the list
         for line in data:

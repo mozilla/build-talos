@@ -275,7 +275,11 @@ class FFSetup(object):
         log = browser_config['browser_log']
 
         b_cmd = self.ffprocess.GenerateBControllerCommandLine(command_line, browser_config, {})
-        process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
+        try:
+            process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
+        except:
+            print "Error running '%s'." % subprocess.list2cmdline(b_cmd)
+            raise
 
         timeout = True
         total_time = 0

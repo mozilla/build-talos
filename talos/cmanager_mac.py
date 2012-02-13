@@ -48,10 +48,14 @@ def GetProcessData(pid):
     as a list (pid, vsz, rss)
   """
   command = ['ps -o pid,vsize,rss -p'+str(pid)]
-  handle = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
-  handle.wait()
-  data = handle.stdout.readlines()
-  
+  try:
+    handle = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+    handle.wait()
+    data = handle.stdout.readlines()
+  except:
+    print "Unexpected error executing '%s': %s", (cmdline, sys.exc_info())
+    raise
+
   # First line is header output should look like:
   # PID      VSZ    RSS
   # 3210    75964    920 

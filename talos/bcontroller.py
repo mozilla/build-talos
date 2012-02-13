@@ -108,23 +108,36 @@ class BrowserWaiter(threading.Thread):
       etlname = 'test.etl'
 
       #start_xperf.py -c <configfile> -e <etl filename>
-      subprocess.call([sys.executable,
-                       os.path.join('xtalos', 'start_xperf.py'),
-                       '-c', self.configFile, '-e', etlname])
+      cmd = [sys.executable, os.path.join('xtalos', 'start_xperf.py'), '-c', self.configFile, '-e', etlname]
+      try:
+        subprocess.call(cmd)
+      except:
+        print "Error running '%s'." % subprocess.list2cmdline(cmd)
+        self.returncode = 1
 
       self.returncode = os.system(self.command)
 
       #stop_xperf.py -x <path to xperf.exe>
       #etlparser.py -o <outputname[.csv]> -p <process_name (i.e. firefox.exe)> -c <path to configfile> -e <xperf_output[.etl]>
-      subprocess.call([sys.executable,
-                       os.path.join('xtalos', 'stop_xperf.py'),
-                       '-x', self.xperf_path])
-      subprocess.call([sys.executable,
-                       os.path.join('xtalos', 'etlparser.py'),
-                       '-o', csvname,
-                       '-p', self.process,
-                       '-e', etlname,
-                       '-c', self.configFile])
+      cmd = [sys.executable, os.path.join('xtalos', 'stop_xperf.py'), '-x', self.xperf_path]
+      try:
+        subprocess.call(cmd)
+      except:
+        print "Error running '%s'." % subprocess.list2cmdline(cmd)
+        self.returncode = 1
+
+      cmd = [sys.executable,
+             os.path.join('xtalos', 'etlparser.py'),
+             '-o', csvname,
+             '-p', self.process,
+             '-e', etlname,
+             '-c', self.configFile]
+      try:
+        subprocess.call(cmd)
+      except:
+        print "Error running '%s'." % subprocess.list2cmdline(cmd)
+        self.returncode = 1
+
       print "__xperf_data_begin__"
       fhandle = open(csvname, 'r')
       print fhandle.read()

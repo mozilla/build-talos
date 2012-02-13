@@ -101,13 +101,13 @@ def GetXRes(pids):
   """Returns the total bytes used by X or raises an error if total bytes is not available"""
   XRes = 0
   for pid in pids:
-    try: 
-      cmdline = "xrestop -m 1 -b | grep -A 15 " + str(pid) + " | tr -d \"\n\" | sed \"s/.*total bytes.*: ~//g\""
+    cmdline = "xrestop -m 1 -b | grep -A 15 " + str(pid) + " | tr -d \"\n\" | sed \"s/.*total bytes.*: ~//g\""
+    try:
       pipe = subprocess.Popen(cmdline, shell=True, stdout=-1).stdout
       data = pipe.read()
       pipe.close()
     except:
-      print "Unexpected error:", sys.exc_info()
+      print "Unexpected error executing '%s': %s", (cmdline, sys.exc_info())
       raise
     try:
       data = float(data)
