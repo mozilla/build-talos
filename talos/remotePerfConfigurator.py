@@ -179,6 +179,7 @@ class remoteTalosOptions(pc.TalosOptions):
         defaults["fennecIDs"] = ''
 
         defaults["sampleConfig"] = 'remote.config'
+        defaults["extensions"] = ['${talos}/pageloader']
         self.set_defaults(**defaults)
 
     def verifyCommandLine(self, args, options):

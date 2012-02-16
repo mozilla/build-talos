@@ -22,25 +22,7 @@ except:
 
 # globals
 here = os.path.dirname(os.path.abspath(__file__))
-pageloader = 'http://hg.mozilla.org/build/pageloader/archive/tip.zip'
 VIRTUALENV='https://raw.github.com/pypa/virtualenv/develop/virtualenv.py'
-
-def get_pageloader(dest):
-    """
-    downloads pageloader and packages as an .xpi
-    """
-    output = os.path.join(dest, 'page_load_test', 'pageloader.xpi')
-    output = zipfile.ZipFile(dest, mode='w')
-    buffer = StringIO() # unfortunately, urllib2 "file like objects" do not have seek
-    buffer.write(urllib2.urlopen(pageloader).read())
-    input = zipfile.ZipFile(buffer)
-    for member in input.infolist():
-        contents = input.read(member)
-        member.filename = member.filename.split(os.path.sep, 1)[-1]
-        if member.filename == '.hg_archival.txt':
-            continue # ignore the hg generated file
-        output.writestr(member, contents)
-    output.close()
 
 def which(binary, path=os.environ['PATH']):
     dirs = path.split(os.pathsep)
@@ -56,9 +38,6 @@ def main(args=sys.argv[1:]):
     # ensure setup.py exists
     setup_py = os.path.join(here, 'setup.py')
     assert os.path.exists(setup_py), "setup.py not found"
-    # ensure page_load_test exists and is a directory
-    page_load_test = os.path.join(here, 'talos', 'page_load_test')
-    assert os.path.exists(page_load_test) and os.path.isdir(page_load_test), "Missing page_load_test directory"
 
     # create a virtualenv
     virtualenv = which('virtualenv') or which('virtualenv.py')
@@ -84,9 +63,6 @@ def main(args=sys.argv[1:]):
 
     # install talos into the virtualenv
     call([os.path.abspath(virtualenv_python), 'setup.py', 'develop'], cwd=here)
-
-    # get pageloader
-    get_pageloader(os.path.join(page_load_test, 'pageloader.xpi'))
 
 if __name__ == '__main__':
     main()

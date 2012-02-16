@@ -42,6 +42,7 @@ import filter
 import optparse
 import os
 import re
+import string
 import sys
 import time
 import urlparse
@@ -52,6 +53,9 @@ from utils import talosError
 import post_file
 from ttest import TTest
 from results import PageloaderResults
+
+# directory of this file
+here = os.path.dirname(os.path.realpath(__file__))
 
 def shortName(name):
   names = {"Working Set": "memset",
@@ -351,7 +355,7 @@ def browserInfo(browser_config, devicemanager = None):
         remoteAppIni = '/data/data/' + browser_config['browser_path'] + '/' + appIniFileName
       else:
         remoteAppIni = browser_config['deviceroot'] + '/' + appIniFileName
-      if (not os.path.isfile('remoteapp.ini')):
+      if not os.path.isfile('remoteapp.ini'):
         devicemanager.getFile(remoteAppIni, 'remoteapp.ini')
       config.read('remoteapp.ini')
     else:
@@ -496,6 +500,16 @@ def test_file(filename, options, parsed):
   browser_config.update(dict([(i, yaml_config[i]) for i in required]))
   browser_config.update(dict([(i, yaml_config.get(i, j)) for i, j in optional.items()]))
 
+  # fix paths to substitute
+  # `os.path.dirname(os.path.abspath(__file__))` for %(talosroot)s
+  # https://bugzilla.mozilla.org/show_bug.cgi?id=705809
+  def interpolatePath(path):
+      return string.Template(path).safe_substitute(talos=here)
+  browser_config['bundles'] = dict([(i, interpolatePath(j))
+                                    for i,j in browser_config['bundles'].items()])
+  browser_config['extensions'] = [interpolatePath(i)
+                                  for i in browser_config['extensions']]
+
   # get device manager if specified
   dm = None
   if browser_config['remote'] == True:
@@ -546,7 +560,7 @@ def test_file(filename, options, parsed):
 
     if port:
       import mozhttpd
-      httpd = mozhttpd.MozHttpd(host=url.hostname, port=int(port), docroot=os.path.split(os.path.realpath(__file__))[0])
+      httpd = mozhttpd.MozHttpd(host=url.hostname, port=int(port), docroot=here)
       httpd.start()
     else:
       print "WARNING: unable to start web server without custom port configured"
@@ -555,6 +569,7 @@ def test_file(filename, options, parsed):
   results = {}
   utils.startTimer()
   utils.stamped_msg(title, "Started")
+  csv_filters = [filter.ignore_max, filter.mean]
   for test in tests:
     testname = test['name']
     utils.stamped_msg("Running test " + testname, "Started")
@@ -569,7 +584,6 @@ def test_file(filename, options, parsed):
       # https://github.com/mozilla/graphs/blob/master/server/pyfomatic/collect.py#L212
       # ultimately, this should not be in Talos:
       # https://bugzilla.mozilla.org/show_bug.cgi?id=721902
-      csv_filters = [filter.ignore_max, filter.mean]
       if csv_dir:
         send_to_csv(csv_dir, {testname : results[testname]}, csv_filters)
       if options["to_screen"] or options["amo"]:
@@ -603,7 +617,7 @@ def test_file(filename, options, parsed):
       #failed to send results, just print to screen and then report graph server error
       for test in tests:
         testname = test['name']
-        send_to_csv(None, {testname : results[testname]})
+        send_to_csv(None, {testname : results[testname]}, csv_filters)
       print '\nFAIL: ' + e.msg.replace('\n', '\nRETURN:')
       raise e
 
@@ -611,7 +625,7 @@ def main(args=sys.argv[1:]):
 
   # parse command line options
   usage = "%prog [options] manifest.yml [manifest.yml ...]"
-  parser = PerfConfigurator.TalosOptions()
+  parser = PerfConfigurator.TalosOptions(usage=usage)
   parser.add_option('-d', '--debug', dest='debug',
                     action='store_true', default=False,
                     help="enable debug")

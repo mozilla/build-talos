@@ -71,17 +71,14 @@ class FFSetup(object):
         if options <> None:
             self.intializeRemoteDevice(options)
 
-    def initializeRemoteDevice(self, options, hostproc = None):
+    def initializeRemoteDevice(self, options, hostproc=None):
         self._remoteWebServer = options['webserver']
         self._deviceroot = options['deviceroot']
         self._host = options['host']
         self._port = options['port']
         self._env = options['env']
-        if (hostproc == None):
-          self._hostproc = self.ffprocess
-        else:
-          self._hostproc = hostproc
-        
+        self._hostproc = hostproc or self.ffprocess
+
     def PrefString(self, name, value, newline):
         """Helper function to create a pref string for profile prefs.js
             in the form 'user_pref("name", value);<newline>'
@@ -155,11 +152,14 @@ class FFSetup(object):
 
         tmpdir = None
         addon_id = None
-        tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
-        zip_extractall(zipfile.ZipFile(addon), tmpdir)
-        addonTmpPath = tmpdir
+        if os.path.isdir(addon):
+            addonSrcPath = addon
+        else:
+            tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
+            zip_extractall(zipfile.ZipFile(addon), tmpdir)
+            addonSrcPath = tmpdir
 
-        doc = minidom.parse(os.path.join(addonTmpPath, 'install.rdf')) 
+        doc = minidom.parse(os.path.join(addonSrcPath, 'install.rdf')) 
         # description_element =
         # tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description/')
 
@@ -170,22 +170,25 @@ class FFSetup(object):
           desc = doc.getElementsByTagName('RDF:Description')
           addon_id = find_id(desc)
           unpack = find_unpack(desc)
-        
+
         if not addon_id: #bail out, we don't have an addon id
             raise talosError("no addon_id found for extension")
-                
-        if (str.lower(unpack) == 'true'):  #install addon unpacked
+
+        if tmpdir is None or unpack.lower() == 'true':  #install addon unpacked
             addon_path = os.path.join(profile_path, 'extensions', addon_id)
-            #if an old copy is already installed, remove it 
-            if os.path.isdir(addon_path): 
-                shutil.rmtree(addon_path, ignore_errors=True) 
-            shutil.move(addonTmpPath, addon_path) 
+            #if an old copy is already installed, remove it
+            if os.path.isdir(addon_path):
+                shutil.rmtree(addon_path, ignore_errors=True)
+            shutil.copytree(addonSrcPath, addon_path)
         else: #do not unpack addon
             addon_file = os.path.join(profile_path, 'extensions', addon_id + '.xpi')
-            if os.path.isfile(addon_file): 
-                os.remove(addon_file) 
+            if os.path.isfile(addon_file):
+                os.remove(addon_file)
             shutil.copy(addon, addon_file)
-            shutil.rmtree(addonTmpPath, ignore_errors=True)
+
+        if tmpdir:
+            # cleanup
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
     def CreateTempProfileDir(self, source_profile, prefs, extensions, webserver):
         """Creates a temporary profile directory from the source profile directory
@@ -220,18 +223,18 @@ class FFSetup(object):
         if (webserver and webserver <> 'localhost'):
              self.ffprocess.addRemoteServerPref(profile_dir, webserver)
 
-        # Add links to all the extensions.
+        # Install the extensions.
         extension_dir = os.path.join(profile_dir, "extensions")
         if not os.path.exists(extension_dir):
             os.makedirs(extension_dir)
         for addon in extensions:
             self.install_addon(profile_dir, addon)
 
-        if (webserver <> 'localhost' and self._host != ''):
+        if webserver != 'localhost' and self._host != '':
             remote_dir = self.ffprocess.copyDirToDevice(profile_dir)
             profile_dir = remote_dir
         return temp_dir, profile_dir
-        
+
     def InstallInBrowser(self, browser_path, dir_path):
         """
             Take the given directory and copies it to appropriate location in the given
@@ -248,13 +251,29 @@ class FFSetup(object):
         Take the given directory and unzip the bundle into
         distribution/bundles/bundlename.
         """
+
+        # sanity check
+        if not os.path.exists(bundle_path):
+            raise talosError("bundle path '%s' does not exist")
+
         destpath = os.path.join(os.path.dirname(browser_path),
                                 'distribution', 'bundles', bundlename)
         if os.path.exists(destpath):
             shutil.rmtree(destpath)
 
-        os.makedirs(destpath)
-        zip_extractall(zipfile.ZipFile(bundle_path), destpath)
+        if os.path.isdir(bundle_path):
+            # XXX work around shutil.copytree:
+            # "The destination directory must not already exist."
+            parent = os.path.dirname(destpath)
+            if not os.path.exists(parent):
+                os.makedirs(parent)
+
+            # bundle is a directory
+            shutil.copytree(bundle_path, destpath)
+        else:
+            # bundle is an xpi
+            os.makedirs(destpath)
+            zip_extractall(zipfile.ZipFile(bundle_path), destpath)
 
     def InitializeNewProfile(self, profile_dir, browser_config):
         """Runs browser with the new profile directory, to negate any performance

@@ -100,6 +100,18 @@ class PerfConfigurator(object):
         return self._getTime(self.buildid)
 
     def convertLine(self, line, testMode, printMe):
+        """
+        given a line in the sample config file convert this to an output
+        line or lines in the output .yml file
+        """
+        # XXX This is not really much of a parser,
+        # more like an elaborate version of sed
+        # The tokens sought must be in the .config file or parsing will fail
+        # Several tokens, such as `extensions: []`, `filters: []`
+        # exist and are required to exist in the source .config files
+        # for the sake of parsing.  We are also very whitespace sensitive.
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=725097
+        # should fix this.
 
         # testmode == writing out a subset of talos tests
         if testMode:
@@ -124,7 +136,7 @@ class PerfConfigurator(object):
 
                         if self.noChrome:
                             line += "  tpchrome: False\n"
-                            
+
                         if self.mozAfterPaint:
                             line += "  tpmozafterpaint: True\n"
 
@@ -198,7 +210,7 @@ class PerfConfigurator(object):
             if ('%s:' % item) in line:
                 newline = '%s: %s\n' % (item, getattr(self, item))
 
-        if self.extensions and ('extensions: {}' in line):
+        if self.extensions and ('extensions: []' in line):
             newline = 'extensions:\n%s\n' % writeList(self.extensions)
 
         if self.filters and ('filters:' in line):
@@ -433,7 +445,7 @@ class TalosOptions(optparse.OptionParser):
         defaults["testPrefix"] = ''
 
         self.add_option("--extension", dest="extensions", action="append",
-                        help="Extension to install while running")
+                        help="Extension to install while running [DEFAULT: %default]")
         defaults["extensions"] = []
 
         self.add_option("--fast",
