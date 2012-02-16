@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://fennecbench/skin/overlay.css" type="text/css"?>
+<overlay id="fennecbench-overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script type="application/x-javascript" src="quit.js"/>
+  <script type="application/x-javascript" src="report.js"/>
+  <script type="application/x-javascript" src="pan.js"/>
+  <script type="application/x-javascript" src="zoom.js"/>
+  <script type="application/x-javascript" src="pageload.js"/>
+  <script type="application/x-javascript" src="overlay.js"/>
+  <script type="application/javascript;version=1.7">
+    messageManager.loadFrameScript("data:,addEventListener('fbContentEvent', function (e) { sendAsyncMessage('fbChromeEvent', {'test':e.getData('test'), 'webServer':e.getData('webServer')}); }, false, true);", true);
+  </script>
+  <toolbar id="toolbar-main">
+    <toolbarbutton id="fennecbench-toolbar-button"
+      oncommand="BenchFE.nextTest();"/>
+  </toolbar>
+</overlay>
+
