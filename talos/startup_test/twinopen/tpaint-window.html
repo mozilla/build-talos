@@ -1,13 +1,13 @@
 <html>
 <script language="javascript" type="text/javascript">
 function painted() {
-  window.removeEventListener("MozAfterPaint", painted, false);
+  window.removeEventListener("MozAfterPaint", painted, true);
   var gLoadEventTime = (new Date()).getTime();
   if (window.opener)
     window.setTimeout('window.opener.childIsOpen('+gLoadEventTime+');',1000);
 }
 
-window.addEventListener("MozAfterPaint", painted, false);  
+window.addEventListener("MozAfterPaint", painted, true);  
 </script>
 
 <body></body>

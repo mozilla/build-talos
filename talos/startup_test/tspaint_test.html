@@ -46,7 +46,7 @@
 var gBegin = document.location.search.split('=')[1]; // ?begin=nnnnn
 
 function painted() {
-  window.removeEventListener("MozAfterPaint", painted, false);
+  window.removeEventListener("MozAfterPaint", painted, true);
 
   var now = (new Date()).getTime();
   var startupTime = now - gBegin;
@@ -74,7 +74,7 @@ function painted() {
     window.close();
   }, 0);
 }
-window.addEventListener("MozAfterPaint", painted, false);
+window.addEventListener("MozAfterPaint", painted, true);
 
 </script>
 <body></body>
