@@ -164,7 +164,7 @@ class PerfConfigurator(object):
 
                 if "tpmanifest:" in line:
                     if self.tpmanifest:
-                        line = "  tpmanifest: %s" % self.tpmanifest
+                        line = "  tpmanifest: %s\n" % self.tpmanifest
                     # if --develop flag specified, generate .develop manifest
                     # and change manifest name in generated config file
                     if self.develop:
