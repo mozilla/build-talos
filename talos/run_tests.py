@@ -407,6 +407,8 @@ def buildCommandLine(test, options):
   if test['tpnoisy']:
     url += ' -tpnoisy'
   url += ' -tpformat %(tpformat)s -tpcycles %(tpcycles)s' % test
+  if test['tppagecycles']:
+    url += ' -tppagecycles %(tppagecycles)s' % test
   if test['rss']:
     url += ' -rss'
   if test['tprender']:

@@ -143,6 +143,9 @@ class PerfConfigurator(object):
                         if self.tpcycles:
                             line = "  tpcycles: %s\n" % self.tpcycles
 
+                        if self.tppagecycles:
+                            line = "  tppagecycles: %s\n" % self.tppagecycles
+
                         if self.rss:
                             line += "  rss: True\n"
 
@@ -537,6 +540,10 @@ class TalosOptions(optparse.OptionParser):
                         action='store', dest='tpcycles',
                         help="number of pageloader cycles to run")
         defaults["tpcycles"] = None
+        self.add_option('--tppagecycles', type='int',
+                        action='store', dest='tppagecycles',
+                        help="number of pageloader cycles to run for each page in the manifest")
+        defaults["tppagecycles"] = None
         self.add_option('--tpdelay', type='int',
                         action='store', dest='tpdelay',
                         help="length of pageloader delay")

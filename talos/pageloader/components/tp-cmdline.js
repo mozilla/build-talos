@@ -80,6 +80,7 @@ PageLoaderCmdLineHandler.prototype =
       }
 
       args.numCycles = cmdLine.handleFlagWithParam("tpcycles", false);
+      args.numPageCycles = cmdLine.handleFlagWithParam("tppagecycles", false);
       args.startIndex = cmdLine.handleFlagWithParam("tpstart", false);
       args.endIndex = cmdLine.handleFlagWithParam("tpend", false);
       args.filter = cmdLine.handleFlagWithParam("tpfilter", false);
@@ -114,6 +115,7 @@ PageLoaderCmdLineHandler.prototype =
   "  -tp <file>         Run pageload perf tests on given manifest\n" +
   "  -tpfilter str      Only include pages from manifest that contain str (regexp)\n" +
   "  -tpcycles n        Loop through pages n times\n" +
+  "  -tppagecycles n    Loop through each page n times before going onto the next page\n" +
   "  -tpstart n         Start at index n in the manifest\n" +
   "  -tpend n           End with index n in the manifest\n" +
   "  -tpformat f1,f2,.. Report format(s) to use\n" +

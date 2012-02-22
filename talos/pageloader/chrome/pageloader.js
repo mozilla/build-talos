@@ -45,6 +45,7 @@ try {
 } catch (ex) {}
 
 var NUM_CYCLES = 5;
+var numPageCycles = 1;
 
 var pageFilterRegexp = null;
 var reportFormat = "js";
@@ -58,6 +59,7 @@ var pages;
 var pageIndex;
 var start_time;
 var cycle;
+var pageCycle;
 var report;
 var renderReport;
 var noisy = false;
@@ -66,7 +68,7 @@ var delay = 250;
 var timeoutEvent = -1;
 var running = false;
 var forceCC = true;
-var reportRSS = false;
+var reportRSS = true;
 
 var useMozAfterPaint = false;
 var gPaintWindow = window;
@@ -92,6 +94,7 @@ function plInit() {
   running = true;
 
   cycle = 0;
+  pageCycle = 1;
 
   try {
     var args = window.arguments[0].wrappedJSObject;
@@ -102,6 +105,7 @@ function plInit() {
     if (args.startIndex) startIndex = parseInt(args.startIndex);
     if (args.endIndex) endIndex = parseInt(args.endIndex);
     if (args.numCycles) NUM_CYCLES = parseInt(args.numCycles);
+    if (args.numPageCycles) numPageCycles = parseInt(args.numPageCycles);
     if (args.format) reportFormat = args.format;
     if (args.width) winWidth = parseInt(args.width);
     if (args.height) winHeight = parseInt(args.height);
@@ -319,9 +323,17 @@ function loadFail() {
 }
 
 function plNextPage() {
-  if (pageIndex < pages.length-1) {
+  var doNextPage = false;
+  if (pageCycle < numPageCycles) {
+    pageCycle++;
+    doNextPage = true;
+  } else if (pageIndex < pages.length-1) {
     pageIndex++;
+    pageCycle = 1;
+    doNextPage = true;
+  }
 
+  if (doNextPage == true) {
     if (forceCC) {
       var tccstart = new Date();
       window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
@@ -348,7 +360,7 @@ function plRecordTime(time) {
   var nextName = pages[i].url.spec;
   report.recordTime(pageIndex, time);
   if (noisy) {
-    dumpLine("Cycle " + (cycle+1) + ": loaded " + pageName + " (next: " + nextName + ")");
+    dumpLine("Cycle " + (cycle+1) + "(" + pageCycle + ")" + ": loaded " + pageName + " (next: " + nextName + ")");
   }
 }
 
@@ -576,6 +588,7 @@ function plStopAll(force) {
   try {
     if (force == false) {
       pageIndex = 0;
+      pageCycle = 1;
       if (cycle < NUM_CYCLES-1) {
         cycle++;
         setTimeout(plLoadPage, delay);
