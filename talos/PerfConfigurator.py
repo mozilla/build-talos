@@ -38,6 +38,13 @@ class PerfConfigurator(object):
     def __init__(self, **options):
         self.__dict__.update(options)
 
+        self.deviceroot = None # for tpmanifest interpolation
+        # XXX this is here because convertLine is monolithic
+        # so we proscribe the behaviour according to the subclass here.
+        # If instead we made the parser more flexible then instead
+        # remotePerfConfigurator could sensibly override this
+        # behaviour without having to touch PerfConfigurator
+
         # use attributes from the options dict
         self.attributes = options.keys() + ['currentDate', 'masterIniSubpath']
 
@@ -168,11 +175,11 @@ class PerfConfigurator(object):
                 if "tpmanifest:" in line:
                     if self.tpmanifest:
                         line = "  tpmanifest: %s\n" % self.tpmanifest
+
                     # if --develop flag specified, generate .develop manifest
                     # and change manifest name in generated config file
-                    if self.develop:
-                        self.buildRemoteManifest(line.split(":")[1].strip())
-                        line = line.strip("\n") + ".develop\n"
+                    if self.develop or self.deviceroot:
+                        line = "  tpmanifest: %s\n" % self.buildRemoteManifest(line.split(":")[1].strip())
 
             return printMe, line
 
