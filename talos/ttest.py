@@ -141,8 +141,9 @@ class TTest(object):
     def initializeProfile(self, profile_dir, browser_config):
         if not self._ffsetup.InitializeNewProfile(profile_dir, browser_config):
             raise talosError("failed to initialize browser")
-        if self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
-            raise talosError("browser failed to close after being initialized") 
+        processes = self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process'])
+        if processes:
+            raise talosError("browser failed to close after being initialized")
 
     def cleanupProfile(self, dir):
         # Delete the temp profile directory  Make it writeable first,
@@ -248,7 +249,8 @@ class TTest(object):
             if running_processes:
                 msg = " already running before testing started (unclean system)"
                 utils.debug(browser_config['process'] + msg)
-                raise talosError("Found processes still running: %s. Please close them before running talos." % ", ".join(running_processes))
+                running_processes_str = ", ".join([('[%s] %s' % (pid, process_name)) for pid, process_name in running_processes])
+                raise talosError("Found processes still running: %s. Please close them before running talos." % running_processes_str)
 
             for bundlename in browser_config['bundles']:
                 self._ffsetup.InstallBundleInBrowser(browser_config['browser_path'],

@@ -37,8 +37,10 @@
 """Utility functions"""
 
 import os
-import time
+import shlex
+import subprocess
 import sys
+import time
 import yaml
 
 DEBUG = 0
@@ -102,8 +104,8 @@ def stamped_msg(msg_title, msg_action):
   print msg_format % (msg_title, msg_action, time.strftime(time_format, time.localtime()))
   sys.stdout.flush()
 
-def setEnvironmentVars(newVars): 
-   """Sets environment variables as specified by env, an array of variables 
+def setEnvironmentVars(newVars):
+   """Sets environment variables as specified by env, an array of variables
    from sample.config"""
    global saved_environment
    env = os.environ
@@ -116,9 +118,8 @@ def setEnvironmentVars(newVars):
      env[var] = str(newVars[var])
 
 def restoreEnvironmentVars():
-  """Restores environment variables to the state they were in before 
+  """Restores environment variables to the state they were in before
   setEnvironmentVars() was last called"""
-  global saved_environment
   for var in saved_environment:
     os.environ[var] = saved_environment[var]
 
@@ -145,19 +146,66 @@ def readConfigFile(filename):
   return yaml_config
 
 def zip_extractall(zipfile, rootdir):
-	#moved from ffsetup.py only required for python versions lower than 2.6
-    """Python 2.4 compatibility instead of ZipFile.extractall."""
-    for name in zipfile.namelist():
-        if name.endswith('/'):
-            if not os.path.exists(os.path.join(rootdir, name)):
-                os.makedirs(os.path.join(rootdir, name))
-        else:
-            destfile = os.path.join(rootdir, name)
-            destdir = os.path.dirname(destfile)
-            if not os.path.isdir(destdir):
-                os.makedirs(destdir)
-            data = zipfile.read(name)
-            f = open(destfile, 'wb')
-            f.write(data)
-            f.close()
+  #moved from ffsetup.py only required for python versions lower than 2.6
+  """Python 2.4 compatibility instead of ZipFile.extractall."""
+  for name in zipfile.namelist():
+    if name.endswith('/'):
+      if not os.path.exists(os.path.join(rootdir, name)):
+        os.makedirs(os.path.join(rootdir, name))
+      else:
+        destfile = os.path.join(rootdir, name)
+        destdir = os.path.dirname(destfile)
+        if not os.path.isdir(destdir):
+          os.makedirs(destdir)
+        data = zipfile.read(name)
+        f = open(destfile, 'wb')
+        f.write(data)
+        f.close()
 
+def ps(arg='axwww'):
+  """
+  python front-end to `ps`
+  http://en.wikipedia.org/wiki/Ps_%28Unix%29
+  """
+  retval = []
+  process = subprocess.Popen(['ps', arg], stdout=subprocess.PIPE)
+  stdout, _ = process.communicate()
+  header = None
+  for line in stdout.splitlines():
+    line = line.strip()
+    if header is None:
+      # first line is the header
+      header = line.split()
+      continue
+    split = line.split(None, len(header)-1)
+    process_dict = dict(zip(header, split))
+    retval.append(process_dict)
+  return retval
+
+def is_running(pid, psarg='axwww'):
+  """returns if a pid is running"""
+  return bool([i for i in ps(psarg) if pid == int(i['PID'])])
+
+def running_processes(name, psarg='axwww', defunct=False):
+  """
+  returns a list of 2-tuples of running processes:
+  (pid, ['path/to/executable', 'args', '...'])
+  with the executable named `name`.
+  - defunct: whether to return defunct processes
+  """
+  retval = []
+  for process in ps(psarg):
+    command = process['COMMAND']
+    command = shlex.split(command)
+    if command[-1] == '<defunct>':
+      command = command[:-1]
+      if not command or not defunct:
+        continue
+    if 'STAT' in process and not defunct:
+      if process['STAT'] == 'Z+':
+        continue
+    prog = command[0]
+    basename = os.path.basename(prog)
+    if basename == name:
+      retval.append((int(process['PID']), command))
+  return retval

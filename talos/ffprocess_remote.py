@@ -113,22 +113,20 @@ class RemoteProcess(FFProcess):
 
         # refresh list of processes
         data = self.GetRunningProcesses()
-        if (data == None):
-            return False
+        if not data:
+            return []
 
         processes_with_names = []
         for process_name in process_names:
             try:
                 procre = re.compile(".*" + process_name + ".*")
-                for line in data:
-                    if (procre.match(line[1])):
-                        processes_with_names.append(process_name)
-                        continue
+                for pid, appname, userid in data:
+                    if procre.match(appname):
+                        processes_with_names.append((pid, process_name))
             except:
                 # Might get an exception if there are no instances of the process running.
                 continue
         return processes_with_names
-  
 
     def TerminateAllProcesses(self, *process_names):
         """Helper function to terminate all processes with the given process name

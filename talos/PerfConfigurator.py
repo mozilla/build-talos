@@ -38,7 +38,7 @@ class PerfConfigurator(object):
     def __init__(self, **options):
         self.__dict__.update(options)
 
-        self.deviceroot = None # for tpmanifest interpolation
+        self.deviceroot = options.get('deviceroot') # for tpmanifest interpolation
         # XXX this is here because convertLine is monolithic
         # so we proscribe the behaviour according to the subclass here.
         # If instead we made the parser more flexible then instead

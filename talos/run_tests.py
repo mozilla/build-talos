@@ -476,7 +476,7 @@ def test_file(filename, options, parsed):
   # set browser_config
   required = ['preferences', 'extensions',
               'browser_path', 'browser_log', 'browser_wait',
-              'process', 'extra_args', 'branch', 'buildid', 'env', 'init_url'
+              'extra_args', 'branch', 'buildid', 'env', 'init_url'
               ]
   optional = {'addon_id': 'NULL',
               'bcontroller_config': 'bcontroller.yml',
@@ -488,6 +488,7 @@ def test_file(filename, options, parsed):
               'dirs': {},
               'host': yaml_config.get('deviceip', ''), # XXX names should match!
               'port': yaml_config.get('deviceport', ''), # XXX names should match!
+              'process': '',
               'remote': False,
               'fennecIDs': '',
               'repository': 'NULL',
@@ -501,6 +502,10 @@ def test_file(filename, options, parsed):
   browser_config = dict(title=title)
   browser_config.update(dict([(i, yaml_config[i]) for i in required]))
   browser_config.update(dict([(i, yaml_config.get(i, j)) for i, j in optional.items()]))
+
+  # get the process name from the path to the browser
+  if not browser_config['process']:
+      browser_config['process'] = os.path.basename(browser_config['browser_path'])
 
   # fix paths to substitute
   # `os.path.dirname(os.path.abspath(__file__))` for %(talosroot)s
