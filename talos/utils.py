@@ -195,7 +195,9 @@ def running_processes(name, psarg='axwww', defunct=False):
   """
   retval = []
   for process in ps(psarg):
-    command = process['COMMAND']
+    command = process.get('COMMAND', process.get('CMD'))
+    if command is None:
+      raise talosError("command not found in %s" % process)
     command = shlex.split(command)
     if command[-1] == '<defunct>':
       command = command[:-1]

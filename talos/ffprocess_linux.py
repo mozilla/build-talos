@@ -90,7 +90,7 @@ class LinuxProcess(FFProcess):
         ret = ''
         try:
             for sig in ('SIGABRT', 'SIGTERM', 'SIGKILL'):
-                if utils._is_running(pid):
+                if utils.is_running(pid):
                     os.kill(pid, getattr(signal, sig))
                     time.sleep(timeout)
                 ret = 'terminated with SIGABRT'
