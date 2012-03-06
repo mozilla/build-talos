@@ -20,6 +20,7 @@ from datetime import datetime
 from os import path
 import os
 import optparse
+import utils
 
 defaultTitle = "qm-pxp01"
 
@@ -179,7 +180,9 @@ class PerfConfigurator(object):
                     # if --develop flag specified, generate .develop manifest
                     # and change manifest name in generated config file
                     if self.develop or self.deviceroot:
-                        line = "  tpmanifest: %s\n" % self.buildRemoteManifest(line.split(":")[1].strip())
+                        manifest = line.split(":")[1].strip()
+                        if manifest:
+                            line = "  tpmanifest: %s\n" % self.buildRemoteManifest(utils.interpolatePath(manifest))
 
             return printMe, line
 

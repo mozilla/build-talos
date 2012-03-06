@@ -49,6 +49,7 @@ import urlparse
 import yaml
 import PerfConfigurator
 import utils
+import urllib
 from utils import talosError
 import post_file
 from ttest import TTest
@@ -437,8 +438,17 @@ def test_file(filename, options, parsed):
   options = options.__dict__
   yaml_config.update(dict([(i,j) for i, j in options.items() if i in parsed]))
 
+  # Check for profile_path, tpmanifest and interpolate based on Talos root
+  # https://bugzilla.mozilla.org/show_bug.cgi?id=727711
   # Build command line from config
+  paths = ['profile_path', 'tpmanifest', 'head', 'tail']
+  
   for test in tests:
+    for path in paths:
+      if test.get(path):
+        test[path] = utils.interpolatePath(test[path])
+    if test.get('tpmanifest'):
+        test['tpmanifest'] = os.path.normpath('file:/%s' % (urllib.quote(test['tpmanifest'], '/\\t:\\')))
     if not test['url']:
       test['url'] = buildCommandLine(test, options)
 
@@ -508,14 +518,15 @@ def test_file(filename, options, parsed):
       browser_config['process'] = os.path.basename(browser_config['browser_path'])
 
   # fix paths to substitute
-  # `os.path.dirname(os.path.abspath(__file__))` for %(talosroot)s
+  # `os.path.dirname(os.path.abspath(__file__))` for ${talos}
   # https://bugzilla.mozilla.org/show_bug.cgi?id=705809
-  def interpolatePath(path):
-      return string.Template(path).safe_substitute(talos=here)
-  browser_config['bundles'] = dict([(i, interpolatePath(j))
+  browser_config['bundles'] = dict([(i, utils.interpolatePath(j))
                                     for i,j in browser_config['bundles'].items()])
-  browser_config['extensions'] = [interpolatePath(i)
+  browser_config['extensions'] = [utils.interpolatePath(i)
                                   for i in browser_config['extensions']]
+  browser_config['dirs'] = dict([(i, utils.interpolatePath(j))
+                                    for i,j in browser_config['dirs'].items()])
+  browser_config['bcontroller_config'] = utils.interpolatePath(browser_config['bcontroller_config'])
 
   # get device manager if specified
   dm = None
@@ -527,12 +538,8 @@ def test_file(filename, options, parsed):
         from mozdevice import devicemanagerSUT
         dm = devicemanagerSUT.DeviceManagerSUT(browser_config['host'], browser_config['port'])
 
-  #normalize paths to work accross platforms
+  # normalize browser path to work across platforms
   browser_config['browser_path'] = os.path.normpath(browser_config['browser_path'])
-  for dir in browser_config['dirs']:
-    browser_config['dirs'][dir] = os.path.normpath(browser_config['dirs'][dir])
-  for bname in browser_config['bundles']:
-    browser_config['bundles'][bname] = os.path.normpath(browser_config['bundles'][bname])
 
   # get test date in seconds since epoch
   if testdate:

@@ -124,7 +124,8 @@ class FFProcess(object):
         fhandle.write(content)
         fhandle.close()
 
-        return [sys.executable, 'bcontroller.py',
+        here = os.path.dirname(os.path.realpath(__file__))
+        return [sys.executable, os.path.join(here, 'bcontroller.py'),
                 '--configFile', browser_config['bcontroller_config']]
 
     def addRemoteServerPref(self, profile_dir, server):

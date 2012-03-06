@@ -42,6 +42,10 @@ import subprocess
 import sys
 import time
 import yaml
+import string
+
+# directory of this file for use with interpolatePath()
+here = os.path.dirname(os.path.realpath(__file__))
 
 DEBUG = 0
 NOISY = 0
@@ -211,3 +215,7 @@ def running_processes(name, psarg='axwww', defunct=False):
     if basename == name:
       retval.append((int(process['PID']), command))
   return retval
+  
+def interpolatePath(path):
+    return string.Template(path).safe_substitute(talos=here)
+
