@@ -87,8 +87,9 @@ class FFProcess(object):
             # always gives the process a chance to close cleanly before terminating it, this takes longer
             # and we need to give it a little extra time to complete
             time.sleep(browser_wait)
-            if self.checkAllProcesses(process_name, child_process):
-                raise talosError("failed to cleanup")
+            processes = self.checkAllProcesses(process_name, child_process)
+            if processes:
+                raise talosError("failed to cleanup processes: %s" % processes)
 
         return terminate_result
 
