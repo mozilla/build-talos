@@ -382,9 +382,9 @@ def useBaseTestDefaults(base, tests):
         if test[item] is None:
           test[item] = ''
   return tests
-  
+
 def buildCommandLine(test, options):
-  
+
   # override with values from command line
   for item in test:
     if options.get(item):
@@ -442,7 +442,7 @@ def test_file(filename, options, parsed):
   # https://bugzilla.mozilla.org/show_bug.cgi?id=727711
   # Build command line from config
   paths = ['profile_path', 'tpmanifest', 'head', 'tail']
-  
+
   for test in tests:
     for path in paths:
       if test.get(path):
@@ -475,11 +475,14 @@ def test_file(filename, options, parsed):
   if not filters:
       # default filters
       if yaml_config.get('ignore_first'):
-          filters = ['ignore_first', 'median']
+          filters = [['ignore_first', [1]], ['median']]
       else:
-          filters = ['ignore_max', 'median']
+          filters = [['ignore_max'], ['median']]
   try:
-      filters = filter.filters(*filters)
+      filter_names = [f[0] for f in filters]
+      filter_functions = filter.filters(*filter_names)
+      for index in range(len(filters)):
+          filters[index][0] = filter_functions[index]
   except AssertionError, e:
       raise talosError(str(e))
 
@@ -583,7 +586,7 @@ def test_file(filename, options, parsed):
   results = {}
   utils.startTimer()
   utils.stamped_msg(title, "Started")
-  csv_filters = [filter.ignore_max, filter.mean]
+  csv_filters = [[filter.ignore_max], [filter.mean]]
   for test in tests:
     testname = test['name']
     utils.stamped_msg("Running test " + testname, "Started")

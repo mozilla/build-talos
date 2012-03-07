@@ -1,3 +1,5 @@
+import filter
+
 class PageloaderResults(object):
     """
     results from a browser_dump snippet
@@ -54,8 +56,7 @@ class PageloaderResults(object):
         for result in self.results:
             page = result['page']
             data = result['runs']
-            for _filter in filters:
-                data = _filter(data)
+            data = filter.apply(data, filters)
             retval.append([data, page])
         return retval
 

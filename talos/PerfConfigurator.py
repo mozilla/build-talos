@@ -13,14 +13,15 @@ Modified by Alice Nodelman on 2008-07-10 - added options for test selection, gra
 Modified by Benjamin Smedberg on 2009-02-27 - added option for symbols path
 """
 
+import filter
 import sys
 import re
 import time
-from datetime import datetime
-from os import path
 import os
 import optparse
 import utils
+from datetime import datetime
+from os import path
 
 defaultTitle = "qm-pxp01"
 
@@ -559,7 +560,6 @@ class TalosOptions(optparse.OptionParser):
                         help="length of pageloader delay")
         defaults["tpdelay"] = None
 
-
         self.set_defaults(**defaults)
 
     def parse_args(self, args=None, values=None):
@@ -589,6 +589,15 @@ class TalosOptions(optparse.OptionParser):
             if options.filters:
                 raise Configuration("Can't use --ignoreFirst and --filter; use --filter instead")
             options.filters = ['ignore_first', 'median']
+
+        # convert options.filters to [[filter, [args]]]
+        if options.filters:
+            for index, filter_name in enumerate(options.filters):
+                try:
+                    f = filter.parse(filter_name)
+                except Exception, e:
+                    raise Configuration("Bad value for filter '%s': %s" % (filter_name, e))
+                options.filters[index] = f
 
         # fix up extraPrefs to be a list of 2-tuples
         options.extraPrefs = [i.split('=', 1) for i in options.extraPrefs]
@@ -640,4 +649,3 @@ def main(argv=sys.argv[1:]):
 
 if __name__ == "__main__":
     sys.exit(main())
-

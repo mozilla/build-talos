@@ -28,14 +28,14 @@ scalar_filters = [mean, median, max, min]
 
 ### filters that return a list
 
-def ignore_first(series):
+def ignore_first(series, number=1):
     """
     ignore first datapoint
     """
-    if len(series) <= 1:
+    if len(series) <= number:
         # don't modify short series
         return series
-    return series[1:]
+    return series[number:]
 
 def ignore(series, function):
     """
@@ -70,6 +70,34 @@ series_filters = dict([(i.__name__, i) for i in series_filters])
 
 ### utility functions
 
+def parse(filter_name):
+    """
+    parses a filter_name like
+    "ignore_first:10" to return
+    ['ignore_first', [10]]
+    or "foo:10.1,2,5.0" to return
+    ['foo', [10.1, 2, 5.0]] .
+    The filter name strings are returned versus the functions'
+    as the data may need to be reserialized (e.g. PerfConfigurator.py)
+    """
+
+    sep = ':'
+    argsep = ','
+
+    def convert_to_number(string):
+        """convert a string to an int or float"""
+        try:
+            return int(string)
+        except ValueError:
+            return float(string)
+
+    args = []
+    if sep in filter_name:
+        filter_name, args = filter_name.split(sep, 1)
+        args = [convert_to_number(arg)
+                for arg in args.split(',')]
+    return [filter_name, args]
+
 def filters(*filter_names):
     """
     return a list of filter functions given a list of names
@@ -97,5 +125,13 @@ def filters(*filter_names):
 def apply(data, filters):
     """apply filters to a data series. does no safety check"""
     for f in filters:
-        data = f(data)
+        args = ()
+        if isinstance(f, list) or isinstance(f, tuple):
+            if len(f) == 2: # function, extra arguments
+                f, args = f
+            elif len(f) == 1: # function
+                f = f[0]
+            else:
+                raise AssertionError("Each value must be either [filter, [args]] or [filter]")
+        data = f(data, *args)
     return data
