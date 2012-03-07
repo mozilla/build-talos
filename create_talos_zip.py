@@ -7,6 +7,7 @@ create a talos.zip appropriate for testing
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tarfile
 import urllib2
@@ -70,8 +71,16 @@ def main(args=sys.argv[1:]):
     newdirs = download(*manifest)
     newfiles = [filename for _,filename in manifest]
 
+    # get the filename
+    filename = 'talos.zip'
+    process = subprocess.Popen(['hg', 'id', '-i'], cwd=here, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode: # failure
+        print >> sys.stderr, "Failed to find the changeset hash"
+    filename = 'talos.%s.zip' % stdout.strip()
+
     # make the talos.zip file
-    zip = zipfile.ZipFile('talos.zip', mode='w', compression=zipfile.ZIP_DEFLATED)
+    zip = zipfile.ZipFile(filename, mode='w', compression=zipfile.ZIP_DEFLATED)
     talosdir = os.path.abspath(os.path.join(here, 'talos'))
     for dirpath, dirnames, filenames in os.walk(talosdir):
         filenames = [i for i in filenames if not i.endswith('.pyc')]
@@ -93,7 +102,7 @@ def main(args=sys.argv[1:]):
         shutil.rmtree(newdir)
 
     # output the path to the zipfile
-    print os.path.abspath('talos.zip')
+    print os.path.abspath(filename)
 
 if __name__ == '__main__':
     main()
