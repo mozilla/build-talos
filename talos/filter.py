@@ -24,7 +24,22 @@ def median(series):
         middle = len(series)/2 # the higher of the middle 2, actually
         return 0.5*(series[middle-1] + series[middle])
 
-scalar_filters = [mean, median, max, min]
+def variance(series):
+    """
+    variance: http://en.wikipedia.org/wiki/Variance
+    """
+
+    _mean = mean(series)
+    variance = sum([(i-_mean)**2 for i in series])/float(len(series))
+    return variance
+
+def stddev(series):
+    """
+    standard deviation: http://en.wikipedia.org/wiki/Standard_deviation
+    """
+    return variance(series)**0.5
+
+scalar_filters = [mean, median, max, min, variance, stddev]
 
 ### filters that return a list
 

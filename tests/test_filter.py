@@ -11,9 +11,6 @@ import sys
 import unittest
 import talos.filter
 
-# globals
-here = os.path.dirname(os.path.abspath(__file__))
-
 class TestFilter(unittest.TestCase):
 
     data = range(30) # test data

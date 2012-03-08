@@ -6,9 +6,6 @@ class PageloaderResults(object):
     https://wiki.mozilla.org/Buildbot/Talos/DataFormat#browser_output.txt
     """
 
-    fields = ('index', 'page', 'median', 'mean', 'min', 'max')
-    numeric = ('median', 'mean', 'min', 'max')
-
     def __init__(self, string):
         """
         - string : string of browser dump
@@ -23,12 +20,10 @@ class PageloaderResults(object):
         self.results = []
         for line in lines:
             result = {}
-            r = line.split(';')
-            for index, field in enumerate(self.fields):
-                result[field] = r[index]
-            for field in self.numeric:
-                result[field] = float(result[field])
-            result['runs'] = [float(i) for i in r[6:]]
+            r = line.strip('|').split(';')
+            result['index'] = int(r[0])
+            result['page'] = r[1]
+            result['runs'] = [float(i) for i in r[2:]]
 
             # fix up page
             result['page'] = self.format_pagename(result['page'])
@@ -59,19 +54,3 @@ class PageloaderResults(object):
             data = filter.apply(data, filters)
             retval.append([data, page])
         return retval
-
-    def value(self, field):
-        return [[result[field], result['page']]
-                for result in self.results]
-
-    def median(self):
-        return self.value('median')
-
-    def mean(self):
-        return self.value('mean')
-
-    def max(self):
-        return self.value('max')
-
-    def min(self):
-        return self.value('min')
