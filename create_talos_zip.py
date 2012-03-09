@@ -21,7 +21,24 @@ manifest = [('https://raw.github.com/mozilla/mozbase/master/mozhttpd/mozhttpd/mo
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py')]
+            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/composer.py', 'yaml/composer.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/constructor.py', 'yaml/constructor.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/cyaml.py', 'yaml/cyaml.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/dumper.py', 'yaml/dumper.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/emitter.py', 'yaml/emitter.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/error.py', 'yaml/error.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/events.py', 'yaml/events.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/__init__.py', 'yaml/__init__.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/loader.py', 'yaml/loader.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/nodes.py', 'yaml/nodes.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/parser.py', 'yaml/parser.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/reader.py', 'yaml/reader.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/representer.py', 'yaml/representer.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/resolver.py', 'yaml/resolver.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/scanner.py', 'yaml/scanner.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/serializer.py', 'yaml/serializer.py'),
+            ('http://pyyaml.org/export/379/pyyaml/trunk/lib/yaml/tokens.py', 'yaml/tokens.py')]
 
 def download(*resources):
     """
