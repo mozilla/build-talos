@@ -166,25 +166,40 @@ def zip_extractall(zipfile, rootdir):
         f.write(data)
         f.close()
 
-def ps(arg='axwww'):
-  """
-  python front-end to `ps`
-  http://en.wikipedia.org/wiki/Ps_%28Unix%29
-  """
+def _parse_ps(_ps_output):
+  """parse the output of the ps command"""
   retval = []
-  process = subprocess.Popen(['ps', arg], stdout=subprocess.PIPE)
-  stdout, _ = process.communicate()
   header = None
-  for line in stdout.splitlines():
+  for line in _ps_output.splitlines():
     line = line.strip()
     if header is None:
       # first line is the header
       header = line.split()
       continue
     split = line.split(None, len(header)-1)
+    if len(split) < len(header):
+      if 'STAT' in header and len(split) == len(header) - 1:
+        # STAT may be empty on ps -Acj for Mac
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=734146
+        stat_index = header.index('STAT')
+        split.insert(stat_index, '')
+      else:
+        print >> sys.stderr, "ps %s output:" % arg
+        print >> sys.stderr, _ps_output
+        raise talosError("ps line, '%s', does not match headers: %s" % (line, header))
     process_dict = dict(zip(header, split))
     retval.append(process_dict)
   return retval
+
+def ps(arg='axwww'):
+  """
+  python front-end to `ps`
+  http://en.wikipedia.org/wiki/Ps_%28Unix%29
+  """
+  global _ps_output # last ps output, for diagnostics
+  process = subprocess.Popen(['ps', arg], stdout=subprocess.PIPE)
+  _ps_output, _ = process.communicate()
+  return _parse_ps(_ps_output)
 
 def is_running(pid, psarg='axwww'):
   """returns if a pid is running"""
@@ -201,6 +216,8 @@ def running_processes(name, psarg='axwww', defunct=False):
   for process in ps(psarg):
     command = process.get('COMMAND', process.get('CMD'))
     if command is None:
+      print >> sys.stderr, "ps %s output:" % psarg
+      print >> sys.stderr, _ps_output
       raise talosError("command not found in %s" % process)
     command = shlex.split(command)
     if command[-1] == '<defunct>':
@@ -211,11 +228,13 @@ def running_processes(name, psarg='axwww', defunct=False):
       if process['STAT'] == 'Z+':
         continue
     prog = command[0]
+    if prog.startswith('(') and prog.endswith(')'):
+      prog = prog[1:-1]
     basename = os.path.basename(prog)
     if basename == name:
       retval.append((int(process['PID']), command))
   return retval
-  
+
 def interpolatePath(path):
-    return string.Template(path).safe_substitute(talos=here)
+  return string.Template(path).safe_substitute(talos=here)
 
