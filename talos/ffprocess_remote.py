@@ -35,7 +35,7 @@ import time
 import tempfile
 import re
 import shutil
-from utils import talosError
+from utils import talosError, testAgent
 
 DEFAULT_PORT = 20701
 
@@ -45,13 +45,9 @@ class RemoteProcess(FFProcess):
     dirSlash = ''
     host = ''
     port = ''
-  
+
     def __init__(self, host, port, rootdir):
-        if (port == 0):
-            port = DEFAULT_PORT
-        if (port == ''):
-            port = DEFAULT_PORT
-        if  (port == None):
+        if not port:
             port = DEFAULT_PORT
 
         self.port = port
@@ -64,13 +60,8 @@ class RemoteProcess(FFProcess):
         else:
             self.dirSlash = "/"
 
-    def setupRemote(self, host = '', port = DEFAULT_PORT):
-        if (port == -1):
-            from mozdevice import devicemanagerADB
-            self.testAgent = devicemanagerADB.DeviceManagerADB(host, port)
-        else:
-            from mozdevice import devicemanagerSUT
-            self.testAgent = devicemanagerSUT.DeviceManagerSUT(host, port)
+    def setupRemote(self, host='', port=DEFAULT_PORT):
+        self.testAgent = testAgent(host, port)
 
     def GetRunningProcesses(self):
         return self.testAgent.getProcessList()

@@ -238,3 +238,10 @@ def running_processes(name, psarg='axwww', defunct=False):
 def interpolatePath(path):
   return string.Template(path).safe_substitute(talos=here)
 
+def testAgent(host, port):
+  if port == -1:
+    from mozdevice import devicemanagerADB
+    return devicemanagerADB.DeviceManagerADB(host, port)
+  else:
+    from mozdevice import devicemanagerSUT
+    return devicemanagerSUT.DeviceManagerSUT(host, port)

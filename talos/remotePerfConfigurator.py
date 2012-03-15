@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+import os
+import sys
 import PerfConfigurator as pc
+import utils
 from PerfConfigurator import Configuration
-import os, sys
 
 class remotePerfConfigurator(pc.PerfConfigurator):
 
@@ -20,13 +22,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
     def _setupRemote(self):
         try:
-            if self.deviceport == -1:
-                from mozdevice import devicemanagerADB
-                self.testAgent = devicemanagerADB.DeviceManagerADB(self.deviceip, self.deviceport)
-            else:
-                from mozdevice import devicemanagerSUT
-                self.testAgent = devicemanagerSUT.DeviceManagerSUT(self.deviceip, self.deviceport)
-
+            self.testAgent = utils.testAgent(self.deviceip, self.deviceport)
             self.deviceroot = self.testAgent.getDeviceRoot()
         except:
             raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
