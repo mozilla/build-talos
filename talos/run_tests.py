@@ -105,8 +105,11 @@ def responsiveness_Metric(val_list):
 def send_to_csv(csv_dir, results, filters):
   import csv
 
-  def write_return(writer, res, value):
-    writer.writerow(['RETURN: %s: %s' % (res , value)])
+  def write_return(writer, res, value=None):
+    if value:
+        writer.writerow(['RETURN: %s: %s' % (res , value)])
+    else:
+        writer.writerow(['RETURN: %s' % res])
   def write_return_value(writer, res, data, callback=lambda x: x):
     data = [float(d) for d in data] # ensure floats
     write_return(writer, res, callback(round(filter.apply(data, filters), 2)))
@@ -129,26 +132,28 @@ def send_to_csv(csv_dir, results, filters):
           res_list.append(v)
       write_return_value(writer, res, res_list)
     elif print_format == 'tpformat':
-      writer.writerow(['i', 'page', 'median', 'mean', 'min' , 'max', 'runs'])
+      writer.writerow(['i', 'page', 'runs'])
       for bd in browser_dump:
         bd.rstrip('\n')
         page_results = bd.splitlines()
         i = 0
-        res_list = []
         for mypage in page_results:
           r = mypage.split(';')
           #skip this line if it isn't the correct format
           if len(r) == 1:
               continue
+
+          # TODO: unify this with
+          # http://hg.mozilla.org/build/talos/file/52063311813e/talos/results.py#l33
           r[1] = r[1].rstrip('/')
           if r[1].find('/') > -1 :
              page = r[1].split('/')[1]
           else:
              page = r[1]
-          res_list.append(r[2])
-          writer.writerow([i, page, r[2], r[3], r[4], r[5], '|'.join(r[6:])])
+
+          writer.writerow([i, page, '|'.join(r[2:])])
           i += 1
-        write_return_value(writer, res, res_list)
+        write_return(writer, res)
     else:
       raise talosError("Unknown print format in send_to_csv")
     for cd in counter_dump:
