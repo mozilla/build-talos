@@ -163,7 +163,7 @@ class PerfConfigurator(object):
                             line += "  tpdelay: %s\n" % self.tpdelay
 
             elif printMe:
-                if 'url' in line and 'url_mod' not in line:
+                if 'url:' in line:
                     line = self.convertUrlToRemote(line)
 
                 if self.responsiveness and 'responsiveness' in line:

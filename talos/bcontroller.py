@@ -50,7 +50,7 @@ defaults = {'endTime': -1,
             'returncode': -1,
             'command': '',
             'browser_log': '',
-            'url_mod': '',
+            'url_timestamp': False,
             'test_timeout': 1200,
             'browser_wait': -1,
             'child_process': 'plugin-container',
@@ -73,18 +73,17 @@ class BrowserWaiter(threading.Thread):
       self.start()
 
   def run(self):
-    if self.url_mod:
-      if (self.remoteProcess): #working with a remote device
-        if (self.url_mod == "str(int(time.time()*1000))"):
+    if self.url_timestamp:
+      if self.remoteProcess: #working with a remote device
           curtime = self.remoteProcess.getCurrentTime()
           if curtime is None:
             self.returncode = 1
             self.endtime = 0
             return
-
-          self.command += curtime
       else: #non-remote device
-        self.command = self.command + eval(self.url_mod)
+        curtime = str(int(time.time()*1000))
+      self.command += curtime
+
 
     self.firstTime = int(time.time()*1000)
     if (self.remoteProcess): #working with a remote device
