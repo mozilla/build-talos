@@ -57,5 +57,9 @@ setup(name='talos',
       dependency_links=dependency_links,
       entry_points="""
       # -*- Entry points: -*-
+      [console_scripts]
+      PerfConfigurator = talos.PerfConfigurator:main
+      remotePerfConfigurator = talos.remotePerfConfigurator:main
+      talos = talos.run_tests:main
       """,
       )

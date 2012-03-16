@@ -51,7 +51,6 @@ __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
 import platform
 import os
-import os.path
 import re
 import time
 import sys
@@ -97,9 +96,9 @@ class TTest(object):
         _ffprocess = None
         if remote == True:
             platform_type = 'remote_'
-            cmanager = __import__('cmanager_remote')
+            import cmanager_remote as cmanager
         elif platform.system() == "Linux":
-            cmanager = __import__('cmanager_linux')
+            import cmanager_linux as cmanager
             platform_type = 'linux_'
             _ffprocess = LinuxProcess()
         elif platform.system() in ("Windows", "Microsoft"):
@@ -109,10 +108,10 @@ class TTest(object):
                 platform_type = 'w7_'
             else:
                 raise talosError('unsupported windows version')
-            cmanager = __import__('cmanager_win32')
+            import cmanager_win32 as cmanager
             _ffprocess = Win32Process()
         elif platform.system() == "Darwin":
-            cmanager = __import__('cmanager_mac')
+            import cmanager_mac as cmanager
             platform_type = 'mac_'
             _ffprocess = MacProcess()
         return cmanager, platform_type, _ffprocess

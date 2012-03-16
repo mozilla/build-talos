@@ -23,6 +23,7 @@ import utils
 from datetime import datetime
 from os import path
 
+here = path.dirname(path.abspath(__file__))
 defaultTitle = "qm-pxp01"
 
 class Configuration(Exception):
@@ -382,7 +383,7 @@ class TalosOptions(optparse.OptionParser):
         self.add_option("-f", "--sampleConfig",
                         action = "store", dest = "sampleConfig",
                         help = "Input config file")
-        defaults["sampleConfig"] = 'sample.config'
+        defaults["sampleConfig"] = os.path.join(here, 'sample.config')
 
         self.add_option("-t", "--title",
                         action = "store", dest = "title",

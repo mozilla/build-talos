@@ -174,7 +174,7 @@ class remoteTalosOptions(pc.TalosOptions):
                     help = "Location of the fennec_ids.txt map file, used for robocop based tests")
         defaults["fennecIDs"] = ''
 
-        defaults["sampleConfig"] = 'remote.config'
+        defaults["sampleConfig"] = os.path.join(pc.here, 'remote.config')
         defaults["extensions"] = ['${talos}/pageloader']
         self.set_defaults(**defaults)
 
