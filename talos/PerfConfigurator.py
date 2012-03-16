@@ -322,7 +322,7 @@ class PerfConfigurator(object):
                 newline += 'http://' + self.webserver + '/' + part
             else:
                 newline += part
-                if (part <> parts[-1]):
+                if part != parts[-1]:
                     newline += ' '
 
         return newline
@@ -335,16 +335,16 @@ class PerfConfigurator(object):
         fHandle = None
         try:
           fHandle = open(manifestName, 'r')
-          manifestData = fHandle.read()
+          manifestLines = fHandle.readlines()
           fHandle.close()
         except:
           if fHandle:
             fHandle.close()
-          return manifestName
+          raise # reraise current exception; prints traceback to screen
 
         newHandle = open(manifestName + '.develop', 'w')
-        for line in manifestData.split('\n'):
-            newHandle.write(line.replace('localhost', self.webserver) + "\n")
+        for line in manifestLines:
+            newHandle.write(line.replace('localhost', self.webserver))
         newHandle.close()
 
         return manifestName + '.develop'
