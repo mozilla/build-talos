@@ -225,7 +225,7 @@ class PerfConfigurator(object):
             if ('%s:' % item) in line:
                 newline = '%s: %s\n' % (item, getattr(self, item))
 
-        if self.extensions and ('extensions: []' in line):
+        if self.extensions and (line.strip() == 'extensions: []'):
             newline = 'extensions:\n%s\n' % writeList(self.extensions)
 
         if self.filters and ('filters:' in line):

@@ -159,7 +159,7 @@ class FFSetup(object):
             zip_extractall(zipfile.ZipFile(addon), tmpdir)
             addonSrcPath = tmpdir
 
-        doc = minidom.parse(os.path.join(addonSrcPath, 'install.rdf')) 
+        doc = minidom.parse(os.path.join(addonSrcPath, 'install.rdf'))
         # description_element =
         # tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description/')
 

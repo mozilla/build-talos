@@ -156,15 +156,15 @@ def zip_extractall(zipfile, rootdir):
     if name.endswith('/'):
       if not os.path.exists(os.path.join(rootdir, name)):
         os.makedirs(os.path.join(rootdir, name))
-      else:
-        destfile = os.path.join(rootdir, name)
-        destdir = os.path.dirname(destfile)
-        if not os.path.isdir(destdir):
-          os.makedirs(destdir)
-        data = zipfile.read(name)
-        f = open(destfile, 'wb')
-        f.write(data)
-        f.close()
+    else:
+      destfile = os.path.join(rootdir, name)
+      destdir = os.path.dirname(destfile)
+      if not os.path.isdir(destdir):
+        os.makedirs(destdir)
+      data = zipfile.read(name)
+      f = open(destfile, 'wb')
+      f.write(data)
+      f.close()
 
 def _parse_ps(_ps_output):
   """parse the output of the ps command"""
