@@ -494,7 +494,7 @@ def test_file(filename, options, parsed):
   # set browser_config
   required = ['preferences', 'extensions',
               'browser_path', 'browser_log', 'browser_wait',
-              'extra_args', 'branch', 'buildid', 'env', 'init_url'
+              'extra_args', 'buildid', 'env', 'init_url'
               ]
   optional = {'addon_id': 'NULL',
               'bcontroller_config': 'bcontroller.yml',

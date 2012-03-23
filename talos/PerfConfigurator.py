@@ -241,8 +241,6 @@ class PerfConfigurator(object):
 
             lfile = lfile.replace('\\', '\\\\')
             newline = '%s: %s\n' % (parts[0], lfile)
-        if 'testbranch' in line:
-            newline = 'branch: ' + self.branch
 
         #only change the results_url if the user has provided one
         if self.results_url and ('results_url' in line):
@@ -394,11 +392,6 @@ class TalosOptions(optparse.OptionParser):
                         action = "store", dest = "branch_name",
                         help = "Name of the branch we are testing on")
         defaults["branch_name"] = ''
-
-        self.add_option("-b", "--branch",
-                        action = "store", dest = "branch",
-                        help = "Product branch we are testing on")
-        defaults["branch"] = ''
 
         self.add_option("-o", "--output",
                         action = "store", dest = "outputName",
