@@ -22,6 +22,7 @@ manifest = [('https://raw.github.com/mozilla/mozbase/master/mozhttpd/mozhttpd/mo
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
+            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/droid.py', 'mozdevice/droid.py'),
             ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/composer.py', 'yaml/composer.py'),
             ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/constructor.py', 'yaml/constructor.py'),
             ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/cyaml.py', 'yaml/cyaml.py'),
