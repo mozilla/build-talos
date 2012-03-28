@@ -151,10 +151,10 @@ class PerfConfigurator(object):
                             line += "  tpmozafterpaint: True\n"
 
                         if self.tpcycles:
-                            line = "  tpcycles: %s\n" % self.tpcycles
+                            line += "  tpcycles: %s\n" % self.tpcycles
 
                         if self.tppagecycles:
-                            line = "  tppagecycles: %s\n" % self.tppagecycles
+                            line += "  tppagecycles: %s\n" % self.tppagecycles
 
                         if self.rss:
                             line += "  rss: True\n"
