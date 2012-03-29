@@ -66,7 +66,8 @@ class Win32Process(FFProcess):
             profile_dir = profile_dir.replace('\\', '\\\\\\')
             profile_arg = '-profile %s' % profile_dir
 
-        cmd = '%s %s %s %s' % (browser_path,
+        #Escaped quotes around cmd & double quotes around browser_path to allow paths containing spaces
+        cmd = '\'"%s" %s %s %s\'' % (browser_path, 
                                 extra_args,
                                 profile_arg,
                                 url)
