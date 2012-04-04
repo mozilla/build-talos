@@ -291,15 +291,7 @@ class TTest(object):
                 if (i > 0) and self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
                     raise talosError("previous cycle still running")
 
-                # Execute the test's head script if there is one
-                if 'head' in test_config:
-                    cmd = [sys.executable, test_config['head']]
-                    try:
-                        subprocess.call(cmd)
-                    except:
-                        raise talosError("error executing head script '%s': %s" % (subprocess.list2cmdline(cmd), sys.exc_info()[0]))
-
-                # Run the test 
+                # Run the test
                 browser_results = ""
                 if 'timeout' in test_config:
                      timeout = test_config['timeout']
@@ -422,13 +414,6 @@ class TTest(object):
 
                 all_browser_results.append(browser_results)
                 all_counter_results.append(counter_results)
-
-                # Execute the test's tail script if there is one
-                if 'tail' in test_config:
-                    try:
-                        subprocess.call([sys.executable, test_config['tail']])
-                    except:
-                        raise talosError("error executing tail script: %s" % sys.exc_info()[0])
 
             self.cleanupProfile(temp_dir)
             utils.restoreEnvironmentVars()
