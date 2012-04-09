@@ -498,7 +498,6 @@ def test_file(filename, options, parsed):
               ]
   optional = {'addon_id': 'NULL',
               'bcontroller_config': 'bcontroller.yml',
-              'bundles': {},
               'branch_name': '',
               'child_process': 'plugin-container',
               'develop': False,
@@ -528,8 +527,6 @@ def test_file(filename, options, parsed):
   # fix paths to substitute
   # `os.path.dirname(os.path.abspath(__file__))` for ${talos}
   # https://bugzilla.mozilla.org/show_bug.cgi?id=705809
-  browser_config['bundles'] = dict([(i, utils.interpolatePath(j))
-                                    for i,j in browser_config['bundles'].items()])
   browser_config['extensions'] = [utils.interpolatePath(i)
                                   for i in browser_config['extensions']]
   browser_config['dirs'] = dict([(i, utils.interpolatePath(j))

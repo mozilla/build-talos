@@ -175,13 +175,13 @@ class FFSetup(object):
             raise talosError("no addon_id found for extension")
 
         if tmpdir is None or unpack.lower() == 'true':  #install addon unpacked
-            addon_path = os.path.join(profile_path, 'extensions', addon_id)
+            addon_path = os.path.join(profile_path, 'extensions', 'staged', addon_id)
             #if an old copy is already installed, remove it
             if os.path.isdir(addon_path):
                 shutil.rmtree(addon_path, ignore_errors=True)
             shutil.copytree(addonSrcPath, addon_path)
         else: #do not unpack addon
-            addon_file = os.path.join(profile_path, 'extensions', addon_id + '.xpi')
+            addon_file = os.path.join(profile_path, 'extensions', 'staged', addon_id + '.xpi')
             if os.path.isfile(addon_file):
                 os.remove(addon_file)
             shutil.copy(addon, addon_file)
@@ -224,7 +224,7 @@ class FFSetup(object):
              self.ffprocess.addRemoteServerPref(profile_dir, webserver)
 
         # Install the extensions.
-        extension_dir = os.path.join(profile_dir, "extensions")
+        extension_dir = os.path.join(profile_dir, 'extensions', 'staged')
         if not os.path.exists(extension_dir):
             os.makedirs(extension_dir)
         for addon in extensions:
@@ -245,35 +245,6 @@ class FFSetup(object):
         todir = os.path.join(os.path.dirname(browser_path), os.path.basename(os.path.normpath(dir_path)))
         for fromfile in fromfiles:
             self.ffprocess.copyFile(fromfile, todir)
-
-    def InstallBundleInBrowser(self, browser_path, bundlename, bundle_path):
-        """
-        Take the given directory and unzip the bundle into
-        distribution/bundles/bundlename.
-        """
-
-        # sanity check
-        if not os.path.exists(bundle_path):
-            raise talosError("bundle path '%s' does not exist")
-
-        destpath = os.path.join(os.path.dirname(browser_path),
-                                'distribution', 'bundles', bundlename)
-        if os.path.exists(destpath):
-            shutil.rmtree(destpath)
-
-        if os.path.isdir(bundle_path):
-            # XXX work around shutil.copytree:
-            # "The destination directory must not already exist."
-            parent = os.path.dirname(destpath)
-            if not os.path.exists(parent):
-                os.makedirs(parent)
-
-            # bundle is a directory
-            shutil.copytree(bundle_path, destpath)
-        else:
-            # bundle is an xpi
-            os.makedirs(destpath)
-            zip_extractall(zipfile.ZipFile(bundle_path), destpath)
 
     def InitializeNewProfile(self, profile_dir, browser_config):
         """Runs browser with the new profile directory, to negate any performance

@@ -251,11 +251,6 @@ class TTest(object):
                 running_processes_str = ", ".join([('[%s] %s' % (pid, process_name)) for pid, process_name in running_processes])
                 raise talosError("Found processes still running: %s. Please close them before running talos." % running_processes_str)
 
-            for bundlename in browser_config['bundles']:
-                self._ffsetup.InstallBundleInBrowser(browser_config['browser_path'],
-                                                     bundlename,
-                                                     browser_config['bundles'][bundlename])
-  
             # add any provided directories to the installed browser
             for dir in browser_config['dirs']:
                 self._ffsetup.InstallInBrowser(browser_config['browser_path'], 
