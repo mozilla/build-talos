@@ -282,7 +282,7 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo, filt
       try:
         utils.stamped_msg("Transmitting test: " + testname, "Started")
         if results_scheme in ('http', 'https'):
-          links += process_Request(post_file.post_multipart(results_server, results_path, [("key", "value")], [("filename", "data_string", data_string)]))
+          links += process_Request(post_file.post_multipart(results_server, results_path, files=[("filename", "data_string", data_string)]))
         elif results_scheme == 'file':
           f = file(results_path, 'a')
           f.write(data_string)

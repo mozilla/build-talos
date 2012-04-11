@@ -24,7 +24,7 @@ def link_exists(host, selector):
         h.putheader('Host', host)
         h.endheaders()
         h.send(msg)
-        
+
         errcode, errmsg, headers = h.getreply()
         if errcode == 200:
             found = 1
@@ -34,7 +34,7 @@ def link_exists(host, selector):
         print "WARNING: graph server ", e.__class__,  e, url
     return found
 
-def post_multipart(host, selector, fields, files):
+def post_multipart(host, selector, fields=(), files=()):
     """
     Post fields and files to an http host as multipart/form-data.
     fields is a sequence of (name, value) elements for regular form fields.
