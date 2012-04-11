@@ -53,6 +53,7 @@ import platform
 import os
 import re
 import time
+import shutil
 import sys
 import subprocess
 import utils
@@ -185,7 +186,13 @@ class TTest(object):
                 except:
                     raise talosError("error executing: '%s'" % subprocess.list2cmdline(cmd))
                 nullfd.close()
-            os.remove(dump)
+            dumpSavePath = os.environ.get('MINIDUMP_SAVE_PATH', None)
+            if dumpSavePath:
+                shutil.move(dump, dumpSavePath)
+                utils.noisy("Saved dump as %s" % os.path.join(dumpSavePath,
+                                                              os.path.basename(dump)))
+            else:
+                os.remove(dump)
             found = True
 
         if browser_config['remote'] == True:
