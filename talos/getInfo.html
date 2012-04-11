@@ -45,6 +45,30 @@
   </head>
 
   <body onload="
+     const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
+     const THUNDERBIRD_ID = '{3550f703-e582-4d05-9a08-453d09bdfdc6}';
+     const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
+     product = 'undefined';
+     try {
+         netscape.security.PrivilegeManager.enablePrivilege('UniversalPreferencesRead UniversalPreferencesWrite UniversalXPConnect');
+         var appInfo = Components.classes['@mozilla.org/xre/app-info;1']
+                                     .getService(Components.interfaces.nsIXULAppInfo);
+
+         if(appInfo.ID == FIREFOX_ID) {  
+           product = 'Firefox';
+         } else if(appInfo.ID == THUNDERBIRD_ID) {  
+           product = 'Thunderbird';
+         } else if(appInfo.ID == SEAMONKEY_ID) {  
+           product = 'SeaMonkey';
+         }
+    } catch(err) {
+        dumpLog('exception getting privileged access');
+    }
+    try {
+        dumpLog('__browserInfo\nbrowser_name:' + product + '\nbrowser_version:' + appInfo.version + '\nbuildID:' + appInfo.appBuildID + '\n__browserInfo');
+    } catch(err) {
+        dumpLog('exception accessing privileged information');
+    }
     dumpLog('__metrics\tScreen width/height:' + screen.width + '/' + screen.height + '\n\tcolorDepth:' + screen.colorDepth + '\n');
     dumpLog('\tBrowser inner width/height: ' + window.innerWidth + '/' + window.innerHeight + '\n');
 //JMAHER: this is temporarily commented out because this hangs the fennec browser

@@ -367,11 +367,16 @@ def browserInfo(browser_config, devicemanager = None):
     else:
       config.read(appIniPath)
 
-    browser_config['buildid'] = config.get('App', 'BuildID')
-    browser_config['repository'] = config.get('App', 'SourceRepository')
-    browser_config['sourcestamp'] = config.get('App', 'SourceStamp')
-    browser_config['browser_name'] = config.get('App', 'Name')
-    browser_config['browser_version'] = config.get('App', 'Version')
+    if not 'buildid' in browser_config or not browser_config['buildid']:
+      browser_config['buildid'] = config.get('App', 'BuildID')
+    if not 'repository' in browser_config or not browser_config['repository']:
+      browser_config['repository'] = config.get('App', 'SourceRepository')
+    if not 'sourcestamp' in browser_config or not browser_config['sourcestamp']:
+      browser_config['sourcestamp'] = config.get('App', 'SourceStamp')
+    if not 'browser_name' in browser_config or not browser_config['browser_name']:
+      browser_config['browser_name'] = config.get('App', 'Name')
+    if not 'browser_version' in browser_config or not browser_config['browser_version']:
+      browser_config['browser_version'] = config.get('App', 'Version')
   if ('repository' in browser_config) and ('sourcestamp' in browser_config):
     print 'RETURN:<a href = "' + browser_config['repository'] + '/rev/' + browser_config['sourcestamp'] + '">rev:' + browser_config['sourcestamp'] + '</a>'
   else:
@@ -509,7 +514,7 @@ def test_file(filename, options, parsed):
               'remote': False,
               'fennecIDs': '',
               'repository': 'NULL',
-              'source_stamp': 'NULL',
+              'sourcestamp': 'NULL',
               'symbols_path': None,
               'test_name_extension': '',
               'test_timeout': 1200,
@@ -555,7 +560,11 @@ def test_file(filename, options, parsed):
   utils.debug("actual date: %d" % int(time.time()))
 
   #pull buildid & sourcestamp from browser
-  browser_config = browserInfo(browser_config, devicemanager = dm)
+  try:
+    browser_config = browserInfo(browser_config, devicemanager = dm)
+  except:
+    if not browser_config['develop']:
+      raise
 
   if browser_config['remote'] == True:
     procName = browser_config['browser_path'].split('/')[-1]

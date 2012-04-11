@@ -54,6 +54,7 @@ import zipfile
 from xml.dom import minidom
 
 from utils import talosError, zip_extractall
+import utils
 import subprocess
 
 
@@ -256,7 +257,9 @@ class FFSetup(object):
             browser_config: object containing all the browser_config options
             profile_dir: The full path to the profile directory to load
         """
+        INFO_REGEX = re.compile('__browserInfo(.*)__browserInfo', re.DOTALL|re.MULTILINE)
         PROFILE_REGEX = re.compile('__metrics(.*)__metrics', re.DOTALL|re.MULTILINE)
+
         command_line = self.ffprocess.GenerateBrowserCommandLine(browser_config["browser_path"], 
                                                                  browser_config["extra_args"], 
                                                                  profile_dir, 
@@ -291,6 +294,18 @@ class FFSetup(object):
             if match:
                 res = 1
                 print match.group(1)
+
+            match = INFO_REGEX.search(results_raw)
+            if match:
+                binfo = match.group(1)
+                print binfo
+                for line in binfo.split('\n'):
+                    if line.strip().startswith('browser_name'):
+                        browser_config['browser_name'] = line.split(':')[1]
+                    if line.strip().startswith('browser_version'):
+                        browser_config['browser_version'] = line.split(':')[1]
+                    if line.strip().startswith('buildID'):
+                        browser_config['buildid'] = line.split(':')[1]
         else:
             raise talosError("initialization timed out")
 

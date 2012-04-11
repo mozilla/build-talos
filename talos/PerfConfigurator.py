@@ -33,8 +33,6 @@ class Configuration(Exception):
 
 class PerfConfigurator(object):
 
-    masterIniSubpath = "application.ini"
-
     # items that can be simply replaced on output
     replacements = ['test_timeout', 'browser_path', 'xperf_path', 'browser_log', 'webserver', 'buildid', 'develop', 'ignore_first']
 
@@ -49,11 +47,9 @@ class PerfConfigurator(object):
         # behaviour without having to touch PerfConfigurator
 
         # use attributes from the options dict
-        self.attributes = options.keys() + ['currentDate', 'masterIniSubpath']
+        self.attributes = options.keys() + ['currentDate']
 
         self.currentDate = self._getCurrentDateString()
-        if not self.buildid:
-            self.buildid = self._getCurrentBuildId()
         if not self.outputName:
             self.outputName = self.currentDate + "_config.yml"
 
@@ -73,26 +69,6 @@ class PerfConfigurator(object):
         """collect a date string to be used in naming the created config file"""
         currentDateTime = datetime.now()
         return currentDateTime.strftime("%Y%m%d_%H%M")
-
-    def _getMasterIniContents(self):
-        """ Open and read the application.ini from the application directory """
-        master = open(path.join(path.dirname(self.browser_path), self.masterIniSubpath))
-        data = master.read()
-        master.close()
-        return data.split('\n')
-
-    def _getCurrentBuildId(self):
-        masterContents = self._getMasterIniContents()
-        if not masterContents:
-            raise Configuration("Could not get BuildID: master ini file empty or does not exist")
-
-        reBuildid = re.compile('BuildID\s*=\s*(\d{10}|\d{12})')
-        for line in masterContents:
-            match = re.match(reBuildid, line)
-            if match:
-                return match.group(1)
-        raise Configuration("BuildID not found in "
-          + path.join(path.dirname(self.browser_path), self.masterIniSubpath))
 
     def _getTime(self, timestamp):
         if len(timestamp) == 14:
@@ -209,6 +185,9 @@ class PerfConfigurator(object):
             if self.branch_name:
                 newline += '\n'
                 newline += 'branch_name: %s\n' % self.branch_name
+            if self.sourceStamp:
+                newline += '\n'
+                newline += 'sourcestamp: %s\n' % self.sourceStamp
             if self.noChrome or self.mozAfterPaint:
                 newline += '\n'
                 newline += "test_name_extension: "
@@ -553,6 +532,11 @@ class TalosOptions(optparse.OptionParser):
                         action='store', dest='tpdelay',
                         help="length of pageloader delay")
         defaults["tpdelay"] = None
+
+        self.add_option("--sourceStamp", dest="sourceStamp",
+                        action="store",
+                        help="Specify the hg revision or sourcestamp for the changeset we are testing.  This will use the value found in application.ini if it is not specified.")
+        defaults["sourceStamp"] = ""
 
         self.set_defaults(**defaults)
 

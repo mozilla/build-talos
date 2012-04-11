@@ -117,34 +117,6 @@ class remotePerfConfigurator(pc.PerfConfigurator):
                                 + newManifestName + " to " + remoteName)
         return remoteName
 
-    def _getMasterIniContents(self):
-        """ Open and read the application.ini on the device under test """
-        if (self._remote == True):
-            localfilename = "remoteapp.ini"
-
-            #we need a better OS detection method, but for now this is how we work on android
-            if self.browser_path.startswith('org.mozilla.f'):
-              remoteFile = '/data/data/' + self.browser_path + '/' + self.masterIniSubpath
-            else:
-              parts = self.browser_path.split('/')
-              remoteFile = '/'.join(parts[0:-1]) + '/' + self.masterIniSubpath
-            if (not os.path.isfile(localfilename)):
-              filecontents = self.testAgent.getFile(remoteFile, localfilename)
-              if not filecontents:
-                  raise Configuration("Unable to copy master ini file from "
-                                      "device - either it doesn't exist yet "
-                                      "(have you run fennec at least once?) "
-                                      "or you don't have permissions to get it "
-                                      "(workaround: extract it from apk locally)")
-              return filecontents.split('\n')
-
-            master = open(localfilename)
-        else:
-            return pc.PerfConfigurator._getMasterIniContents(self)
-        data = master.read()
-        master.close()
-        return data.split('\n')
-
 class remoteTalosOptions(pc.TalosOptions):
 
     def __init__(self, **kwargs):
