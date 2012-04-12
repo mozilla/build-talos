@@ -222,6 +222,12 @@ class RemoteProcess(FFProcess):
     def MakeDirectoryContentsWritable(self, dir):
         pass
 
+    def removeFile(self, filename):
+        if self.testAgent.fileExists(filename):
+            retval = self.testAgent.removeFile(filename)
+            if retval is None:
+                raise talosError("Unable to remove file '%s' on remote device")
+
     def copyFile(self, fromfile, toDir):
         toDir = toDir.replace("/", self.dirSlash) 
         if (self.testAgent.pushFile(fromfile, toDir + self.dirSlash + os.path.basename(fromfile)) is False):

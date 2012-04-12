@@ -266,14 +266,11 @@ class TTest(object):
             # make profile path work cross-platform
             test_config['profile_path'] = os.path.normpath(test_config['profile_path'])
             profile_dir, temp_dir = self.createProfile(test_config['profile_path'], browser_config)
-            if os.path.isfile(browser_config['browser_log']):
-                os.chmod(browser_config['browser_log'], 0777)
-                os.remove(browser_config['browser_log'])
             self.initializeProfile(profile_dir, browser_config)
 
             if browser_config['fennecIDs']:
                 self.setupRobocopTests(browser_config, profile_dir)
-    
+
             utils.debug("initialized " + browser_config['process'])
             if test_config['shutdown']:
                 shutdown = []
@@ -285,20 +282,20 @@ class TTest(object):
                responsiveness = []
 
             for i in range(test_config['cycles']):
+
+                # remove the browser log file
                 if os.path.isfile(browser_config['browser_log']):
                     os.chmod(browser_config['browser_log'], 0777)
                     os.remove(browser_config['browser_log'])
                 time.sleep(browser_config['browser_wait']) #wait out the browser closing
-                # check to see if the previous cycle is still hanging around 
+
+                # check to see if the previous cycle is still hanging around
                 if (i > 0) and self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
                     raise talosError("previous cycle still running")
 
                 # Run the test
                 browser_results = ""
-                if 'timeout' in test_config:
-                     timeout = test_config['timeout']
-                else:
-                    timeout = 7200 # 2 hours
+                timeout = test_config.get('timeout', 7200) # 2 hours default
                 total_time = 0
                 url = test_config['url']
                 command_line = self._ffprocess.GenerateBrowserCommandLine(browser_config['browser_path'],
@@ -309,8 +306,9 @@ class TTest(object):
                 utils.debug("command line: " + command_line)
 
                 b_log = browser_config['browser_log']
-                if (self.remote == True):
+                if self.remote == True:
                     b_log = browser_config['deviceroot'] + '/' + browser_config['browser_log']
+                    self._ffprocess.removeFile(b_log)
 
                 b_cmd = self._ffprocess.GenerateBControllerCommandLine(command_line, browser_config, test_config)
                 try:
