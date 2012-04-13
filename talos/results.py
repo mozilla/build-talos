@@ -39,6 +39,9 @@ class PageloaderResults(object):
             page = page.split('/')[0]
         return page
 
+    def raw_values(self):
+        return dict([(result['page'], result['runs']) for result in self.results])
+
     def filter(self, *filters):
         """
         filter the results set;

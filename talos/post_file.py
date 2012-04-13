@@ -47,16 +47,15 @@ def post_multipart(host, selector, fields=(), files=()):
       if index > 0:
           selector = '/'.join([host[index:], selector.lstrip('/')])
           host = host[0:index]
+
+      # Summarized results to the official graph server
       content_type, body = encode_multipart_formdata(fields, files)
-      h = httplib.HTTP(host)
-      h.putrequest('POST', selector)
-      h.putheader('content-type', content_type)
-      h.putheader('content-length', str(len(body)))
-      h.putheader('Host', host)
-      h.endheaders()
-      h.send(body)
-      errcode, errmsg, headers = h.getreply()
-      return h.file.read()
+
+      headers = {"Content-Type": content_type, "Content-length": str(len(body)), "Host": host, "Accept": "text/plain"}
+      conn = httplib.HTTPConnection(host)
+      conn.request("POST", selector, body, headers)
+      response = conn.getresponse()
+      return response.read()
     except (httplib.HTTPException, error, herror, gaierror, timeout), e:
       print "WARNING: graph server unreachable"
       print "WARNING: " + str(e)

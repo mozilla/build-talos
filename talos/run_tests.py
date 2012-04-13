@@ -54,6 +54,7 @@ from utils import talosError
 import post_file
 from ttest import TTest
 from results import PageloaderResults
+import mozinfo
 
 # directory of this file
 here = os.path.dirname(os.path.realpath(__file__))
@@ -115,7 +116,7 @@ def send_to_csv(csv_dir, results, filters):
     write_return(writer, res, callback(round(filter.apply(data, filters), 2)))
 
   for res in results:
-    browser_dump, counter_dump, print_format = results[res]
+    browser_dump, counter_dump, print_format, test = results[res]
     if csv_dir:
       writer = csv.writer(open(os.path.join(csv_dir, res + '.csv'), "wb"))
     else: #working with stdout
@@ -211,6 +212,16 @@ def construct_results(machine, testname, browser_config, date, vals, amo):
   data_string += "END"
   return data_string
 
+def getRunOptions(browser, test):
+  options = []
+  test_options = ['rss', 'tpchrome', 'tpmozafterpaint', 'tpcycles', 'tppagecycles', 'tprender', 'tpdelay', 'responsiveness', 'shutdown']
+  for option in test_options:
+    if test[option] == True or test[option] == False:
+      options.append('"%s": %s' % (option, str(test[option]).lower()))
+    else:
+      options.append('"%s": "%s"' % (option, test[option]))
+  return "{%s}" % ', '.join(options)
+
 def send_to_graph(results_url, machine, date, browser_config, results, amo, filters):
   """send the results to a graphserver or file URL"""
 
@@ -226,14 +237,23 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo, filt
   for testname in results:
     vals = []
     fullname = testname
-    browser_dump, counter_dump, print_format = results[testname]
+    browser_dump, counter_dump, print_format, test_config = results[testname]
     utils.debug("Working with test: " + testname)
     utils.debug("Sending results: " + " ".join(browser_dump))
     utils.stamped_msg("Generating results file: " + testname, "Started")
+
+    # TODO: add this for other formats
+    raw_values = '"results": {}'
     if print_format == 'tsformat':
       #non-tpformat results
+      raw_vals = []
       for bd in browser_dump:
         vals.extend([[x, 'NULL'] for x in bd.split('|')])
+        raw_vals.extend([float(x) for x in bd.split('|')])
+        raw = []
+        # TODO: make the startup tests report the pagename, for now I use the 'testname'
+        raw.append('"%s": %s' % (testname, raw_vals))
+        raw_values = '"results": {%s}' % ', '.join(raw)
     elif print_format == 'tpformat':
       #tpformat results
       fullname += browser_config['test_name_extension']
@@ -242,10 +262,28 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo, filt
         newvals = page_results.filter(*filters)
         newvals = [[val, page] for val, page in newvals if val > -1]
         vals.extend(newvals)
+
+        rv = page_results.raw_values()
+        raw = []
+        for page in rv.keys():
+          raw.append('"%s": %s' % (page, rv[page]))
+        raw_values = '"results": {%s}' % ', '.join(raw)
     else:
       raise talosError("Unknown print format in send_to_graph")
     result_strings.append(construct_results(machine, fullname, browser_config, date, vals, amo))
     result_testnames.append(fullname)
+    options = getRunOptions(browser_config, test_config)
+    if browser_config['remote']:
+      # TODO: figure out how to not hardcode this, specifically the version !!
+      raw_machine = '"test_machine": {"name": "%s", "os": "%s", "osversion": "%s", "platform": "%s"}' % \
+                     (machine, "Android", "4.0.3", "arm")
+    else:
+      raw_machine = '"test_machine": {"name": "%s", "os": "%s", "osversion": "%s", "platform": "%s"}' % \
+                     (machine, mozinfo.info["os"], mozinfo.info["version"], mozinfo.info["processor"])
+    raw_build = '"test_build": {"name": "%s", "version": "%s", "revision": "%s", "branch":  "%s", "id": "%s"}' % \
+                  (browser_config["browser_name"], browser_config["browser_version"], browser_config["sourcestamp"], browser_config["branch_name"], browser_config["buildid"])
+    raw_testrun = '"testrun": {"date": "%s", "suite": "Talos %s", "options": %s}' % \
+                   (date, testname, options)
 
     #TODO: do we only test ts, if not, can we ensure that we are not trying to uplaod ts_rss, etc...
     if amo and testname == 'ts':
@@ -258,12 +296,15 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo, filt
 
     utils.stamped_msg("Generating results file: " + testname, "Stopped")
     #counters collected for this test
+    aux = []
     for cd in counter_dump:
       for count_type in cd:
         counterName = testname + '_' + shortName(count_type)
         if cd[count_type] == []: #failed to collect any data for this counter
           utils.stamped_msg("No results collected for: " + counterName, "Error")
           continue
+        adata = '"'+shortName(count_type)+'": %s' % [x for x in cd[count_type]]
+        aux.append(adata.replace('\'', '"'))
         vals = [[x, 'NULL'] for x in cd[count_type]]
         if print_format == "tpformat":
           counterName += browser_config['test_name_extension']
@@ -271,6 +312,15 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo, filt
         result_strings.append(construct_results(machine, counterName, browser_config, date, vals, amo))
         result_testnames.append(counterName)
         utils.stamped_msg("Generating results file: " + counterName, "Stopped")
+
+    raw_counters = '"results_aux": {%s}' % ', '.join(aux)
+    raw_results = "{%s, %s, %s, %s, %s}" % (raw_machine, raw_build, raw_testrun, raw_values, raw_counters)
+    try:
+        post_file.post_multipart("http://10.8.73.29", "/views/api/load_test", fields=[("data", urllib.quote(raw_results))])
+        print "done posting raw results to staging server"
+    except:
+        # This is for posting to a staging server, we can ignore the error
+        print "was not able to post raw results to staging server"
 
   #send all the strings along to the graph server
   for data_string, testname in zip(result_strings, result_testnames):
@@ -605,7 +655,7 @@ def test_file(filename, options, parsed):
       mytest = TTest(browser_config['remote'])
       browser_dump, counter_dump, print_format = mytest.runTest(browser_config, test)
       utils.debug("Received test results: " + " ".join(browser_dump))
-      results[testname] = [browser_dump, counter_dump, print_format]
+      results[testname] = [browser_dump, counter_dump, print_format, test]
       # If we're doing CSV, write this test immediately (bug 419367)
 
       # use filters to approximate what graphserver does:
