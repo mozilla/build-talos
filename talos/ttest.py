@@ -48,19 +48,19 @@
 
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
-
-import platform
+import glob
 import os
+import platform
 import re
-import time
+import results
 import shutil
 import sys
 import subprocess
-import utils
-import glob
-from utils import talosError
 import tempfile
+import time
+import utils
 
+from utils import talosError
 from ffprocess_linux import LinuxProcess
 from ffprocess_win32 import Win32Process
 from ffprocess_mac import MacProcess
@@ -71,16 +71,6 @@ class TTest(object):
     _ffsetup = None
     _ffprocess = None
     platform_type = ''
-
-    # Regular expression for getting results from most tests
-    RESULTS_REGEX = re.compile('__start_report(.*?)__end_report.*?__startTimestamp(.*?)__endTimestamp.*?__startBeforeLaunchTimestamp(.*?)__endBeforeLaunchTimestamp.*?__startAfterTerminationTimestamp(.*?)__endAfterTerminationTimestamp',
-                      re.DOTALL | re.MULTILINE)
-    # Regular expression to get stats for page load test (Tp) - 
-    #should go away once data passing is standardized
-    RESULTS_TP_REGEX = re.compile('__start_tp_report(.*?)__end_tp_report.*?__startTimestamp(.*?)__endTimestamp.*?__startBeforeLaunchTimestamp(.*?)__endBeforeLaunchTimestamp.*?__startAfterTerminationTimestamp(.*?)__endAfterTerminationTimestamp',
-                      re.DOTALL | re.MULTILINE)
-    RESULTS_REGEX_FAIL = re.compile('__FAIL(.*?)__FAIL', re.DOTALL|re.MULTILINE)
-    RESULTS_RESPONSIVENESS_REGEX = re.compile('MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*?)$', re.DOTALL|re.MULTILINE)
 
     def __init__(self, remote = False):
         cmanager, platformtype, ffprocess = self.getPlatformType(remote)
@@ -274,7 +264,9 @@ class TTest(object):
             utils.debug("initialized " + browser_config['process'])
             if test_config['shutdown']:
                 shutdown = []
-            # ignore responsiveness tests on linux until we fix Bug 697555
+
+            responsiveness = []
+            # ignore responsiveness tests on linux until we fix Bug 710296
             if test_config.get('responsiveness') and platform.system() != "Linux":
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
@@ -294,7 +286,6 @@ class TTest(object):
                     raise talosError("previous cycle still running")
 
                 # Run the test
-                browser_results = ""
                 timeout = test_config.get('timeout', 7200) # 2 hours default
                 total_time = 0
                 url = test_config['url']
@@ -318,7 +309,7 @@ class TTest(object):
 
                 #give browser a chance to open
                 # this could mean that we are losing the first couple of data points
-                #   as the tests starts, but if we don't provide
+                # as the tests starts, but if we don't provide
                 # some time for the browser to start we have trouble connecting the CounterManager to it
                 time.sleep(browser_config['browser_wait'])
                 #set up the counters for this test
@@ -348,42 +339,29 @@ class TTest(object):
                             counter_results[count_type].append(val)
                     if process.poll() != None: #browser_controller completed, file now full
                         break
-                        
+
                 if total_time >= timeout:
                     raise talosError("timeout exceeded")
-                else:
-                    #stop the counter manager since this test is complete
-                    if counters:
-                        cm.stopMonitor()
 
-                    if not os.path.isfile(browser_config['browser_log']):
-                        raise talosError("no output from browser")
-                    results_file = open(browser_config['browser_log'], "r")
-                    results_raw = results_file.read()
-                    results_file.close()
-  
-                    match = self.RESULTS_REGEX.search(results_raw)
-                    tpmatch = self.RESULTS_TP_REGEX.search(results_raw)
-                    failmatch = self.RESULTS_REGEX_FAIL.search(results_raw)
-                    if match:
-                        browser_results += match.group(1)
-                        startTime = int(match.group(2))
-                        endTime = int(match.group(4))
-                        format = "tsformat"
-                    #TODO: this a stop gap until all of the tests start outputting the same format
-                    elif tpmatch:
-                        match = tpmatch
-                        browser_results += match.group(1)
-                        startTime = int(match.group(2))
-                        endTime = int(match.group(4))
-                        format = "tpformat"
-                    elif failmatch:
-                        match = failmatch
-                        browser_results += match.group(1)
-                        raise talosError(match.group(1))
-                    else:
-                        raise talosError("unrecognized output format")
-  
+                #stop the counter manager since this test is complete
+                if counters:
+                    cm.stopMonitor()
+
+                # read the browser output
+                browser_log_filename = browser_config['browser_log']
+                if not os.path.isfile(browser_log_filename):
+                    raise talosError("no output from browser [%s]" % browser_log_filename)
+                results_file = open(browser_log_filename)
+                results_raw = results_file.read()
+                results_file.close()
+
+                # get the results from the browser output
+                browser_log_results = results.BrowserLogResults(results_raw, filename=browser_log_filename)
+                browser_results = browser_log_results.browser_results
+                startTime = browser_log_results.startTime
+                endTime = browser_log_results.endTime
+                format = browser_log_results.format
+
                 if ("Main_RSS" in counters) or ("Content_RSS" in counters):
                     RSS_REGEX = re.compile('RSS:\s+([a-zA-Z0-9]+):\s+([0-9]+)$')
                     counter_results['Main_RSS'] = []
@@ -396,8 +374,8 @@ class TTest(object):
                                 counter_results['Main_RSS'].append(value)
                             if type == 'Content':
                                 counter_results['Content_RSS'].append(value)
-                    
-                time.sleep(browser_config['browser_wait']) 
+
+                time.sleep(browser_config['browser_wait'])
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir)
                 #clean up the bcontroller process
@@ -410,7 +388,7 @@ class TTest(object):
                     shutdown.append(endTime - startTime)
                 # ignore responsiveness tests on linux until we fix Bug 697555
                 if test_config.get('responsiveness') and platform.system() != "Linux":
-                    responsiveness = self.RESULTS_RESPONSIVENESS_REGEX.findall(results_raw)
+                    responsiveness.extend(browser_log_results.responsiveness())
 
                 all_browser_results.append(browser_results)
                 all_counter_results.append(counter_results)
@@ -418,10 +396,10 @@ class TTest(object):
             self.cleanupProfile(temp_dir)
             utils.restoreEnvironmentVars()
             if test_config['shutdown']:
-                all_counter_results.append({'shutdown' : shutdown})      
-            # ignore responsiveness tests on linux until we fix Bug 697555
-            if test_config.get('responsiveness') and platform.system() != "Linux":
-                all_counter_results.append({'responsiveness' : responsiveness})      
+                all_counter_results.append({'shutdown' : shutdown})
+            # include tresponsiveness results if taken
+            if responsiveness:
+                all_counter_results.append({'responsiveness' : responsiveness})
             return (all_browser_results, all_counter_results, format)
         except:
             try:

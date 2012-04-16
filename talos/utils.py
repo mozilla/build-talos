@@ -245,3 +245,38 @@ def testAgent(host, port):
   else:
     from mozdevice import devicemanagerSUT
     return devicemanagerSUT.DeviceManagerSUT(host, port)
+
+def findall(string, token):
+  """find all occurances in a string"""
+  # really, should be in python core
+  retval = []
+  while True:
+    if retval:
+      index = retval[-1] + len(token)
+    else:
+      index = 0
+    location = string.find(token, index)
+    if location == -1:
+      return retval
+    retval.append(location)
+
+def tokenize(string, start, end):
+  """
+  tokenize a string by start + end tokens,
+  returns parts and position of last token
+  """
+  assert end not in start, "End token '%s' is contained in start token '%s'" % (end, start)
+  assert start not in end, "Start token '%s' is contained in end token '%s'" % (start, end)
+  _start = findall(string, start)
+  _end = findall(string, end)
+  if not _start and not _end:
+      return [], -1
+  assert len(_start), "Could not find start token: '%s'" % start
+  assert len(_end), "Could not find end token: '%s'" % end
+  assert len(_start) == len(_end), "Unmatched number of tokens found: '%s' (%d) vs '%s' (%d)" % (start, len(_start), end, len(_end))
+  for i in range(len(_start)):
+    assert _end[i] > _start[i], "End token '%s' occurs before start token '%s'" % (end, start)
+  parts = []
+  for i in range(len(_start)):
+    parts.append(string[_start[i] + len(start):_end[i]])
+  return parts, _end[-1]
