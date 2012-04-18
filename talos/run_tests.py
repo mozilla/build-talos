@@ -45,6 +45,7 @@ import re
 import string
 import sys
 import time
+import traceback
 import urlparse
 import yaml
 import PerfConfigurator
@@ -670,6 +671,8 @@ def test_file(filename, options, parsed):
       utils.stamped_msg("Failed " + testname, "Stopped")
       print 'FAIL: Busted: ' + testname
       print 'FAIL: ' + e.msg.replace('\n','\nRETURN:')
+      talosError_tb = sys.exc_info()
+      traceback.print_exception(*talosError_tb)
       if browser_config['develop'] == True and httpd:
         httpd.stop()
       raise e
