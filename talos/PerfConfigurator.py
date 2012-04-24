@@ -511,11 +511,6 @@ class TalosOptions(optparse.OptionParser):
                         help = "set amo")
         defaults["amo"] = False
 
-        self.add_option("--csvDir", dest="csv_dir",
-                        action="store",
-                        help="specify csv output file")
-        defaults["csv_dir"] = ""
-
         self.add_option('--tpmanifest',
                         action='store', dest='tpmanifest',
                         help="manifest file to test")

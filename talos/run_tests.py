@@ -104,82 +104,6 @@ def responsiveness_Metric(val_list):
   s = sum([int(x)*int(x) / 1000000.0 for x in val_list])
   return str(round(s))
 
-def send_to_csv(csv_dir, results, filters):
-  import csv
-
-  def write_return(writer, res, value=None):
-    if value:
-        writer.writerow(['RETURN: %s: %s' % (res , value)])
-    else:
-        writer.writerow(['RETURN: %s' % res])
-  def write_return_value(writer, res, data, callback=lambda x: x):
-    data = [float(d) for d in data] # ensure floats
-    write_return(writer, res, callback(round(filter.apply(data, filters), 2)))
-
-  for res in results:
-    browser_dump, counter_dump, print_format, test = results[res]
-    if csv_dir:
-      writer = csv.writer(open(os.path.join(csv_dir, res + '.csv'), "wb"))
-    else: #working with stdout
-      writer = csv.writer(sys.stdout)
-    if print_format == 'tsformat':
-      i = 0
-      res_list = []
-      writer.writerow(['i', 'val'])
-      for val in browser_dump:
-        val_list = val.split('|')
-        for v in val_list:
-          writer.writerow([i, v])
-          i += 1
-          res_list.append(v)
-      write_return_value(writer, res, res_list)
-    elif print_format == 'tpformat':
-      writer.writerow(['i', 'page', 'runs'])
-      for bd in browser_dump:
-        bd.rstrip('\n')
-        page_results = bd.splitlines()
-        i = 0
-        for mypage in page_results:
-          r = mypage.split(';')
-          #skip this line if it isn't the correct format
-          if len(r) == 1:
-              continue
-
-          # TODO: unify this with
-          # http://hg.mozilla.org/build/talos/file/52063311813e/talos/results.py#l33
-          r[1] = r[1].rstrip('/')
-          if r[1].find('/') > -1 :
-             page = r[1].split('/')[1]
-          else:
-             page = r[1]
-
-          writer.writerow([i, page, '|'.join(r[2:])])
-          i += 1
-        write_return(writer, res)
-    else:
-      raise talosError("Unknown print format in send_to_csv")
-    for cd in counter_dump:
-      for count_type in cd:
-        counterName = res + '_' + shortName(count_type)
-        if cd[count_type] == []: #failed to collect any data for this counter
-          utils.stamped_msg("No results collected for: " + counterName, "Error")
-          continue
-        if csv_dir:
-          writer = csv.writer(open(os.path.join(csv_dir, counterName + '.csv'), "wb"))
-        else:
-          writer = csv.writer(sys.stdout)
-        writer.writerow(['i', 'value'])
-        i = 0
-        for val in cd[count_type]:
-          writer.writerow([i, val])
-          i += 1
-        if isMemoryMetric(shortName(count_type)):
-          write_return_value(writer, counterName, cd[count_type], filesizeformat)
-        elif count_type == 'responsiveness':
-          write_return(writer, counterName, responsiveness_Metric(cd[count_type]))
-        else:
-          write_return_value(writer, counterName, cd[count_type])
-
 def construct_results(machine, testname, browser_config, date, vals, amo):
   """
   Creates string formated for the collector script of the graph server
@@ -517,14 +441,7 @@ def test_file(filename, options, parsed):
   title = yaml_config.get('title', '')
   testdate = yaml_config.get('testdate', '')
   results_url = yaml_config.get('results_url', '')
-  csv_dir = yaml_config.get('csv_dir', '')
 
-  # markup data
-  if csv_dir:
-    csv_dir = os.path.normpath(csv_dir)
-    if not os.path.exists(csv_dir):
-      print 'FAIL: path "%s" does not exist' % csv_dir
-      sys.exit(1)
   if results_url:
     results_url_split = urlparse.urlsplit(results_url)
     results_scheme, results_server, results_path, _, _ = results_url_split
@@ -648,7 +565,6 @@ def test_file(filename, options, parsed):
   results = {}
   utils.startTimer()
   utils.stamped_msg(title, "Started")
-  csv_filters = [[filter.ignore_max], [filter.mean]]
   for test in tests:
     testname = test['name']
     utils.stamped_msg("Running test " + testname, "Started")
@@ -657,16 +573,6 @@ def test_file(filename, options, parsed):
       browser_dump, counter_dump, print_format = mytest.runTest(browser_config, test)
       utils.debug("Received test results: " + " ".join(browser_dump))
       results[testname] = [browser_dump, counter_dump, print_format, test]
-      # If we're doing CSV, write this test immediately (bug 419367)
-
-      # use filters to approximate what graphserver does:
-      # https://github.com/mozilla/graphs/blob/master/server/pyfomatic/collect.py#L212
-      # ultimately, this should not be in Talos:
-      # https://bugzilla.mozilla.org/show_bug.cgi?id=721902
-      if csv_dir:
-        send_to_csv(csv_dir, {testname : results[testname]}, csv_filters)
-      if options["to_screen"] or options["amo"]:
-        send_to_csv(None, {testname : results[testname]}, csv_filters)
     except talosError, e:
       utils.stamped_msg("Failed " + testname, "Stopped")
       print 'FAIL: Busted: ' + testname
@@ -695,10 +601,7 @@ def test_file(filename, options, parsed):
       utils.stamped_msg("Completed sending results", "Stopped")
     except talosError, e:
       utils.stamped_msg("Failed sending results", "Stopped")
-      #failed to send results, just print to screen and then report graph server error
-      for test in tests:
-        testname = test['name']
-        send_to_csv(None, {testname : results[testname]}, csv_filters)
+      send_to_graph('file://%s' % os.path.join(os.getcwd(), 'results.out'), title, date, browser_config, results, options["amo"], filters)
       print '\nFAIL: ' + e.msg.replace('\n', '\nRETURN:')
       raise e
 
@@ -713,10 +616,6 @@ def main(args=sys.argv[1:]):
   parser.add_option('-n', '--noisy', dest='noisy',
                     action='store_true', default=False,
                     help="enable noisy output")
-  parser.add_option('-s', '--screen', dest='to_screen',
-                    action='store_true', default=False,
-                    help="output CSV to screen")
-
   options, args = parser.parse_args(args)
 
   # if no arguments print help
