@@ -83,7 +83,7 @@ def main(args=sys.argv[1:]):
     assert os.path.exists(hgignore), '.hgignore not found in %s' % here
     ignore_patterns = [re.compile(i)
                        for i in file(hgignore).read().splitlines()
-                       if not i.startswith('#')]
+                       if not i.startswith('#') and i.strip()]
 
     # get the files
     newdirs = download(*manifest)
@@ -103,12 +103,17 @@ def main(args=sys.argv[1:]):
     for dirpath, dirnames, filenames in os.walk(talosdir):
         filenames = [i for i in filenames if not i.endswith('.pyc')]
         for f in filenames:
-            fullname = os.path.join(dirpath, f)
-            truncname = fullname[len(talosdir):].strip(os.path.sep)
-            if truncname in newfiles or not ignore(truncname, ignore_patterns):
-                # do not package files that are in .hgignore
-                # except the new files
-                zip.write(fullname, arcname=os.path.join('talos', truncname))
+            try:
+                fullname = os.path.join(dirpath, f)
+                truncname = fullname[len(talosdir):].strip(os.path.sep)
+                arcname = os.path.join('talos', truncname)
+                if truncname in newfiles or not ignore(arcname, ignore_patterns):
+                    # do not package files that are in .hgignore
+                    # except the new files
+                    zip.write(fullname, arcname=arcname)
+            except:
+                print fullname, truncname
+                raise
     zip.close()
 
     # cleanup: remove downloaded files

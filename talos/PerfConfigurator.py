@@ -19,7 +19,9 @@ import re
 import time
 import os
 import optparse
+import test
 import utils
+import yaml
 from datetime import datetime
 from os import path
 
@@ -85,7 +87,7 @@ class PerfConfigurator(object):
     def _getTimeFromBuildId(self):
         return self._getTime(self.buildid)
 
-    def convertLine(self, line, testMode, printMe):
+    def convertLine(self, line):
         """
         given a line in the sample config file convert this to an output
         line or lines in the output .yml file
@@ -98,71 +100,6 @@ class PerfConfigurator(object):
         # for the sake of parsing.  We are also very whitespace sensitive.
         # https://bugzilla.mozilla.org/show_bug.cgi?id=725097
         # should fix this.
-
-        # testmode == writing out a subset of talos tests
-        if testMode:
-            if line.startswith('- name'):
-                # found the start of an individual test description
-                printMe = False
-
-                for test in self.activeTests.split(':'):
-                    # determine if this is a test we are going to run
-                    if re.match('^-\s*name\s*:\s*' + test + '\s*$', line):
-                        printMe = True
-                        if test == 'tp' and self.fast: #only affects the tp test name
-                            line = line.replace('tp', 'tp_fast')
-                            if self.testPrefix:
-                                line = line.replace(test, '_'.join([self.testPrefix,
-                                                                    test]))
-                        if self.responsiveness:
-                            line += "  responsiveness: True\n"
-
-                        if self.noShutdown:
-                            line += "  shutdown : True\n"
-
-                        if self.noChrome:
-                            line += "  tpchrome: False\n"
-
-                        if self.mozAfterPaint:
-                            line += "  tpmozafterpaint: True\n"
-
-                        if self.tpcycles:
-                            line += "  tpcycles: %s\n" % self.tpcycles
-
-                        if self.tppagecycles:
-                            line += "  tppagecycles: %s\n" % self.tppagecycles
-
-                        if self.rss:
-                            line += "  rss: True\n"
-
-                        if self.tpdelay:
-                            line += "  tpdelay: %s\n" % self.tpdelay
-
-            elif printMe:
-                if 'url:' in line:
-                    line = self.convertUrlToRemote(line)
-
-                if self.responsiveness and 'responsiveness' in line:
-                    line = ""
-
-                if self.noShutdown and 'shutdown :' in line:
-                    line = ""
-
-                if self.tpcycles and 'tpcycles' in line:
-                    line = ""
-
-                if "tpmanifest:" in line:
-                    if self.tpmanifest:
-                        line = "  tpmanifest: %s\n" % self.tpmanifest
-
-                    # if --develop flag specified, generate .develop manifest
-                    # and change manifest name in generated config file
-                    if self.develop or self.deviceroot:
-                        manifest = line.split(":")[1].strip()
-                        if manifest:
-                            line = "  tpmanifest: %s\n" % self.buildRemoteManifest(utils.interpolatePath(manifest))
-
-            return printMe, line
 
         def writeList(thelist):
             """write a list in YAML"""
@@ -227,25 +164,32 @@ class PerfConfigurator(object):
         #only change the browser_wait if the user has provided one
         if self.browser_wait and ('browser_wait' in line):
             newline = 'browser_wait: ' + str(self.browser_wait) + '\n'
-        if 'init_url' in line:
-            newline = self.convertUrlToRemote(newline)
+        if line.startswith('init_url:'):
+            url = line.split(':', 1)[-1].strip()
+            newline = 'init_url: %s' % self.convertUrlToRemote(url)
 
         if self.extraPrefs and re.match('^\s*preferences:\s*$', line):
             newline = 'preferences:\n'
             for pref, value in self.extraPrefs:
                 newline += '  %s: %s\n' % (pref, value)
 
-        return printMe, newline
+        return newline
 
     def writeConfigFile(self):
 
         # read the config file
+        if not path.exists(self.sampleConfig):
+            raise Configuration("unable to find %s, please check your filename for --sampleConfig" % self.sampleConfig)
         try:
-            configFile = open(path.join(self.configPath, self.sampleConfig))
+            configFile = open(self.sampleConfig)
+            config = configFile.readlines()
+            configFile.close()
         except:
-            raise Configuration("unable to find %s, please check your filename for --sampleConfig" % path.join(self.configPath, self.sampleConfig))
-        config = configFile.readlines()
-        configFile.close()
+            try:
+                configFile.close()
+            except:
+                pass
+            raise Configuration("unable to read %s, please check your filename for --sampleConfig" % self.sampleConfig)
 
         # fix up the preferences
         requiredPrefs = []
@@ -262,47 +206,99 @@ class PerfConfigurator(object):
 
         # write the config file
         destination = open(self.outputName, "w")
-        printMe = True
-        testMode = False
         for line in config:
-            printMe, newline = self.convertLine(line, testMode, printMe)
-            if printMe:
-                destination.write(newline)
+            newline = self.convertLine(line)
             if line.startswith('tests :'):
-                #enter into test writing mode
-                testMode = True
-                printMe = False
+                # tests section - these are serialized subsequently
+                break
+            destination.write(newline)
+
+        # write the tests
+        destination.write('\n')
+        self.writeTests(destination)
+
+        # close file
         destination.close()
 
         # print the config file to stdout
         if self.verbose:
             self._dumpConfiguration()
 
-    def convertUrlToRemote(self, line):
+    def writeTests(self, destination):
         """
-          For a give url line in the .config file, add a webserver.
-          In addition if there is a .manifest file specified, covert
-          and copy that file to the remote device.
+        write tests to destination file
         """
 
-        if (not self.webserver or self.webserver == 'localhost'):
-          return line
+        # load config file as YAML
+        yaml_config = yaml.load(file(self.sampleConfig))
 
-        #NOTE: line.split() causes this to fail because it splits on the \n and not every single ' '
-        parts = line.split(' ')
-        newline = ''
+        # get test overrides
+        overrides = yaml_config.get('tests', {})
+        if overrides:
+            # make a dictionary keyed on name and with every value except name
+            overrides = dict([(i.pop('name'), i) for i in overrides])
+
+        # print each test to the destination
+        print >> destination, "tests :"
+        for test_name in self.activeTests:
+
+            test_class = test.test_dict[test_name]
+
+            # copy master dict
+            test_overrides = overrides.get(test_name, {})
+
+            # directly translateable keys:
+            for key in ('responsiveness', 'tpcycles', 'tppagecycles', 'rss', 'tpdelay'):
+                value = getattr(self, key)
+                if value:
+                    test_overrides[key] = value
+
+            # non-directly translateable keys
+            if self.noShutdown:
+                test_overrides['shutdown'] = True
+            if self.noChrome:
+                test_overrides['tpchrome'] = False
+            if self.mozAfterPaint:
+                test_overrides['tpmozafterpaint'] = True
+
+            # instantiate the test
+            test_instance = test_class(**test_overrides)
+
+            # fix up url
+            url = getattr(test_instance, 'url', None)
+            if url:
+                test_instance.url = self.convertUrlToRemote(url)
+
+            # fix up tpmanifest
+            tpmanifest = getattr(test_instance, 'tpmanifest', None)
+            if tpmanifest:
+                if self.tpmanifest:
+                    test_instance.tpmanifest = self.tpmanifest
+
+                # if --develop flag specified, generate .develop manifest
+                # and change manifest name in generated config file
+                if self.develop or self.deviceroot:
+                    test_instance.tpmanifest = self.buildRemoteManifest(utils.interpolatePath(test_instance.tpmanifest))
+
+            # serialize the test
+            print >> destination, test_instance
+
+    def convertUrlToRemote(self, url):
+        """
+        For a give url add a webserver.
+        In addition if there is a .manifest file specified, covert
+        and copy that file to the remote device.
+        """
+
+        if not self.webserver or self.webserver == 'localhost':
+          return url
 
         # We cannot load .xul remotely and winopen.xul is the only instance.
         # winopen.xul is handled in remotePerfConfigurator.py
-        for part in parts:
-            if '.html' in part:
-                newline += 'http://' + self.webserver + '/' + part
-            else:
-                newline += part
-                if part != parts[-1]:
-                    newline += ' '
-
-        return newline
+        if '.html' in url:
+            return 'http://' + self.webserver + '/' + url
+        else:
+            return url
 
     def buildRemoteManifest(self, manifestName):
         """
@@ -351,11 +347,6 @@ class TalosOptions(optparse.OptionParser):
                         action = "store", dest = "browser_path",
                         help = "path to executable we are testing")
         defaults["browser_path"] = ''
-
-        self.add_option("-c", "--configPath",
-                        action = "store", dest = "configPath",
-                        help = "path to config file")
-        defaults["configPath"] = ''
 
         self.add_option("-f", "--sampleConfig",
                         action = "store", dest = "sampleConfig",
@@ -533,6 +524,11 @@ class TalosOptions(optparse.OptionParser):
                         help="Specify the hg revision or sourcestamp for the changeset we are testing.  This will use the value found in application.ini if it is not specified.")
         defaults["sourceStamp"] = ""
 
+        self.add_option('--print-tests', dest="print_tests",
+                        action='store_true',
+                        help="Print the resulting tests configuration to stdout (or print available tests if --activeTests not specified)")
+        defaults['print_tests'] = False
+
         self.set_defaults(**defaults)
 
     def parse_args(self, args=None, values=None):
@@ -542,6 +538,19 @@ class TalosOptions(optparse.OptionParser):
         return options, args
 
     def verifyCommandLine(self, args, options):
+
+        # ensure activeTests is correct
+        if options.activeTests:
+            options.activeTests = options.activeTests.split(':')
+        else:
+            options.activeTests = []
+        missing = [t for t in options.activeTests
+                   if t not in test.test_dict]
+        if missing:
+            test_noun = 'tests'
+            if len(missing) == 1:
+                test_noun = 'test'
+            raise Configuration("Unknown %s: %s" % (test_noun, ', '.join(missing)))
 
         # if resultsServer and resultsLinks are given replace results_url from there
         if options.resultsServer and options.resultsLink:
@@ -602,10 +611,28 @@ def main(argv=sys.argv[1:]):
         options, args = parser.parse_args(argv)
         if args:
             raise Configuration("Configurator does not take command line arguments, only options (arguments were: %s)" % (",".join(args)))
+
+        print_tests = options.__dict__.pop('print_tests')
+
         # ensure tests are supplied
         if not options.activeTests:
+
+            # if print_tests is specified, print available tests
+            if print_tests:
+                print 'Available tests:'
+                for test_class in test.tests:
+                    print test_class.name()
+                return 0
+
             raise Configuration("Active tests should be declared explicitly. Nothing declared with --activeTests.")
-        configurator = PerfConfigurator(**options.__dict__);
+
+        configurator = PerfConfigurator(**options.__dict__)
+
+        if print_tests:
+            # print the chosen tests
+            configurator.writeTests(sys.stdout)
+            return 0
+
         configurator.writeConfigFile()
     except Configuration, err:
         print >> sys.stderr, progname + ": " + str(err.msg)

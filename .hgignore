@@ -10,7 +10,7 @@ browser_output\.txt$
 mozdevice
 mozinfo\.py$
 mozhttpd\.py$
-talos\.zip$
+\.zip$
 mobile_tp4
 remoteapp\.ini
 \.develop$
@@ -19,3 +19,4 @@ remoteapp\.ini
 ^include$
 ^lib$
 ^local$
+^talos/page_load_test/tp5/.*

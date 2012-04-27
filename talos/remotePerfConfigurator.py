@@ -32,29 +32,28 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
         self._remote = True
 
-    def convertLine(self, line, testMode, printMe):
+    def convertLine(self, line):
         # For NativeUI Fennec, we are working around bug 708793 and uploading a
         # unique machine name (defined via title) with a .n.  Currently a machine name
         # is a 1:1 mapping with the OS+hardware
         if self.nativeUI and not self.title.endswith(".n"):
           self.title = "%s.n" % self.title
-        printMe, newline = pc.PerfConfigurator.convertLine(self, line, testMode, printMe)
+        newline = pc.PerfConfigurator.convertLine(self, line)
 
-        if printMe:
-            if 'remote:' in line:
-                newline = 'remote: %s\n' % self._remote
-            if 'talos.logfile:' in line:
-                parts = line.split(':')
-                if (parts[1] != None and parts[1].strip() == ''):
-                    lfile = os.path.join(os.getcwd(), 'browser_output.txt')
-                elif self.browser_log != 'browser_output.txt':
-                    lfile = self.browser_log
-                else:
-                    lfile = parts[1].strip().strip("'")
-                lfile = self.deviceroot + '/' + lfile.split('/')[-1]
-                newline = '%s: %s\n' % (parts[0], lfile)
+        if 'remote:' in line:
+            newline = 'remote: %s\n' % self._remote
+        if 'talos.logfile:' in line:
+            parts = line.split(':')
+            if parts[1] != None and parts[1].strip() == '':
+                lfile = os.path.join(os.getcwd(), 'browser_output.txt')
+            elif self.browser_log != 'browser_output.txt':
+                lfile = self.browser_log
+            else:
+                lfile = parts[1].strip().strip("'")
+            lfile = self.deviceroot + '/' + lfile.split('/')[-1]
+            newline = '%s: %s\n' % (parts[0], lfile)
 
-        return printMe, newline
+        return newline
 
     def buildRemoteTwinopen(self):
         """
@@ -76,33 +75,26 @@ class remotePerfConfigurator(pc.PerfConfigurator):
                 raise Configuration("Unable to copy twinopen file "
                                     + file + " to " + talosRoot + file)
 
-    def convertUrlToRemote(self, line):
+    def convertUrlToRemote(self, url):
         """
-          For a give url line in the .config file, add a webserver.
-          In addition if there is a .manifest file specified, covert 
-          and copy that file to the remote device.
+        For a give url, add a webserver.
+        In addition if there is a .manifest file specified, covert
+        and copy that file to the remote device.
         """
         if self._remote == False:
-            return line
+            return url
 
-        line = pc.PerfConfigurator.convertUrlToRemote(self, line)
-        parts = line.split(' ')
-        newline = ''
-        for part in parts:
-            if 'winopen.xul' in part:
-                self.buildRemoteTwinopen()
-                newline += 'file://' + self.deviceroot + '/talos/' + part
-            else:
-                newline += part
-                if (part <> parts[-1]):
-                    newline += ' '
+        url = pc.PerfConfigurator.convertUrlToRemote(self, url)
+        if 'winopen.xul' in url:
+            self.buildRemoteTwinopen()
+            url = 'file://' + self.deviceroot + '/talos/' + url
 
         # Take care of tpan/tzoom tests
-        newline = newline.replace('webServer=', 'webServer=' + self.webserver);
+        url = url.replace('webServer=', 'webServer=' + self.webserver);
 
         # Take care of the robocop based tests
-        newline = newline.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.browser_path)
-        return newline
+        url = url.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.browser_path)
+        return url
 
     def buildRemoteManifest(self, manifestName):
         """
