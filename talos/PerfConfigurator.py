@@ -36,7 +36,7 @@ class Configuration(Exception):
 class PerfConfigurator(object):
 
     # items that can be simply replaced on output
-    replacements = ['test_timeout', 'browser_path', 'xperf_path', 'browser_log', 'webserver', 'buildid', 'develop', 'ignore_first']
+    replacements = ['test_timeout', 'browser_path', 'xperf_path', 'browser_log', 'webserver', 'develop', 'ignore_first']
 
     def __init__(self, **options):
         self.__dict__.update(options)
@@ -72,21 +72,6 @@ class PerfConfigurator(object):
         currentDateTime = datetime.now()
         return currentDateTime.strftime("%Y%m%d_%H%M")
 
-    def _getTime(self, timestamp):
-        if len(timestamp) == 14:
-          buildIdTime = time.strptime(timestamp, "%Y%m%d%H%M%S")
-        elif len(timestamp) == 12:
-          buildIdTime = time.strptime(timestamp, "%Y%m%d%H%M")
-        else:
-          buildIdTime = time.strptime(timestamp, "%Y%m%d%H")
-        return time.strftime("%a, %d %b %Y %H:%M:%S GMT", buildIdTime)
-
-    def _getTimeFromTimeStamp(self):
-        return self._getTime(self.testDate)
-
-    def _getTimeFromBuildId(self):
-        return self._getTime(self.buildid)
-
     def convertLine(self, line):
         """
         given a line in the sample config file convert this to an output
@@ -110,12 +95,6 @@ class PerfConfigurator(object):
         if 'title:' in line:
             # write title block
             newline = 'title: ' + self.title + '\n'
-            if self.testdate:
-                newline += '\n'
-                newline += 'testdate: "%s"\n' % self._getTimeFromTimeStamp()
-            elif self.useId:
-                newline += '\n'
-                newline += 'testdate: "%s"\n' % self._getTimeFromBuildId()
             if self.addon_id:
                 newline += '\n'
                 newline += 'addon_id: "%s"\n' % self.addon_id
@@ -367,21 +346,6 @@ class TalosOptions(optparse.OptionParser):
                         action = "store", dest = "outputName",
                         help = "Output file")
         defaults["outputName"] = ''
-
-        self.add_option("-i", "--id",
-                        action = "store_true", dest = "buildid",
-                        help = "Build ID of the product we are testing")
-        defaults["buildid"] = ''
-
-        self.add_option("-u", "--useId",
-                        action = "store", dest = "useId",
-                        help = "Use the buildid as the testdate")
-        defaults["useId"] = False
-
-        self.add_option("--testDate",
-                        action = "store", dest = "testdate",
-                        help = "Test date for the test run")
-        defaults["testdate"] = ''
 
         self.add_option("-w", "--browserWait",
                         action = "store", type="int", dest = "browser_wait",
