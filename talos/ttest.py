@@ -340,6 +340,8 @@ class TTest(object):
                     if process.poll() != None: #browser_controller completed, file now full
                         break
 
+                process.kill()
+
                 if total_time >= timeout:
                     raise talosError("timeout exceeded")
 
