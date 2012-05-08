@@ -100,6 +100,11 @@ class tcheck2(TsBase):
     cycles = 5
     timeout = 300
 
+class tcheck3(TsBase):
+    url = 'am instrument -w -e class org.mozilla.fennec.tests.testCheck3 org.mozilla.roboexample.test/android.test.InstrumentationTestRunner'
+    cycles = 5
+    timeout = 300
+
 ### pageloader tests
 
 class PageloaderTest(Test):
