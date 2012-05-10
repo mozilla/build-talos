@@ -252,6 +252,8 @@ class FFSetup(object):
             hit that could occur as a result of starting up with a new profile.  
             Also kills the "extra" browser that gets spawned the first time browser
             is run with a new profile.
+            Returns 1 (success) if PROFILE_REGEX is found,
+            and 0 (failure) otherwise
 
         Args:
             browser_config: object containing all the browser_config options
@@ -282,32 +284,34 @@ class FFSetup(object):
                 timeout = False
                 break
             total_time += 1
+        if timeout:
+            raise talosError("initialization timed out")
 
         res = 0
-        if (timeout == False):
-            if not os.path.isfile(log):
-                raise talosError("initalization has no output from browser")
-            results_file = open(log, "r")
-            results_raw = results_file.read()
-            results_file.close()
-            match = PROFILE_REGEX.search(results_raw)
-            if match:
-                res = 1
-                print match.group(1)
-
-            match = INFO_REGEX.search(results_raw)
-            if match:
-                binfo = match.group(1)
-                print binfo
-                for line in binfo.split('\n'):
-                    if line.strip().startswith('browser_name'):
-                        browser_config['browser_name'] = line.split(':')[1]
-                    if line.strip().startswith('browser_version'):
-                        browser_config['browser_version'] = line.split(':')[1]
-                    if line.strip().startswith('buildID'):
-                        browser_config['buildid'] = line.split(':')[1]
+        if not os.path.isfile(log):
+            raise talosError("initalization has no output from browser")
+        results_file = open(log, "r")
+        results_raw = results_file.read()
+        results_file.close()
+        match = PROFILE_REGEX.search(results_raw)
+        if match:
+            res = 1
+            print match.group(1)
         else:
-            raise talosError("initialization timed out")
+            utils.noisy("Could not find %s in browser_log: %s" % (PROFILE_REGEX.pattern, log))
+            utils.noisy("Raw results:%s" % results_raw)
+            utils.noisy("Initialization of new profile failed")
+        match = INFO_REGEX.search(results_raw)
+        if match:
+            binfo = match.group(1)
+            print binfo
+            for line in binfo.split('\n'):
+                if line.strip().startswith('browser_name'):
+                    browser_config['browser_name'] = line.split(':')[1]
+                if line.strip().startswith('browser_version'):
+                    browser_config['browser_version'] = line.split(':')[1]
+                if line.strip().startswith('buildID'):
+                    browser_config['buildid'] = line.split(':')[1]
 
         return res
 
