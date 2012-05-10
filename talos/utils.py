@@ -280,3 +280,27 @@ def tokenize(string, start, end):
   for i in range(len(_start)):
     parts.append(string[_start[i] + len(start):_end[i]])
   return parts, _end[-1]
+
+# methods for introspecting network availability
+# Used for the --develop option where we dynamically create a webserver
+
+def findOpenPort(ip):
+  # XXX we don't import this at the top of the file
+  # as this requires hashlib and talos on windows
+  # is still on python 2.4 and "we don't care" if
+  # devicemanager requires a higher version
+  from mozdevice import devicemanager
+  nettools = devicemanager.NetworkTools()
+  return nettools.findOpenPort(ip, 15707)
+
+def getLanIp():
+  # XXX we don't import this at the top of the file
+  # as this requires hashlib and talos on windows
+  # is still on python 2.4 and "we don't care" if
+  # devicemanager requires a higher version
+  from mozdevice import devicemanager
+  nettools = devicemanager.NetworkTools()
+  ip = nettools.getLanIp()
+  port = findOpenPort(ip)
+  return "%s:%s" % (ip, port)
+

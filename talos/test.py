@@ -1,5 +1,5 @@
 """
-test prototypes for Talos
+test definitions for Talos
 """
 
 class Test(object):
@@ -14,13 +14,27 @@ class Test(object):
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
-    def __str__(self):
-        lines = ["- name: %s" % self.name()]
+    def items(self):
+        """
+        returns a list of 2-tuples
+        """
+        retval = [('name', self.name())]
         for key in self.keys:
             value = getattr(self, key, None)
             if value is not None:
-                lines.append('  %s: %s' % (key, value))
+                retval.append((key, value))
+        return retval
+
+    def __str__(self):
+        """string form appropriate for YAML output"""
+        items = self.items()
+
+        key, value = items.pop(0)
+        lines = ["- %s: %s" % (key, value)]
+        for key, value in items:
+            lines.append('  %s: %s' % (key, value))
         return '\n'.join(lines)
+
 
 class TestSequel(Test):
     """abstract class to handle names in the form of 'tdhtml.2'"""
@@ -237,7 +251,6 @@ class a11y_2(TestSequel, a11y):
     tpcycles = 1
 
 # global test data
-
 tests = [ts, ts_paint,
          ts_places_generated_max, ts_places_generated_min, ts_places_generated_med,
          tp, tp4, tp4m, tp5, tp5r, tp5row, tp_js,
@@ -249,22 +262,3 @@ tests = [ts, ts_paint,
          tdhtml_2, tsvg_2, tsvg_opacity_2, v8_2, tsspider_2, tscroll_2, a11y_2
          ]
 test_dict = dict([(i.name(), i) for i in tests])
-
-if __name__ == '__main__':
-    import optparse
-    parser = optparse.OptionParser()
-
-    options, args = parser.parse_args()
-
-    if not args:
-        print 'Available tests:'
-        for test in tests:
-            print test.name()
-
-    missing = [i for i in args if i not in test_dict]
-    if missing:
-        parser.error("Unknown tests: %s" % ', '.join(missing))
-
-    for arg in args:
-        test = test_dict[arg]()
-        print str(test)

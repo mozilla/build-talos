@@ -1,66 +1,215 @@
 #!/usr/bin/env python
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
+
+"""
+performance configuration for remote Talos
+"""
+
+import copy
 import os
 import sys
-import PerfConfigurator as pc
 import utils
-from PerfConfigurator import Configuration
+import PerfConfigurator as pc
 
 class remotePerfConfigurator(pc.PerfConfigurator):
 
-    replacements = pc.PerfConfigurator.replacements + ['deviceip', 'deviceroot', 'deviceport', 'fennecIDs']
+    # use options from PerfConfigurator
+    options = copy.deepcopy(pc.PerfConfigurator.options) + [
+        ('nativeUI', {'help': 'Run tests on Fennec with a Native Java UI instead of the XUL UI',
+                      'default': False})
+        ]
 
-    def __init__(self, **options):
-        self.__dict__.update(options)
-        self._remote = False
-        if (self.deviceip <> '' or self.deviceport == -1):
-            self._setupRemote()
-            options['deviceroot'] = self.deviceroot
+    preferences = copy.deepcopy(pc.PerfConfigurator.preferences)
 
-        #this depends on buildID which requires querying the device
-        pc.PerfConfigurator.__init__(self, **options)
+    # remote-specific options
+    remote_options = {
+        'deviceip': {'help': 'Device IP (when using SUTAgent)',
+                     'flags': ['-r', '--remoteDevice']},
+        'deviceport': {'help': "SUTAgent port (defaults to 20701, specify -1 to use ADB)",
+                       'default': 20701,
+                       'flags': ['-p', '--remotePort']},
+        'deviceroot': {'help': 'path on the device that will hold files and the profile',
+                       'flags': ['--deviceRoot']},
+        'fennecIDs': {'help': 'Location of the fennec_ids.txt map file, used for robocop based tests',
+                      'flags': ['--fennecIDs']},
+        'remote': {'default': False,
+                   'flags': []},
+        }
 
-    def _setupRemote(self):
-        try:
-            self.testAgent = utils.testAgent(self.deviceip, self.deviceport)
-            self.deviceroot = self.testAgent.getDeviceRoot()
-        except:
-            raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
+    # remote-specific defaults
+    default_values = {'basetest': {'timeout': 3600,
+                                   'profile_path': '${talos}/mobile_profile',
+                                   'remote_counters': [],
+                                   'tpcycles': 3,
+                                   'tpdelay': 1000
+                                   },
+                      'browser_wait': 20,
+                      'test_timeout': 3600,
+                      'env': {'MOZ_CRASHREPORTER_NO_REPORT': '1',
+                              'MOZ_CRASHREPORTER_SHUTDOWN': '1'},
+                      'dirs': {'chrome': '${talos}/page_load_test/chrome',
+                               'components': '${talos}/page_load_test/components'},
+                      'process': 'fennec',
+                      'title': 'mobile',
+                      'test_overrides': {'ts':
+                                             {'cycles': 20,
+                                              'timeout': 150},
+                                         'ts_paint':
+                                             {'cycles': 20},
+                                         'ts_places_generated_max':
+                                             {'cycles': 10,
+                                              'timeout': 150},
+                                         'ts_places_generated_min':
+                                             {'cycles': 10,
+                                              'timeout': 150},
+                                         'ts_places_generated_med':
+                                             {'cycles': 10,
+                                              'timeout': 150},
+                                         'tdhtml':
+                                             {'tpcycles': 3},
+                                         'tsvg':
+                                             {'tpcycles': 3},
+                                         'tsspider':
+                                             {'tpcycles': 3}
+                                         }
+                      }
 
-        if self.deviceroot is None:
-            raise Configuration("Unable to connect to remote device '%s'" % self.deviceip)
+    ### overrides of PerfConfigurator methods
 
-        self._remote = True
+    def __init__(self, **kwargs):
 
-    def convertLine(self, line):
+        self.remote = False
+
+        # remote-specific preferences
+        self.preferences.update({'talos.logfile': 'browser_output.txt',
+                                 'network.manage-offline-status': False})
+        for pref in ['network.proxy.http',
+                     'network.proxy.http_port',
+                     'network.proxy.type',
+                     'browser.bookmarks.max_backups',
+                     'dom.max_chrome_script_run_time']:
+            # remove preferences not applicable to remote
+            self.preferences.pop(pref)
+
+        # add remote-specific options
+        names = [i[0] for i in self.options]
+        for key, value in self.remote_options.items():
+            index = names.index(key)
+            self.options[index][-1].update(value)
+
+        # initialize PerfConfigurator
+        pc.PerfConfigurator.__init__(self, **kwargs)
+
+        # add remote-specific defaults
+        for key, value in self.default_values.items():
+            default = self.option_dict[key].get('default')
+            if isinstance(default, dict):
+                default.update(value)
+            else:
+                self.option_dict[key]['default'] = value
+
+    def validate(self):
+
+        # setup remote
+        deviceip = self.config.get('deviceip')
+        deviceport = self.config['deviceport']
+        if deviceip or deviceport == -1:
+            self._setupRemote(deviceip, deviceport)
+
         # For NativeUI Fennec, we are working around bug 708793 and uploading a
         # unique machine name (defined via title) with a .n.  Currently a machine name
         # is a 1:1 mapping with the OS+hardware
-        if self.nativeUI and not self.title.endswith(".n"):
-          self.title = "%s.n" % self.title
-        newline = pc.PerfConfigurator.convertLine(self, line)
+        if self.config.pop('nativeUI') and not self.config['title'].endswith(".n"):
+            self.config['title'] = "%s.n" % self.config['title']
 
-        if 'remote:' in line:
-            newline = 'remote: %s\n' % self._remote
-        if 'talos.logfile:' in line:
-            parts = line.split(':')
-            if parts[1] != None and parts[1].strip() == '':
-                lfile = os.path.join(os.getcwd(), 'browser_output.txt')
-            elif self.browser_log != 'browser_output.txt':
-                lfile = self.browser_log
-            else:
-                lfile = parts[1].strip().strip("'")
-            lfile = self.deviceroot + '/' + lfile.split('/')[-1]
-            newline = '%s: %s\n' % (parts[0], lfile)
+        # fix webserver for --develop mode
+        if self.config.get('develop'):
+            webserver = self.config.get('webserver')
+            if (not webserver) or (webserver == 'localhost'):
+                self.config['webserver'] = utils.getLanIp()
 
-        return newline
+        # webServer can be used without remoteDevice, but is required when using remoteDevice
+        if self.config.get('deviceip') or self.config.get('deviceroot'):
+            if self.config.get('webserver', 'localhost') == 'localhost' or not self.config.get('deviceip'):
+                raise pc.ConfigurationError("When running Talos on a remote device, you need to provide a webServer and optionally a remotePort")
+
+        fennecIDs = self.config.get('fennecIDs')
+        if fennecIDs and not os.path.exists(fennecIDs):
+            raise pc.ConfigurationError("Unable to find fennce IDs file, please ensure this file exists: %s" % fennecIDs)
+
+        # use parent class validator
+        pc.PerfConfigurator.validate(self)
+
+        self.config['remote'] = self.remote
+
+        # fix up logfile preference
+        logfile = self.config['preferences'].get('talos.logfile')
+        if logfile:
+            # use the last part of the browser_log overridden for the remote log
+            # from the global; see
+            # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/remotePerfConfigurator.py#l45
+            self.config['preferences']['talos.logfile'] = '%s/%s' % (self.deviceroot, logfile.split('/')[-1])
+
+    def convertUrlToRemote(self, url):
+        """
+        For a give url, add a webserver.
+        In addition if there is a .manifest file specified, covert
+        and copy that file to the remote device.
+        """
+        url = pc.PerfConfigurator.convertUrlToRemote(self, url)
+        if self.remote == False:
+            return url
+        if 'winopen.xul' in url:
+            self.buildRemoteTwinopen()
+            url = 'file://' + self.deviceroot + '/talos/' + url
+
+        # Take care of tpan/tzoom tests
+        url = url.replace('webServer=', 'webServer=%s' % self.config['webserver'])
+
+        # Take care of the robocop based tests
+        url = url.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.config['browser_path'])
+        return url
+
+    def buildRemoteManifest(self, manifestName):
+        """
+        Push the manifest name to the remote device.
+        """
+        remoteName = self.deviceroot
+        newManifestName = pc.PerfConfigurator.buildRemoteManifest(self, manifestName)
+
+        remoteName += '/' + os.path.basename(manifestName)
+        if self.testAgent.pushFile(newManifestName, remoteName) == False:
+            msg = "Unable to copy remote manifest file %s to %s" % (newManifestName, remoteName)
+            raise pc.ConfigurationError(msg)
+        return remoteName
+
+    ### remotePerfConfigurator specific methods
+
+    def _setupRemote(self, deviceip, deviceport):
+
+        try:
+            self.testAgent = utils.testAgent(deviceip, deviceport)
+            self.deviceroot = self.testAgent.getDeviceRoot()
+        except:
+            raise pc.ConfigurationError("Unable to connect to remote device '%s'" % deviceip)
+
+        if self.deviceroot is None:
+            raise pc.ConfigurationError("Unable to connect to remote device '%s'" % deviceip)
+
+        self.config['deviceroot'] = self.deviceroot
+        self.remote = True
 
     def buildRemoteTwinopen(self):
         """
-          twinopen needs to run locally as it is a .xul file.
-          copy bits to <deviceroot>/talos and fix line to reference that
+        twinopen needs to run locally as it is a .xul file.
+        copy bits to <deviceroot>/talos and fix line to reference that
         """
-        if self._remote == False:
+        # XXX this should live in run_test.py or similar
+
+        if self.remote == False:
             return
 
         files = ['page_load_test/quit.js',
@@ -72,112 +221,23 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         talosRoot = self.deviceroot + '/talos/'
         for file in files:
             if self.testAgent.pushFile(file, talosRoot + file) == False:
-                raise Configuration("Unable to copy twinopen file "
-                                    + file + " to " + talosRoot + file)
+                raise pc.ConfigurationError("Unable to copy twinopen file "
+                                            + file + " to " + talosRoot + file)
 
-    def convertUrlToRemote(self, url):
-        """
-        For a give url, add a webserver.
-        In addition if there is a .manifest file specified, covert
-        and copy that file to the remote device.
-        """
-        if self._remote == False:
-            return url
+def main(args=sys.argv[1:]):
 
-        url = pc.PerfConfigurator.convertUrlToRemote(self, url)
-        if 'winopen.xul' in url:
-            self.buildRemoteTwinopen()
-            url = 'file://' + self.deviceroot + '/talos/' + url
+    # generate a configuration from command-line arguments
+    conf = remotePerfConfigurator(usage='%prog [options]')
 
-        # Take care of tpan/tzoom tests
-        url = url.replace('webServer=', 'webServer=' + self.webserver);
+    # XXX add PerfConfigurator-specific override for load since
+    # Perfconfigurator and talos console_script entry points differ
+    conf.add_option("-f", "--sampleConfig", dest="load",
+                    action="append",
+                    help="Input config file")
 
-        # Take care of the robocop based tests
-        url = url.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.browser_path)
-        return url
-
-    def buildRemoteManifest(self, manifestName):
-        """
-           Push the manifest name to the remote device.
-        """
-        remoteName = self.deviceroot
-        newManifestName = pc.PerfConfigurator.buildRemoteManifest(self, manifestName)
-
-        remoteName += '/' + os.path.basename(manifestName)
-        if self.testAgent.pushFile(newManifestName, remoteName) == False:
-            raise Configuration("Unable to copy remote manifest file "
-                                + newManifestName + " to " + remoteName)
-        return remoteName
-
-class remoteTalosOptions(pc.TalosOptions):
-
-    def __init__(self, **kwargs):
-        pc.TalosOptions.__init__(self, **kwargs)
-        defaults = {}
-
-        self.add_option("-r", "--remoteDevice", action="store",
-                    type = "string", dest = "deviceip",
-                    help = "Device IP (when using SUTAgent)")
-        defaults["deviceip"] = ''
-
-        self.add_option("-p", "--remotePort", action="store",
-                    type="int", dest = "deviceport",
-                    help = "SUTAgent port (defaults to 20701, specify -1 to use ADB)")
-        defaults["deviceport"] = 20701
-
-        self.add_option("--deviceRoot", action="store",
-                    type = "string", dest = "deviceroot",
-                    help = "path on the device that will hold files and the profile")
-        defaults["deviceroot"] = ''
-
-        self.add_option("--nativeUI", action = "store_true", dest = "nativeUI",
-                    help = "Run tests on Fennec with a Native Java UI instead of the XUL UI")
-        defaults["nativeUI"] = False
-
-        self.add_option("--fennecIDs", action = "store", dest = "fennecIDs",
-                    help = "Location of the fennec_ids.txt map file, used for robocop based tests")
-        defaults["fennecIDs"] = ''
-
-        defaults["sampleConfig"] = os.path.join(pc.here, 'remote.config')
-        defaults["extensions"] = ['${talos}/pageloader']
-        self.set_defaults(**defaults)
-
-    def verifyCommandLine(self, args, options):
-        options = pc.TalosOptions.verifyCommandLine(self, args, options)
-
-        if options.develop:
-            if options.webserver.startswith('localhost'):
-                options.webserver = pc.getLanIp()
-
-        #webServer can be used without remoteDevice, but is required when using remoteDevice
-        if (options.deviceip != '' or options.deviceroot != ''):
-            if (options.webserver == 'localhost'  or options.deviceip == ''):
-                raise Configuration("When running Talos on a remote device, you need to provide a webServer and optionally a remotePort")
-
-        if options.fennecIDs and not os.path.exists(options.fennecIDs):
-            raise Configuration("Unable to find fennec_ids.txt, please ensure this file exists: %s" % options.fennecIDs)
-
-        return options
-
-def main(argv=sys.argv[1:]):
-    parser = remoteTalosOptions()
-    progname = parser.get_prog_name()
-
-    try:
-        options, args = parser.parse_args(argv)
-        configurator = remotePerfConfigurator(**options.__dict__)
-        configurator.writeConfigFile()
-    except Configuration, err:
-        print >> sys.stderr, "%s: %s" % (progname, str(err.msg))
-        return 4
-    except EnvironmentError, err:
-        print >> sys.stderr, "%s: %s" % (progname, err)
-        return 4
-    # Note there is no "default" exception handler: we *want* a big ugly
-    # traceback and not a generic error if something happens that we didn't
-    # anticipate
-
+    # parse the arguments and dump an output file
+    conf.parse_args(args)
     return 0
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main())

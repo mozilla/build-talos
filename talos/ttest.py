@@ -340,7 +340,15 @@ class TTest(object):
                     if process.poll() != None: #browser_controller completed, file now full
                         break
 
-                process.kill()
+                if hasattr(process, 'kill'):
+                    # BBB python 2.4 does not have Popen.kill(); see
+                    # https://bugzilla.mozilla.org/show_bug.cgi?id=752951#c6
+                    try:
+                        process.kill()
+                    except OSError, e:
+                        if e.errno != 3: 
+                            # 3 == No such process in Linux and Mac (errno.h)
+                            raise
 
                 if total_time >= timeout:
                     raise talosError("timeout exceeded")
