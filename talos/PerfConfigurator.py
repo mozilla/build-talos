@@ -205,7 +205,7 @@ the highest value.
                         ]
 
     # default filters
-    filters = ['ignore_first', 'median']
+    filters = ['ignore_max', 'median']
 
     # config items to extend vs overwrite
     extend = set(['basetest', 'extraPrefs'])
