@@ -85,7 +85,8 @@ class PerfConfigurator(Configuration):
                        'flags': ['--webServer']}),
         ('develop', {'help': "useful for running tests on a developer machine.  Creates a local webserver and doesn't upload to the graph servers.",
                      'default': False}),
-        ('responsiveness', {'help': 'turn on responsiveness collection'}),
+        ('responsiveness', {'help': 'turn on responsiveness collection',
+                            'type': bool}),
         ('ignore_first', {'help': """Alternative median calculation from pageloader data.
 Use the raw values and discard the first page load instead of
 the highest value.
@@ -533,7 +534,10 @@ def main(args=sys.argv[1:]):
                     help="Input config file")
 
     # parse the arguments and dump an output file
-    conf.parse_args(args)
+    options, args = conf.parse_args(args)
+    if args:
+        conf.error("PerfConfigurator takes no arguments")
+        return 1
     return 0
 
 if __name__ == '__main__':
