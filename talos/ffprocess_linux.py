@@ -93,10 +93,6 @@ class LinuxProcess(FFProcess):
                 if utils.is_running(pid):
                     os.kill(pid, getattr(signal, sig))
                     time.sleep(timeout)
-                ret = 'terminated with SIGABRT'
-                if self.ProcessesWithNames(str(pid)):
-                    os.kill(pid, signal.SIGTERM)
-                    time.sleep(timeout)
                     ret = 'terminated with %s' % sig
         except OSError, (errno, strerror):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
