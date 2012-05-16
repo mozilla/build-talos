@@ -137,6 +137,18 @@ def filters(*filter_names):
     retval.append(scalar_filters[reducer])
     return retval
 
+def filters_args(_filters):
+    """
+    convenience function to take a list of
+    [['filter_name', args]] and convert these to functions
+    """
+    retval = []
+    filter_names = [f[0] for f in _filters]
+    filter_functions = filters(*filter_names)
+    for index, value in enumerate(_filters):
+        retval.append([filter_functions[index], value[-1]])
+    return retval
+
 def apply(data, filters):
     """apply filters to a data series. does no safety check"""
     for f in filters:

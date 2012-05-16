@@ -127,11 +127,12 @@ class PageloaderTest(Test):
     tpcycles = 1 # number of time to run each page
     cycles = None
     timeout = None
+    filters = None
     keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome',
             'rss', 'resolution', 'cycles',
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
-            'xperf_providers', 'xperf_stackwalk'
+            'xperf_providers', 'xperf_stackwalk', 'filters'
             ]
 
 class tp(PageloaderTest):
@@ -205,22 +206,26 @@ class tscroll(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 5
 
-class dromaeo_css(PageloaderTest):
+class dromaeo(PageloaderTest):
+    """abstract base class for dramaeo tests"""
+    filters = [['mean', []]]
+
+class dromaeo_css(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/css.manifest'
 
-class dromaeo_dom(PageloaderTest):
+class dromaeo_dom(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/dom.manifest'
 
-class dromaeo_jslib(PageloaderTest):
+class dromaeo_jslib(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/jslib.manifest'
 
-class dromaeo_sunspider(PageloaderTest):
+class dromaeo_sunspider(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/sunspider.manifest'
 
-class dromaeo_v8(PageloaderTest):
+class dromaeo_v8(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/v8.manifest'
 
-class dromaeo_basics(PageloaderTest):
+class dromaeo_basics(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/dromaeo.manifest'
 
 class a11y(PageloaderTest):
