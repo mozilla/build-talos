@@ -261,7 +261,7 @@ tests = [ts, ts_paint,
          tp, tp4, tp4m, tp5, tp5r, tp5row, tp_js,
          tdhtml, tsvg, tsvg_opacity,
          v8, tpaint, twinopen, tsspider, tscroll,
-         tpan, tzoom, trobopan, tcheckerboard, tprovider, tcheck2,
+         tpan, tzoom, trobopan, tcheckerboard, tprovider, tcheck2, tcheck3,
          dromaeo_css, dromaeo_dom, dromaeo_jslib, dromaeo_sunspider, dromaeo_v8, dromaeo_basics,
          a11y,
          tdhtml_2, tsvg_2, tsvg_opacity_2, v8_2, tsspider_2, tscroll_2, a11y_2
