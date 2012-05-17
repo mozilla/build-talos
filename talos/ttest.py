@@ -49,6 +49,7 @@
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
 import glob
+import mozinfo
 import os
 import platform
 import re
@@ -330,7 +331,6 @@ class TTest(object):
                     if (len(fileData) > 0):
                         utils.noisy(fileData.replace(dumpResult, ''))
                         dumpResult = fileData
-        
 
                     # Get the output from all the possible counters
                     for count_type in counters:
@@ -346,7 +346,7 @@ class TTest(object):
                     try:
                         process.kill()
                     except OSError, e:
-                        if e.errno != 3: 
+                        if (not mozinfo.isWin) and (e.errno != 3):
                             # 3 == No such process in Linux and Mac (errno.h)
                             raise
 
