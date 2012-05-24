@@ -167,6 +167,7 @@ the highest value.
     # for extension scopes, see
     # see https://developer.mozilla.org/en/Installing_extensions
     preferences = {
+        'app.update.enabled': False,
         'browser.bookmarks.max_backups': 0,
         'browser.cache.disk.smart_size.enabled': False,
         'browser.cache.disk.smart_size.first_run': False,
