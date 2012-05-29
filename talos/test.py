@@ -173,6 +173,16 @@ class tp5row(tp5):
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS', 'Content_RSS']
     mac_counters = ['Private Bytes', 'Main_RSS', 'Content_RSS']
 
+class tp5n(tp5):
+    tpmanifest = '${talos}/page_load_test/tp5n/tp5n.manifest'
+    tpcycles = 1
+    tppagecycles = 25
+    rss = True
+    win_counters = ['Main_RSS', 'Content_RSS', 'Private Bytes', '% Processor Time']
+    w7_counters = ['Main_RSS', 'Content_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
+    linux_counters = ['Private Bytes', 'XRes', 'Main_RSS', 'Content_RSS']
+    mac_counters = ['Private Bytes', 'Main_RSS', 'Content_RSS']
+
 class tp_js(PageloaderTest):
     url = """'"http://localhost/page_load_test/framecycler.html?quit=1&cycles=5"'"""
     win_counters = ['Working Set', 'Private Bytes', '% Processor Time']
@@ -189,8 +199,9 @@ class tsvg(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/svg/svg.manifest'
     tpcycles = 5
 
-class tsvg_opacity(tsvg):
+class tsvg_opacity(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/svg_opacity/svg_opacity.manifest'
+    tpcycles = 5
 
 class v8(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/v8/v8.manifest'
@@ -253,17 +264,43 @@ class tscroll_2(TestSequel, tscroll):
     pass
 
 class a11y_2(TestSequel, a11y):
+    pass
+
+# 'r' tests are row based vs column based.
+class tdhtmlr(tdhtml):
     tpcycles = 1
+    tppagecycles = 25
+
+class tsvgr(tsvg):
+    tpcycles = 1
+    tppagecycles = 25
+
+class tsvgr_opacity(tsvg_opacity):
+    tpcycles = 1
+    tppagecycles = 25
+
+class tsspiderr(tsspider):
+    tpcycles = 1
+    tppagecycles = 25
+
+class tscrollr(tscroll):
+    tpcycles = 1
+    tppagecycles = 25
+
+class a11yr(a11y):
+    tpcycles = 1
+    tppagecycles = 25
 
 # global test data
 tests = [ts, ts_paint,
          ts_places_generated_max, ts_places_generated_min, ts_places_generated_med,
-         tp, tp4, tp4m, tp5, tp5r, tp5row, tp_js,
+         tp, tp4, tp4m, tp5, tp5r, tp5row, tp5n, tp_js,
          tdhtml, tsvg, tsvg_opacity,
          v8, tpaint, twinopen, tsspider, tscroll,
          tpan, tzoom, trobopan, tcheckerboard, tprovider, tcheck2, tcheck3,
          dromaeo_css, dromaeo_dom, dromaeo_jslib, dromaeo_sunspider, dromaeo_v8, dromaeo_basics,
          a11y,
-         tdhtml_2, tsvg_2, tsvg_opacity_2, v8_2, tsspider_2, tscroll_2, a11y_2
+         tdhtml_2, tsvg_2, tsvg_opacity_2, v8_2, tsspider_2, tscroll_2, a11y_2,
+         tdhtmlr, tsvgr, tsvgr_opacity, tsspiderr, tscrollr, a11yr
          ]
 test_dict = dict([(i.name(), i) for i in tests])

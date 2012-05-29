@@ -242,7 +242,7 @@ def send_to_graph(results_url, machine, date, browser_config, results, amo, filt
         if cd[count_type] == []: #failed to collect any data for this counter
           utils.stamped_msg("No results collected for: " + counterName, "Error")
           continue
-        adata = '"'+shortName(count_type)+'": %s' % [x for x in cd[count_type]]
+        adata = '"'+shortName(count_type)+'": %s' % [str(x) for x in cd[count_type]]
         aux.append(adata.replace('\'', '"'))
         vals = [[x, 'NULL'] for x in cd[count_type]]
         if print_format == "tpformat":
