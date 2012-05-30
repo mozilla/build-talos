@@ -26,7 +26,7 @@ class PerfConfigurator(Configuration):
     options = [
         ('browser_path', {'help': "path to executable we are testing",
                           'required': "Please specify --executablePath",
-                          'flags': ['-e', '--executeablePath']
+                          'flags': ['-e', '--executablePath']
                           }),
         # --sampleConfig is handled separately
         ('title', {'help': 'Title of the test run',
