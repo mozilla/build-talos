@@ -93,7 +93,7 @@ class LinuxProcess(FFProcess):
                 if utils.is_running(pid):
                     os.kill(pid, getattr(signal, sig))
                     time.sleep(timeout)
-                    ret = 'terminated with %s' % sig
+                    ret = 'killed with %s' % sig
         except OSError, (errno, strerror):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
