@@ -203,6 +203,7 @@ class TTest(object):
         remoteLog = deviceRoot + "/" + browser_config['browser_log']
         fHandle.write("logfile=%s\n" % remoteLog)
         fHandle.write("host=http://%s\n" % browser_config['webserver'])
+        fHandle.write("rawhost=http://%s\n" % browser_config['webserver'])
         fHandle.close()
 
         # Note, we are pushing to /sdcard since we have this location hard coded in robocop
