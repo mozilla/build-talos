@@ -153,6 +153,7 @@
 			times = times.sort(function(a,b){
 				return a - b;
 			});
+                        results.raw = times
 
 			// Make Sum
 			results.sum = 0;
@@ -229,6 +230,7 @@
 	var totalTime = 0;
 	var time = 0;
 	var title, testName, testID, testSummary = {} , testSummaryNum = {}, maxTotal = 0, maxTotalNum = 0;
+        var meanValues = [];
 	var nameDone = {};
 	
 	// Query String Parsing
@@ -363,7 +365,17 @@
 				var summary = (runStyle === "runs/s" ? Math.pow(Math.E, maxTotal / maxTotalNum) : maxTotal).toFixed(2);
 
 				if ( typeof tpRecordTime !== "undefined" ) {
-					tpRecordTime( summary );
+                                        first = true;
+                                        meanString = "";
+                                        for (var i=0;i<meanValues.length; i++) {
+                                            if (first == true) {
+                                                meanString = meanValues[i];
+                                                first = false;
+                                            } else {
+                                                meanString += "," + meanValues[i];
+                                            }
+                                        }
+                                        tpRecordTime( meanString );
 
 				} else {
 					var pre = document.createElement("pre");
@@ -681,6 +693,9 @@
 		testSummary[data.curID] = (testSummary[data.curID] || 0) + mean;
 		testSummaryNum[data.curID] = (testSummaryNum[data.curID] || 0) + 1;
 		
+                for (var data_iter = 0; data_iter < data.raw.length; data_iter++) {
+                    meanValues.push(data.raw[data_iter]);
+                }
 		maxTotal += mean;
 		maxTotalNum++;
 

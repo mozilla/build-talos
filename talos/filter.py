@@ -1,3 +1,5 @@
+import math
+
 """
 data filters:
 takes a series of run data and applies statistical transforms to it
@@ -39,7 +41,33 @@ def stddev(series):
     """
     return variance(series)**0.5
 
-scalar_filters = [mean, median, max, min, variance, stddev]
+def dromaeo(series):
+    """
+    dromaeo: https://wiki.mozilla.org/Dromaeo, pull the internal calculation out
+      * This is for 'runs/s' based tests, not 'ms' tests.
+      * chunksize: defined in dromaeo: page_load_test/dromaeo/webrunner.js#l8
+    """
+    means = []
+    chunksize = 5
+    series = list(dromaeo_chunks(series, chunksize))
+    for i in series:
+        means.append(mean(i))
+    return geometric_mean(means)
+
+def dromaeo_chunks(series, size):
+    for i in xrange(0, len(series), size):
+        yield series[i:i+size]
+
+def geometric_mean(series):
+    """
+    geometric_mean: http://en.wikipedia.org/wiki/Geometric_mean
+    """
+    total = 0
+    for i in series:
+        total += math.log(i)
+    return math.exp(total / len(series))
+
+scalar_filters = [mean, median, max, min, variance, stddev, dromaeo]
 
 ### filters that return a list
 

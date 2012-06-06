@@ -219,7 +219,7 @@ class tscroll(PageloaderTest):
 
 class dromaeo(PageloaderTest):
     """abstract base class for dramaeo tests"""
-    filters = [['mean', []]]
+    filters = [['dromaeo', []]]
 
 class dromaeo_css(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/css.manifest'

@@ -358,7 +358,14 @@ function plRecordTime(time) {
     i = 0;
   }
   var nextName = pages[i].url.spec;
-  report.recordTime(pageIndex, time);
+  if (typeof(time) == "string") {
+    var times = time.split(',');
+    for (var t = 0; t < times.length; t++) {
+      report.recordTime(pageIndex, times[t]);
+    }
+  } else {
+    report.recordTime(pageIndex, time);
+  }
   if (noisy) {
     dumpLine("Cycle " + (cycle+1) + "(" + pageCycle + ")" + ": loaded " + pageName + " (next: " + nextName + ")");
   }
@@ -423,7 +430,7 @@ function _loadHandlerCapturing() {
   }
 
   // set up the function for content to call
-  if (gTime >= 0) {
+  if (gTime != -1) {
     plRecordTime(gTime);
     gTime = -1;
     setTimeout(plNextPage, delay);
