@@ -21,6 +21,7 @@
 # Contributor(s):
 #   Annie Sullivan <annie.sullivan@gmail.com> (original author)
 #   Alice Nodelman <anodelman@mozilla.com>
+#   retornam <mozbugs.retornam+bz@gmail.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -76,15 +77,15 @@ def browserInfo(browser_config, devicemanager=None):
     else:
       config.read(appIniPath)
 
-    if not 'buildid' in browser_config or not browser_config['buildid']:
+    if not browser_config.get('buildid'):
       browser_config['buildid'] = config.get('App', 'BuildID')
-    if not 'repository' in browser_config or browser_config['repository'] == 'NULL':
+    if not browser_config.get('repository', 'NULL') == 'NULL':
       browser_config['repository'] = config.get('App', 'SourceRepository')
-    if not 'sourcestamp' in browser_config or browser_config['sourcestamp'] == 'NULL':
+    if not browser_config.get('sourcestamp', 'NULL') == 'NULL':
       browser_config['sourcestamp'] = config.get('App', 'SourceStamp')
-    if not 'browser_name' in browser_config or not browser_config['browser_name']:
+    if not browser_config.get('browser_name'):
       browser_config['browser_name'] = config.get('App', 'Name')
-    if not 'browser_version' in browser_config or not browser_config['browser_version']:
+    if not browser_config.get('browser_version'):
       browser_config['browser_version'] = config.get('App', 'Version')
   if ('repository' in browser_config) and ('sourcestamp' in browser_config):
     print 'RETURN:<a href = "' + browser_config['repository'] + '/rev/' + browser_config['sourcestamp'] + '">rev:' + browser_config['sourcestamp'] + '</a>'
