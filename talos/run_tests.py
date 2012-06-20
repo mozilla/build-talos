@@ -181,7 +181,6 @@ def run_tests(config):
   # set defaults
   title = config.get('title', '')
   testdate = config.get('testdate', '')
-  results_urls = config.get('results_url', [])
   amo = config.get('amo', False)
 
   # set browser_config
