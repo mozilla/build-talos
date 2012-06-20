@@ -11,8 +11,8 @@ from socket import error, herror, gaierror, timeout
 socket.setdefaulttimeout(None)
 import urlparse
 
-def link_exists(host, selector):
-    url = "http://" + host + selector
+def link_exists(host, selector, scheme='http'):
+    url = "%s://%s%s" % (scheme, host, selector)
     host, path = urlparse.urlsplit(url)[1:3]
     found = 0
     msg = "ping"
@@ -33,6 +33,16 @@ def link_exists(host, selector):
     except Exception, e:
         print "WARNING: graph server ", e.__class__,  e, url
     return found
+
+def test_links(*urls):
+    """ensure urls exist"""
+    # should this function return True/False, etc?
+
+    for url in urls:
+        url_split = urlparse.urlsplit(url)
+        scheme, server, path, _, _ = url_split
+        if scheme in ('http', 'https') and not link_exists(server, path, scheme):
+            print 'WARNING: graph server link does not exist: %s' % url
 
 def post_multipart(host, selector, fields=(), files=()):
     """

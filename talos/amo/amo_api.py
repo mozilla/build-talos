@@ -1,4 +1,3 @@
-
 from amo import AMOOAuth
 import mozinfo
 import os
@@ -29,7 +28,7 @@ def getOSDetails():
 
   osname = amo_os_values[mozinfo.info['os']]
   osversion = mozinfo.info['version']
-  
+
   #define os, osversion, platform to match https://bugzilla.mozilla.org/show_bug.cgi?id=693209
   if osname == "Linux":
     relver = platform.release()
@@ -46,7 +45,8 @@ def getOSDetails():
 # amo.perf({'os':'WINNT', 'version':'1.23', 'platform': 'x86_64',
 #           'product': 'fx', 'product_version': '4.2.6',
 #           'average': 1.3, 'test': 'ts', 'addon_id': 22})
-def upload_amo_results(addonid, appversion, product, testname, vals):  
+def amo_results_data(addonid, appversion, product, testname, vals):
+  """data structure for amo result"""
   os, osversion, platform = getOSDetails()
 
   data = {'addon_id': addonid,
@@ -57,15 +57,16 @@ def upload_amo_results(addonid, appversion, product, testname, vals):
           'product_version': appversion,
           'version': osversion,
           'test': testname}
+  return data
 
-  # TODO: allow for domain to be dynamically configured.  Potentially in the addons.config file
+def upload_amo_results(data, domain, prefix, protocol):
+
   # NOTE: credentials are stored in ~/.amo-oauth
-  amo = AMOOAuth(domain="addons-dev.allizom.org", port=443, protocol='https',
-                 prefix='/z')
+  amo = AMOOAuth(domain=domain, port=443, protocol=protocol,
+                 prefix=prefix)
   retVal = amo.create_perf(data)
   if retVal == "OK":
     print "Uploaded results to AMO successfully: %s" % data
   else:
     print "ERROR: Uploading results to AMO failed: %s : %s" % (retVal, data)
   return retVal
-

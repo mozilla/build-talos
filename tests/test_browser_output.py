@@ -17,12 +17,11 @@ class TestBrowserOutput(unittest.TestCase):
 
     def test_ts_format(self):
 
-        # read the output
+        # output file
         browser_ts = os.path.join(here, 'browser_output.ts.txt')
-        raw_results = file(browser_ts).read()
 
         # parse the results
-        browser_log = BrowserLogResults(raw_results)
+        browser_log = BrowserLogResults(browser_ts)
 
         # ensure the results meet what we expect
         self.assertEqual(browser_log.format, 'tsformat')
@@ -32,12 +31,11 @@ class TestBrowserOutput(unittest.TestCase):
 
     def test_tsvg_format(self):
 
-        # read the output
+        # output file
         browser_tsvg = os.path.join(here, 'browser_output.tsvg.txt')
-        raw_results = file(browser_tsvg).read()
 
         # parse the results
-        browser_log = BrowserLogResults(raw_results)
+        browser_log = BrowserLogResults(browser_tsvg)
 
         # ensure the results meet what we expect
         self.assertEqual(browser_log.format, 'tpformat')
@@ -134,7 +132,7 @@ __startBeforeLaunchTimestamp1333663595557__endBeforeLaunchTimestamp
 __startAfterTerminationTimestamp1333663596551__endAfterTerminationTimestamp
 """
 
-        b = BrowserLogResults(good_report)
+        b = BrowserLogResults(results_raw=good_report)
 
         # but there's no hope for this one
         bad_report = good_report + good_report # interesting math
@@ -158,7 +156,7 @@ __startAfterTerminationTimestamp1333663596551__endAfterTerminationTimestamp
 
         error = None
         try:
-            BrowserLogResults(browser_log)
+            BrowserLogResults(results_raw=browser_log)
         except talosError, e:
             if substr not in e.msg:
                 import pdb; pdb.set_trace()

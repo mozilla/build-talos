@@ -41,8 +41,12 @@ class PerfConfigurator(Configuration):
         ('resultsServer', {'help': "Address of the results server [DEPRECATED: use --resultsURL]"}),
         ('resultsLink', {'help': 'Link to the results from this test run [DEPRECATED: use --resultsURL]',
                          'flags': ['-l', '--resultsLink']}),
-        ('results_url', {'help': 'URL of results server or file:// url for local output'}),
-
+        ('results_urls', {'help': 'URL of graphserver or file:// url for local output',
+                         'flags': ['--results_url'],
+                         'type': list}),
+        ('datazilla_urls', {'help': 'URL of datazilla server of file:// url for local output',
+                            'flags': ['--datazilla-url'],
+                            'type': list}),
         # XXX activeTests should really use a list-thingy but can't because of
         # the one-off ':' separation :/
         ('activeTests', {'help': "List of tests to run, separated by ':' (ex. ts:tp4:tsvg)",
@@ -55,9 +59,6 @@ class PerfConfigurator(Configuration):
         ('tpmozafterpaint', {'help': 'wait for MozAfterPaint event before recording the time',
                              'type': bool,
                              'flags': ['--mozAfterPaint']}),
-
-        # testPrefix will be killed
-        # https://bugzilla.mozilla.org/show_bug.cgi?id=749802
 
         ('extensions', {'help': 'Extension to install while running',
                         'default': ['${talos}/pageloader'],
@@ -98,6 +99,8 @@ the highest value.
                      'flags': ['--filter']}),
         ('amo', {'help': 'set amo',
                  'type': bool}),
+        ('cycles', {'help': 'number of browser cycles to run',
+                    'type': int}),
         ('tpmanifest', {'help': 'manifest file to test'}),
         ('tpcycles', {'help': 'number of pageloader cycles to run',
                       'type': int}),
@@ -105,7 +108,7 @@ the highest value.
                           'type': int}),
         ('tpdelay', {'help': 'length of the pageloader delay',
                      'type': int}),
-        ('sourceStamp',  {'help': 'Specify the hg revision or sourcestamp for the changeset we are testing.  This will use the value found in application.ini if it is not specified.'}),
+        ('sourcestamp',  {'help': 'Specify the hg revision or sourcestamp for the changeset we are testing.  This will use the value found in application.ini if it is not specified.'}),
 
         ### arguments without command line options
         ('extra_args', {'help': 'arguments to pass to browser',
@@ -195,7 +198,8 @@ the highest value.
         }
 
     # keys to generated self.config that are global overrides to tests
-    global_overrides = ['responsiveness',
+    global_overrides = ['cycles',
+                        'responsiveness',
                         'rss',
                         'shutdown',
                         'tpcycles',
@@ -270,9 +274,17 @@ the highest value.
         resultsServer = self.config.pop('resultsServer', None)
         resultsLink = self.config.pop('resultsLink', None)
         if resultsServer and resultsLink:
-            if self.config.get('results_url'):
+            if self.config.get('results_urls'):
                 raise Configuration("Can't user resultsServer/resultsLink and results_url: use results_url instead")
-            self.config['results_url'] = 'http://%s%s' % (resultsServer, resultsLink)
+            self.config['results_urls'] = ['http://%s%s' % (resultsServer, resultsLink)]
+
+        # default raw_results_url
+        # TODO: deprecate and set via invoker (buildbot, etc)
+        if not self.config.get('datazilla_urls'):
+            self.config['datazilla_urls'] = ["http://10.8.73.29/views/api/load_test"]
+        # include a way to disable
+        if self.config['datazilla_urls'] == ['']:
+            self.config['datazilla_urls'] = []
 
         # BBB: remove doubly-quoted xperf values from command line
         # (needed for buildbot)
@@ -358,7 +370,6 @@ the highest value.
         # add the tests to the configuration
         # XXX extending vs over-writing?
         self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides))
-
 
     def parse_args(self, *args, **kwargs):
 

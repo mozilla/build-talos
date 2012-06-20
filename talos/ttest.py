@@ -216,7 +216,7 @@ class TTest(object):
     def runTest(self, browser_config, test_config):
         """
             Runs an url based test on the browser as specified in the browser_config dictionary
-  
+
         Args:
             browser_config:  Dictionary of configuration options for the browser (paths, prefs, etc)
             test_config   :  Dictionary of configuration for the given test (url, cycles, counters, etc)
@@ -227,9 +227,7 @@ class TTest(object):
         utils.debug("operating with platform_type : " + self.platform_type)
         counters = test_config.get(self.platform_type + 'counters', [])
         resolution = test_config['resolution']
-        all_browser_results = []
-        all_counter_results = []
-        format = ""
+        all_results = []
         utils.setEnvironmentVars(browser_config['env'])
         utils.setEnvironmentVars({'MOZ_CRASHREPORTER_NO_REPORT': '1'})
 
@@ -252,9 +250,9 @@ class TTest(object):
 
             # add any provided directories to the installed browser
             for dir in browser_config['dirs']:
-                self._ffsetup.InstallInBrowser(browser_config['browser_path'], 
+                self._ffsetup.InstallInBrowser(browser_config['browser_path'],
                                             browser_config['dirs'][dir])
-  
+
             # make profile path work cross-platform
             test_config['profile_path'] = os.path.normpath(test_config['profile_path'])
             profile_dir, temp_dir = self.createProfile(test_config['profile_path'], browser_config)
@@ -264,16 +262,21 @@ class TTest(object):
                 self.setupRobocopTests(browser_config, profile_dir)
 
             utils.debug("initialized " + browser_config['process'])
-            if test_config['shutdown']:
-                shutdown = []
 
-            responsiveness = []
-            # ignore responsiveness tests on linux until we fix Bug 710296
+            # setup global (cross-cycle) counters:
+            # shutdown, responsiveness
+            global_counters = {}
+            if test_config['shutdown']:
+                global_counters['shutdown'] = []
             if test_config.get('responsiveness') and platform.system() != "Linux":
+                # ignore responsiveness tests on linux until we fix Bug 710296
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL': '10'})
-               responsiveness = []
+               global_counters['responsiveness'] = []
+
+            # instantiate an object to hold test results
+            test_results = results.TestResults(test_config, global_counters)
 
             for i in range(test_config['cycles']):
 
@@ -314,17 +317,17 @@ class TTest(object):
                 # as the tests starts, but if we don't provide
                 # some time for the browser to start we have trouble connecting the CounterManager to it
                 time.sleep(browser_config['browser_wait'])
+
                 #set up the counters for this test
+                counter_results = None
                 if counters:
                     cm = self.cmanager.CounterManager(self._ffprocess, browser_config['process'], counters)
-                counter_results = {}
-                for counter in counters:
-                    counter_results[counter] = []
+                    counter_results = dict([(counter, []) for counter in counters])
 
-                startTime = -1
-                dumpResult = ""
                 #the main test loop, monitors counters and checks for browser output
+                dumpResult = ""
                 while total_time < timeout:
+
                     # Sleep for [resolution] seconds
                     time.sleep(resolution)
                     total_time += resolution
@@ -336,7 +339,7 @@ class TTest(object):
                     # Get the output from all the possible counters
                     for count_type in counters:
                         val = cm.getCounterValue(count_type)
-                        if (val):
+                        if val:
                             counter_results[count_type].append(val)
                     if process.poll() != None: #browser_controller completed, file now full
                         break
@@ -358,33 +361,13 @@ class TTest(object):
                 if counters:
                     cm.stopMonitor()
 
-                # read the browser output
+                # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']
                 if not os.path.isfile(browser_log_filename):
                     raise talosError("no output from browser [%s]" % browser_log_filename)
-                results_file = open(browser_log_filename)
-                results_raw = results_file.read()
-                results_file.close()
 
-                # get the results from the browser output
-                browser_log_results = results.BrowserLogResults(results_raw, filename=browser_log_filename)
-                browser_results = browser_log_results.browser_results
-                startTime = browser_log_results.startTime
-                endTime = browser_log_results.endTime
-                format = browser_log_results.format
-
-                if ("Main_RSS" in counters) or ("Content_RSS" in counters):
-                    RSS_REGEX = re.compile('RSS:\s+([a-zA-Z0-9]+):\s+([0-9]+)$')
-                    counter_results['Main_RSS'] = []
-                    counter_results['Content_RSS'] = []
-                    for line in results_raw.split('\n'):
-                        rssmatch = RSS_REGEX.search(line)
-                        if (rssmatch):
-                            (type, value) = (rssmatch.group(1), rssmatch.group(2))
-                            if type == 'Main':
-                                counter_results['Main_RSS'].append(value)
-                            if type == 'Content':
-                                counter_results['Content_RSS'].append(value)
+                # add the results from the browser output
+                test_results.add(browser_log_filename, counter_results=counter_results)
 
                 time.sleep(browser_config['browser_wait'])
                 #clean up any stray browser processes
@@ -394,24 +377,17 @@ class TTest(object):
                 while ((process.poll() is None) and timer < browser_config['browser_wait']):
                     time.sleep(1)
                     timer+=1
- 
-                if test_config['shutdown']:
-                    shutdown.append(endTime - startTime)
-                # ignore responsiveness tests on linux until we fix Bug 697555
-                if test_config.get('responsiveness') and platform.system() != "Linux":
-                    responsiveness.extend(browser_log_results.responsiveness())
 
-                all_browser_results.append(browser_results)
-                all_counter_results.append(counter_results)
-
+            # cleanup
             self.cleanupProfile(temp_dir)
             utils.restoreEnvironmentVars()
-            if test_config['shutdown']:
-                all_counter_results.append({'shutdown' : shutdown})
-            # include tresponsiveness results if taken
-            if responsiveness:
-                all_counter_results.append({'responsiveness' : responsiveness})
-            return (all_browser_results, all_counter_results, format)
+
+            # include global (cross-cycle) counters
+            test_results.all_counter_results.extend([{key: value} for key, value in global_counters.items()])
+
+            # return results
+            return test_results
+
         except:
             try:
                 if 'cm' in vars():

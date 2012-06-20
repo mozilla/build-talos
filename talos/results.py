@@ -1,17 +1,223 @@
+#!/usr/bin/env python
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 """
-objects for parsing Talos results
+objects and methods for parsing and serializing Talos results
+see https://wiki.mozilla.org/Buildbot/Talos/DataFormat
 """
 
 import filter
+import optparse
+import os
+import output
 import re
+import sys
+import time
 import utils
 
-__all__ = ['BrowserLogResults', 'PageloaderResults']
+__all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'BrowserLogResults', 'main']
+
+class TalosResults(object):
+    """Container class for Talos results"""
+
+    def __init__(self, title, date, browser_config, filters, remote=False, amo=False, test_name_extension=''):
+        self.results = []
+        self.filters = filters
+        self.test_name_extension = test_name_extension
+        self.remote = False
+        self.amo = amo
+
+        # info needed for graphserver
+        self.title = title
+        self.date = date
+        self.browser_config = browser_config
+
+    def add(self, test_results):
+        self.results.append(test_results)
+
+    def check_output_formats(self, **output_formats):
+        """check output formats"""
+
+        # ensure formats are available
+        formats = output_formats.keys()
+        missing = self.check_formats_exist(formats)
+        if missing:
+            raise utils.talosError("Output format(s) unknown: %s" % ','.join(missing))
+
+        # perform per-format check
+        for format, urls in output_formats.items():
+            cls = output.formats[format]
+            cls.check(urls)
+
+    @classmethod
+    def check_formats_exist(cls, formats):
+        """
+        ensure that all formats are registered
+        return missing formats
+        """
+        return [i for i in formats if i not in output.formats]
+
+    def output(self, **output_formats):
+        """
+        output all results to appropriate URLs
+        """
+
+        utils.noisy("Outputting talos results => %s" % output_formats)
+        try:
+
+            for key, urls in output_formats.items():
+                _output = output.formats[key](self)
+                results = _output()
+                for url in urls:
+                    _output.output(results, url)
+
+        except utils.talosError, e:
+            # print to results.out
+            try:
+                _output = output.GraphserverOutput(self)
+                results = _output()
+                _output.output('file://%s' % os.path.join(os.getcwd(), 'results.out'), results)
+            except:
+                pass
+            print '\nFAIL: %s' % e.msg.replace('\n', '\nRETURN:')
+            raise e
+
+
+class TestResults(object):
+    """container object for all test results across cycles"""
+
+    type = 'VALUES'
+
+    def __init__(self, test_config, global_counters=None):
+        self.results = []
+        self.test_config = test_config
+        self.format = None
+        self.global_counters = global_counters or {}
+        self.all_counter_results = []
+
+    def name(self):
+        return self.test_config['name']
+
+    def add(self, results, counter_results=None):
+        """
+        accumulate one cycle of results
+        - results : TalosResults instance or path to browser log
+        - counter_results : counters accumulated for this cycle
+        """
+
+        if isinstance(results, basestring):
+            # ensure the browser log exists
+            if not os.path.isfile(results):
+                raise talosError("no output from browser [%s]" % results)
+
+            # convert to a results class via parsing the browser log
+            results = BrowserLogResults(filename=results, counter_results=counter_results, global_counters=self.global_counters).results()
+
+        # ensure the results format matches previous results
+        if self.results:
+            if not results.format == self.results[0].format:
+                raise utils.talosError("Conflicting formats for results")
+        else:
+            self.format = results.format
+
+        self.results.append(results)
+        if counter_results:
+            self.all_counter_results.append(counter_results)
+
+class TsResults(object):
+    """
+    results for Ts tests
+    """
+
+    format = 'tsformat'
+
+    def __init__(self, string, counter_results=None):
+        self.vals = [float(val) for val in string.split('|')]
+        self.counter_results = counter_results
+
+    def values(self, filters):
+        """return filtered (value, page) for each value"""
+        return [[val, 'NULL'] for val in self.vals]
+
+    def raw_values(self):
+        return self.vals[:]
+
+class PageloaderResults(object):
+    """
+    results from a browser_dump snippet
+    https://wiki.mozilla.org/Buildbot/Talos/DataFormat#browser_output.txt
+    """
+
+    format = 'tpformat'
+
+    def __init__(self, string, counter_results=None):
+        """
+        - string : string of relevent part of browser dump
+        - counter_results : counter results dictionary
+        """
+
+        self.counter_results = counter_results
+
+        string = string.strip()
+        lines = string.splitlines()
+
+        # currently we ignore the metadata on top of the output (e.g.):
+        # _x_x_mozilla_page_load
+        # _x_x_mozilla_page_load_details
+        # |i|pagename|runs|
+        lines = [line for line in lines if ';' in line]
+
+        # gather the data
+        self.results = []
+        for line in lines:
+            result = {}
+            r = line.strip('|').split(';')
+            result['index'] = int(r[0])
+            result['page'] = r[1]
+            result['runs'] = [float(i) for i in r[2:]]
+
+            # fix up page
+            result['page'] = self.format_pagename(result['page'])
+
+            self.results.append(result)
+
+    def format_pagename(self, page):
+        """
+        fix up the page for reporting
+        """
+        page = page.rstrip('/')
+        if '/' in page:
+            page = page.split('/')[0]
+        return page
+
+    def raw_values(self):
+        return [(result['page'], result['runs']) for result in self.results]
+
+    def values(self, filters):
+        return [[val, page] for val, page in self.filter(*filters)
+                if val > -1]
+
+    def filter(self, *filters):
+        """
+        filter the results set;
+        applies each of the filters in order to the results data
+        filters should be callables that take a list
+        the last filter should return a scalar (float or int)
+        returns a list of [[data, page], ...]
+        """
+        retval = []
+        for result in self.results:
+            page = result['page']
+            data = result['runs']
+            data = filter.apply(data, filters)
+            retval.append([data, page])
+        return retval
 
 class BrowserLogResults(object):
-    """
-    parse the results from the browser log
-    """
+    """parse the results from the browser log output"""
 
     # tokens for the report types
     report_tokens = [('tsformat', ('__start_report', '__end_report')),
@@ -27,13 +233,49 @@ class BrowserLogResults(object):
     # regular expression for failure case if we can't parse the tokens
     RESULTS_REGEX_FAIL = re.compile('__FAIL(.*?)__FAIL', re.DOTALL|re.MULTILINE)
 
+    # regular expression for RSS results
+    RSS_REGEX = re.compile('RSS:\s+([a-zA-Z0-9]+):\s+([0-9]+)$')
+
     # regular expression for responsiveness results
     RESULTS_RESPONSIVENESS_REGEX = re.compile('MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*?)$', re.DOTALL|re.MULTILINE)
 
-    def __init__(self, results_raw, filename=None):
+    # classes for results types
+    classes = {'tsformat': TsResults,
+               'tpformat': PageloaderResults}
+
+    def __init__(self, filename=None, results_raw=None, counter_results=None, global_counters=None):
+        """
+        - shutdown : whether to record shutdown results or not
+        """
+
+        self.counter_results = counter_results
+        self.global_counters = global_counters
+
+        if not (results_raw or filename):
+            raise utils.talosError("Must specify filename or results_raw")
 
         self.filename = filename
+        if results_raw is None:
+            # read the file
+
+            if not os.path.isfile(filename):
+                raise utils.talosError("File '%s' does not exist" % filename)
+            f = file(filename)
+            exception = None
+            try:
+                results_raw = f.read()
+            except Exception, exception:
+                pass
+            try:
+                f.close()
+            except:
+                pass
+            if exception:
+                raise exception
+
         self.results_raw = results_raw
+
+        # parse the results
         try:
             self.parse()
         except utils.talosError:
@@ -43,6 +285,9 @@ class BrowserLogResults(object):
                 self.error(match.group(1))
                 raise utils.talosError(match.group(1))
             raise # reraise failing exception
+
+        # accumulate counter results
+        self.counters(self.counter_results, self.global_counters)
 
     def error(self, message):
         """raise a talosError for bad parsing of the browser log"""
@@ -98,64 +343,98 @@ class BrowserLogResults(object):
             self.error("Multiple matches for %s,%s" % (start_token, end_token))
         return parts[0], last_token
 
+    def results(self):
+        """return results instance appropriate to the format detected"""
+
+        if self.format not in self.classes:
+            raise utils.talosError("Unable to find a results class for format: %s" % repr(self.format))
+
+        return self.classes[self.format](self.browser_results)
+
+    ### methods for counters
+
+    def counters(self, counter_results=None, global_counters=None):
+        """accumulate all counters"""
+
+        if counter_results is not None:
+            self.rss(counter_results)
+
+        if global_counters is not None:
+            if 'shutdown' in global_counters:
+                self.shutdown(global_counters)
+            if 'responsiveness' in global_counters:
+                global_counters['responsiveness'].extend(self.responsiveness())
+
+    def rss(self, counter_results):
+        """record rss counters in counter_results dictionary"""
+
+        counters = ['Main', 'Content']
+        if not set(['%s_RSS' for i in counters]).issubset(counter_results.keys()):
+            return
+        for line in self.results_raw.split('\n'):
+            rssmatch = self.RSS_REGEX.search(line)
+            if rssmatch:
+                (type, value) = (rssmatch.group(1), rssmatch.group(2))
+                # type will be 'Main' or 'Content'
+                counter_results['%s_RSS'].append(value)
+
+    def shutdown(self, counter_results):
+        """record shutdown time in counter_results dictionary"""
+        counter_results.setdefault('shutdown', []).append(self.endTime - self.startTime)
+
     def responsiveness(self):
         return self.RESULTS_RESPONSIVENESS_REGEX.findall(self.results_raw)
 
 
-class PageloaderResults(object):
-    """
-    results from a browser_dump snippet
-    https://wiki.mozilla.org/Buildbot/Talos/DataFormat#browser_output.txt
-    """
+def main(args=sys.argv[1:]):
 
-    def __init__(self, string):
-        """
-        - string : string of browser dump
-        """
-        string = string.strip()
-        lines = string.splitlines()
+    # parse command line options
+    usage = '%prog [options] browser.log [...]'
+    parser = optparse.OptionParser(usage=usage)
+    # TODO: unify CLI options with PerfConfigurator/talos options
+    parser.add_option("-a", dest='testname',
+                      default='test')
+    parser.add_option("-t", "--title", dest="title",
+                      default='qm-pxp01')
+    parser.add_option("--date", dest="date",
+                      default=time.time())
+    options, args = parser.parse_args()
+    if not args:
+        parser.print_help()
+        parser.exit()
 
-        # currently we ignore the metadata on top of the output
-        lines = [line for line in lines if ';' in line]
+    # make a browser_config dictionary with minimal information
+    browser_config = {'branch_name': '',
+                      'buildid': 'testbuildid',
+                      'sourcestamp': 'NULL',
+                      'browser_name': 'Firefox',
+                      'browser_version': '3.14', # for jmaher
+                      'addon_id': 'NULL'
+                      }
 
-        # gather the data
-        self.results = []
-        for line in lines:
-            result = {}
-            r = line.strip('|').split(';')
-            result['index'] = int(r[0])
-            result['page'] = r[1]
-            result['runs'] = [float(i) for i in r[2:]]
+    # filters
+    # TODO: add to CLI options
+    filters = [filter.ignore_max, filter.mean]
 
-            # fix up page
-            result['page'] = self.format_pagename(result['page'])
+    # gather the results
+    results = TalosResults(title=options.title,
+                           date=options.date,
+                           browser_config=browser_config,
+                           filters=filters)
+    for arg in args:
+        browser_log = BrowserLogResults(arg)
+        test_results = TestResults({'name': arg})
+        test_results.add(browser_log.results())
+        results.add(test_results)
 
-            self.results.append(result)
+    # print the graphserver-format data
+    # TODO: add the ability to specify results_urls, raw_results_urls
+    # and ability to output to stdout
+    import tempfile
+    filename = tempfile.mktemp()
+    results.output(results_urls=['file://%s' % filename])
+    contents = file(filename).read()
+    print contents
 
-    def format_pagename(self, page):
-        """
-        fix up the page for reporting
-        """
-        page = page.rstrip('/')
-        if '/' in page:
-            page = page.split('/')[0]
-        return page
-
-    def raw_values(self):
-        return dict([(result['page'], result['runs']) for result in self.results])
-
-    def filter(self, *filters):
-        """
-        filter the results set;
-        applies each of the filters in order to the results data
-        filters should be callables that take a list
-        the last filter should return a scalar (float or int)
-        returns a list of [[data, page], ...]
-        """
-        retval = []
-        for result in self.results:
-            page = result['page']
-            data = result['runs']
-            data = filter.apply(data, filters)
-            retval.append([data, page])
-        return retval
+if __name__ == '__main__':
+    main()
