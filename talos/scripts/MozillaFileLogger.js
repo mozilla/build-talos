@@ -1,15 +1,29 @@
 /**
- * MozillaFileLogger, a log listener that can write to a local file.
+ * MozFileLogger, a log listener that can write to a local file.
  */
 
+// Detect if we are on older branches that don't have specialpowers enabled talos available
+var ua_plat = window.navigator.userAgent.split('(')[1].split(')')[0];
+var parts = ua_plat.split(';');
+var useSpecialPowers = true;
+if (parts.length >= 2) {
+  var rev = parseInt(parts[2].split(':')[1]);
+  if (parts[0].replace(/^\s+|\s+$/g, '') == 'Android' && parts[1].replace(/^\s+|\s+$/g, '') == 'Mobile' && parseInt(rev) < 16)
+  {
+    useSpecialPowers = false;
+  }
+} //else we are on windows xp or windows 7
+
 var ipcMode = false; // running in e10s build and need to use IPC?
-try {
-  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-  var ipcsanity = Components.classes["@mozilla.org/preferences-service;1"]
-                    .getService(Components.interfaces.nsIPrefBranch);
-  ipcsanity.setIntPref("mochitest.ipcmode", 0);
-} catch (e) {
-  ipcMode = true;
+if (!useSpecialPowers) {
+  try {
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+    var ipcsanity = Components.classes["@mozilla.org/preferences-service;1"]
+                      .getService(Components.interfaces.nsIPrefBranch);
+    ipcsanity.setIntPref("mochitest.ipcmode", 0);
+  } catch (e) {
+    ipcMode = true;
+  }
 }
 
 function contentDispatchEvent(type, data, sync) {
@@ -39,20 +53,24 @@ function dumpLog(msg) {
   dump(msg);
   if (ipcMode == true) {
     contentAsyncEvent('Logger', msg);
+  } else if (useSpecialPowers) {
+    SpecialPowers.log(msg);
   } else {
-    MozillaFileLogger.log(msg);
+    MozFileLogger.log(msg);
   }
 }
 
 
-try {
-  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+if (!useSpecialPowers) {
+  try {
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
 
-  if (Cc === undefined) {
-    var Cc = Components.classes;
-    var Ci = Components.interfaces;
-  }
-} catch (ex) {} //running in ipcMode-chrome
+    if (Cc === undefined) {
+      var Cc = Components.classes;
+      var Ci = Components.interfaces;
+    }
+  } catch (ex) {} //running in ipcMode-chrome
+}
 
 try {
   const FOSTREAM_CID = "@mozilla.org/network/file-output-stream;1";
@@ -87,10 +105,10 @@ try {
 
 /** Init the file logger with the absolute path to the file.
     It will create and append if the file already exists **/
-var MozillaFileLogger = {};
+var MozFileLogger = {};
 
 
-MozillaFileLogger.init = function(path) {
+MozFileLogger.init = function(path) {
   if (ipcMode) {
     contentAsyncEvent("LoggerInit", {"filename": path});
     return;
@@ -100,14 +118,14 @@ MozillaFileLogger.init = function(path) {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   } catch (ex) {} //running in ipcMode-chrome
 
-  MozillaFileLogger._file = Cc[LF_CID].createInstance(Ci.nsILocalFile);
-  MozillaFileLogger._file.initWithPath(path);
-  MozillaFileLogger._foStream = Cc[FOSTREAM_CID].createInstance(Ci.nsIFileOutputStream);
-  MozillaFileLogger._foStream.init(this._file, PR_WRITE_ONLY | PR_CREATE_FILE | PR_APPEND,
+  MozFileLogger._file = Cc[LF_CID].createInstance(Ci.nsILocalFile);
+  MozFileLogger._file.initWithPath(path);
+  MozFileLogger._foStream = Cc[FOSTREAM_CID].createInstance(Ci.nsIFileOutputStream);
+  MozFileLogger._foStream.init(this._file, PR_WRITE_ONLY | PR_CREATE_FILE | PR_APPEND,
                                    0664, 0);
 }
 
-MozillaFileLogger.getLogCallback = function() {
+MozFileLogger.getLogCallback = function() {
   if (ipcMode) {
     return function(msg) {
       contentAsyncEvent("Logger", {"num": msg.num, "level": msg.level, "info": msg.info.join(' ')});
@@ -120,26 +138,26 @@ MozillaFileLogger.getLogCallback = function() {
     } catch(ex) {} //running in ipcMode-chrome
 
     var data = msg.num + " " + msg.level + " " + msg.info.join(' ') + "\n";
-    if (MozillaFileLogger._foStream)
-      MozillaFileLogger._foStream.write(data, data.length);
+    if (MozFileLogger._foStream)
+      MozFileLogger._foStream.write(data, data.length);
 
     if (data.indexOf("SimpleTest FINISH") >= 0) {
-      MozillaFileLogger.close();
+      MozFileLogger.close();
     }
   }
 }
 
 // This is only used from chrome space by the reftest harness
-MozillaFileLogger.log = function(msg) {
+MozFileLogger.log = function(msg) {
   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
 
   try {
-    if (MozillaFileLogger._foStream)
-      MozillaFileLogger._foStream.write(msg, msg.length);
+    if (MozFileLogger._foStream)
+      MozFileLogger._foStream.write(msg, msg.length);
   } catch(ex) {}
 }
 
-MozillaFileLogger.close = function() {
+MozFileLogger.close = function() {
   if (ipcMode) {
     contentAsyncEvent("LoggerClose");
     return;
@@ -149,20 +167,26 @@ MozillaFileLogger.close = function() {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   } catch(ex) {} //running in ipcMode-chrome
 
-  if(MozillaFileLogger._foStream)
-    MozillaFileLogger._foStream.close();
+  if(MozFileLogger._foStream)
+    MozFileLogger._foStream.close();
   
-  MozillaFileLogger._foStream = null;
-  MozillaFileLogger._file = null;
+  MozFileLogger._foStream = null;
+  MozFileLogger._file = null;
 }
 
 if (ipcMode == false) {
-  try {
-    var prefs = Components.classes['@mozilla.org/preferences-service;1']
-      .getService(Components.interfaces.nsIPrefBranch2);
-    var filename = prefs.getCharPref('talos.logfile');
-    MozillaFileLogger.init(filename);
-  } catch (ex) {} //pref does not exist, return empty string
+  if (!useSpecialPowers) {
+    try {
+      var prefs = Components.classes['@mozilla.org/preferences-service;1']
+        .getService(Components.interfaces.nsIPrefBranch2);
+      var filename = prefs.getCharPref('talos.logfile');
+      MozFileLogger.init(filename);
+    } catch (ex) {} //pref does not exist, return empty string
+  } else {
+    try {
+      var filename = SpecialPowers.getCharPref('talos.logfile');
+      SpecialPowers.setLogFile(filename);
+    } catch (ex) {} //pref does not exist, return empty string
+  }
 }
-
 

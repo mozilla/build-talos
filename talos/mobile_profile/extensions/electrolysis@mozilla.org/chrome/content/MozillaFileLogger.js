@@ -1,5 +1,5 @@
 /**
- * MozillaFileLogger, a log listener that can write to a local file.
+ * MozFileLogger, a log listener that can write to a local file.
  */
 
 try {
@@ -44,11 +44,11 @@ try {
 
 /** Init the file logger with the absolute path to the file.
     It will create and append if the file already exists **/
-var MozillaFileLogger = {};
+var MozFileLogger = {};
 
 var ipcMode = false;
 
-MozillaFileLogger.init = function(path) {
+MozFileLogger.init = function(path) {
   if (ipcMode) {
     contentAsyncEvent("LoggerInit", {"filename": path});
     return;
@@ -58,14 +58,14 @@ MozillaFileLogger.init = function(path) {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   } catch (ex) {} //running in ipcMode-chrome
 
-  MozillaFileLogger._file = Cc[LF_CID].createInstance(Ci.nsILocalFile);
-  MozillaFileLogger._file.initWithPath(path);
-  MozillaFileLogger._foStream = Cc[FOSTREAM_CID].createInstance(Ci.nsIFileOutputStream);
-  MozillaFileLogger._foStream.init(this._file, PR_WRITE_ONLY | PR_CREATE_FILE | PR_TRUNCATE,
+  MozFileLogger._file = Cc[LF_CID].createInstance(Ci.nsILocalFile);
+  MozFileLogger._file.initWithPath(path);
+  MozFileLogger._foStream = Cc[FOSTREAM_CID].createInstance(Ci.nsIFileOutputStream);
+  MozFileLogger._foStream.init(this._file, PR_WRITE_ONLY | PR_CREATE_FILE | PR_TRUNCATE,
                                    0664, 0);
 }
 
-MozillaFileLogger.getLogCallback = function() {
+MozFileLogger.getLogCallback = function() {
   if (ipcMode) {
     return function(msg) {
       contentAsyncEvent("Logger", {"num": msg.num, "level": msg.level, "info": msg.info.join(' ')});
@@ -78,26 +78,26 @@ MozillaFileLogger.getLogCallback = function() {
     } catch(ex) {} //running in ipcMode-chrome
 
     var data = msg.num + " " + msg.level + " " + msg.info.join(' ') + "\n";
-    if (MozillaFileLogger._foStream)
-      MozillaFileLogger._foStream.write(data, data.length);
+    if (MozFileLogger._foStream)
+      MozFileLogger._foStream.write(data, data.length);
 
     if (data.indexOf("SimpleTest FINISH") >= 0) {
-      MozillaFileLogger.close();
+      MozFileLogger.close();
     }
   }
 }
 
 // This is only used from chrome space by the reftest harness
-MozillaFileLogger.log = function(msg) {
+MozFileLogger.log = function(msg) {
   try {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   } catch(ex) {} //running in ipcMode-chrome
   
-  if (MozillaFileLogger._foStream)
-    MozillaFileLogger._foStream.write(msg, msg.length);
+  if (MozFileLogger._foStream)
+    MozFileLogger._foStream.write(msg, msg.length);
 }
 
-MozillaFileLogger.close = function() {
+MozFileLogger.close = function() {
   if (ipcMode) {
     contentAsyncEvent("LoggerClose");
     return;
@@ -107,9 +107,9 @@ MozillaFileLogger.close = function() {
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   } catch(ex) {} //running in ipcMode-chrome
 
-  if(MozillaFileLogger._foStream)
-    MozillaFileLogger._foStream.close();
+  if(MozFileLogger._foStream)
+    MozFileLogger._foStream.close();
   
-  MozillaFileLogger._foStream = null;
-  MozillaFileLogger._file = null;
+  MozFileLogger._foStream = null;
+  MozFileLogger._file = null;
 }

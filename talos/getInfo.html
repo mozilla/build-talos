@@ -1,87 +1,76 @@
-<!-- ***** BEGIN LICENSE BLOCK *****
-   - Version: MPL 1.1/GPL 2.0/LGPL 2.1
-   -
-   - The contents of this file are subject to the Mozilla Public License Version
-   - 1.1 (the "License"); you may not use this file except in compliance with
-   - the License. You may obtain a copy of the License at
-   - http://www.mozilla.org/MPL/
-   -
-   - Software distributed under the License is distributed on an "AS IS" basis,
-   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-   - for the specific language governing rights and limitations under the
-   - License.
-   -
-   - The Original Code is Windows performance test.
-   -
-   - The Initial Developer of the Original Code is
-   - Google Inc.
-   - Portions created by the Initial Developer are Copyright (C) 1999
-   - the Initial Developer. All Rights Reserved.
-   -
-   - Contributor(s):
-   - Annie Sullivan <annie.sullivan@gmail.com>
-   - Alice Nodelman <anodelman@mozilla.com>
-   -
-   - Alternatively, the contents of this file may be used under the terms of
-   - either the GNU General Public License Version 2 or later (the "GPL"), or
-   - the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-   - in which case the provisions of the GPL or the LGPL are applicable instead
-   - of those above. If you wish to allow use of your version of this file only
-   - under the terms of either the GPL or the LGPL, and not to allow others to
-   - use your version of this file under the terms of the MPL, indicate your
-   - decision by deleting the provisions above and replace them with the notice
-   - and other provisions required by the LGPL or the GPL. If you do not delete
-   - the provisions above, a recipient may use your version of this file under
-   - the terms of any one of the MPL, the GPL or the LGPL.
-   -
-   - ***** END LICENSE BLOCK ***** -->
-
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
+  <meta charset="utf-8">
   <head>
     <script language="Javascript" type="text/javascript" src="scripts/MozillaFileLogger.js"></script>
     <script language="Javascript" type="text/javascript" src="page_load_test/quit.js"></script>
+    <script>
+
+  function setup() {
+    var id;
+    var verison;
+    var buildid;
+
+    if (!useSpecialPowers) {
+      try {
+        netscape.security.PrivilegeManager.enablePrivilege('UniversalPreferencesRead UniversalPreferencesWrite UniversalXPConnect');
+        var appInfo = Components.classes['@mozilla.org/xre/app-info;1']
+                                .getService(Components.interfaces.nsIXULAppInfo);
+        id = appInfo.ID;
+        version = appInfo.Version;
+        buildid = appInfo.appBuildID;
+      } catch(err) {
+          dumpLog('exception getting privileged access, defaulting to XUL_FENNEC');
+          id = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
+      }
+    } else {
+      id = SpecialPowers.ID;
+      version = SpecialPowers.Version;
+      buildid = SpecialPowers.BuildID;
+    }
+    return [id, version, buildid]
+  }
+    </script>
     <title>shutdown script</title>
   </head>
 
   <body onload="
-     const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
-     const THUNDERBIRD_ID = '{3550f703-e582-4d05-9a08-453d09bdfdc6}';
-     const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
-     const FENNEC_ID = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}';
-     const XUL_FENNEC_ID = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
-     product = 'undefined';
-     try {
-         netscape.security.PrivilegeManager.enablePrivilege('UniversalPreferencesRead UniversalPreferencesWrite UniversalXPConnect');
-         var appInfo = Components.classes['@mozilla.org/xre/app-info;1']
-                                     .getService(Components.interfaces.nsIXULAppInfo);
+    var appinfo = setup();
+    var id = appinfo[0];
+    var version = appinfo[1];
+    var buildid = appinfo[2];
 
-         if(appInfo.ID == FIREFOX_ID) {  
-           product = 'Firefox';
-         } else if(appInfo.ID == THUNDERBIRD_ID) {  
-           product = 'Thunderbird';
-         } else if(appInfo.ID == SEAMONKEY_ID) {
-           product = 'SeaMonkey';
-         } else if(appInfo.ID == XUL_FENNEC_ID) {
-           product = 'Fennec';
-         } else if(appInfo.ID == FENNEC_ID) {
-           product = 'Fennec';
-         }
-    } catch(err) {
-        dumpLog('exception getting privileged access');
+    const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
+    const THUNDERBIRD_ID = '{3550f703-e582-4d05-9a08-453d09bdfdc6}';
+    const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
+    const FENNEC_ID = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}';
+    const XUL_FENNEC_ID = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
+    product = 'undefined';
+
+    if(id == FIREFOX_ID) {  
+      product = 'Firefox';
+    } else if(id == THUNDERBIRD_ID) {  
+      product = 'Thunderbird';
+    } else if(id == SEAMONKEY_ID) {
+      product = 'SeaMonkey';
+    } else if(id == XUL_FENNEC_ID) {
+      product = 'Fennec';
+    } else if(id == FENNEC_ID) {
+      product = 'Fennec';
     }
-    try {
-        dumpLog('__browserInfo\nbrowser_name:' + product + '\nbrowser_version:' + appInfo.version + '\nbuildID:' + appInfo.appBuildID + '\n__browserInfo');
-    } catch(err) {
-        dumpLog('exception accessing privileged information');
-    }
+
+    dumpLog('__browserInfo\nbrowser_name:' + product + '\nbrowser_version:' + version + '\nbuildID:' + buildid + '\n__browserInfo');
+
     dumpLog('__metrics\tScreen width/height:' + screen.width + '/' + screen.height + '\n\tcolorDepth:' + screen.colorDepth + '\n');
     dumpLog('\tBrowser inner width/height: ' + window.innerWidth + '/' + window.innerHeight + '\n');
 //JMAHER: this is temporarily commented out because this hangs the fennec browser
 //  dumpLog('\tBrowser outer width/height: ' + window.outerWidth + '/' + window.outerHeight);
     dumpLog('__metrics');
-	goQuitApplication();
-	window.close();
+    goQuitApplication();
+    window.close();
 ">
   </body>
 </html>

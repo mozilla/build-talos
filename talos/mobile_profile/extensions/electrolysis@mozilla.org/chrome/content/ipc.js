@@ -41,19 +41,19 @@ function ipcEvent(e) {
 
     switch (type) {
     case 'LoggerInit':
-      MozillaFileLogger.init(data);
+      MozFileLogger.init(data);
       break;
     case 'Logger':
       dump("in ipcEvent, logger: " + data);
-      MozillaFileLogger.log(data);
+      MozFileLogger.log(data);
       break;
     case 'LoggerClose':
-      MozillaFileLogger.close();
+      MozFileLogger.close();
       break;
     default:
       if (type == 'QuitApplication') {
         removeEventListener("contentEvent", function (e) { ipcEvent(e); }, false, true);
-        MozillaFileLogger.close();
+        MozFileLogger.close();
       }
 
       if (sync == 1) {
@@ -68,5 +68,5 @@ addEventListener("contentEvent", function (e) { ipcEvent(e); }, false, true);
 
 var retVal = sendSyncMessage("chromeEvent", {"type":"getCharPref", "data":"talos.logfile"});
 if (retVal[0]) {
-  MozillaFileLogger.init(retVal[0].value);
+  MozFileLogger.init(retVal[0].value);
 }

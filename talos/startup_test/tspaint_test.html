@@ -22,14 +22,19 @@ function painted() {
     dumpLog('__start_report' + startupTime + '__end_report\n\n');
   }
 
-  try {
-    netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
-    var consoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
-    var messages = {}
-    consoleService.getMessageArray(messages, {});
-    for (var i = 0; i < messages.value.length; i++)
-      dumpLog(messages.value[i].message + '\n');
-  } catch(ex) { dumpLog(ex + '\n'); }
+  var messages = {}
+  if (useSpecialPowers) {
+    messages = SpecialPowers.getConsoleMessages();
+  } else {
+    try {
+      netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+      var consoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
+      consoleService.getMessageArray(messages, {});
+    } catch(ex) { dumpLog(ex + '\n'); }
+  }
+
+  for (var i = 0; i < messages.value.length; i++)
+    dumpLog(messages.value[i].message + '\n');
 
   // Close window asynchronously, there might still be startup operations that still need to run
   window.setTimeout(function() {

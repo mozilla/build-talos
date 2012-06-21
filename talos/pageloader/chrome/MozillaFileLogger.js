@@ -4,7 +4,6 @@
 
 var ipcMode = false; // running in e10s build and need to use IPC?
 try {
-  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   var ipcsanity = Components.classes["@mozilla.org/preferences-service;1"]
                     .getService(Components.interfaces.nsIPrefBranch);
   ipcsanity.setIntPref("mochitest.ipcmode", 0);
@@ -34,8 +33,6 @@ function contentAsyncEvent(type, data) {
 }
 
 try {
-  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-
   if (Cc === undefined) {
     var Cc = Components.classes;
     var Ci = Components.interfaces;
@@ -84,10 +81,6 @@ MozillaFileLogger.init = function(path) {
     return;
   }
 
-  try {
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-  } catch (ex) {} //running in ipcMode-chrome
-
   MozillaFileLogger._file = Cc[LF_CID].createInstance(Ci.nsILocalFile);
   MozillaFileLogger._file.initWithPath(path);
   MozillaFileLogger._foStream = Cc[FOSTREAM_CID].createInstance(Ci.nsIFileOutputStream);
@@ -103,10 +96,6 @@ MozillaFileLogger.getLogCallback = function() {
   }
 
   return function (msg) {
-    try {
-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-    } catch(ex) {} //running in ipcMode-chrome
-
     var data = msg.num + " " + msg.level + " " + msg.info.join(' ') + "\n";
     if (MozillaFileLogger._foStream)
       MozillaFileLogger._foStream.write(data, data.length);
@@ -119,7 +108,6 @@ MozillaFileLogger.getLogCallback = function() {
 
 // This is only used from chrome space by the reftest harness
 MozillaFileLogger.log = function(msg) {
-  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   if (MozillaFileLogger._foStream)
     MozillaFileLogger._foStream.write(msg, msg.length);
 }
@@ -129,10 +117,6 @@ MozillaFileLogger.close = function() {
     contentAsyncEvent("LoggerClose");
     return;
   }
-
-  try {
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-  } catch(ex) {} //running in ipcMode-chrome
 
   if(MozillaFileLogger._foStream)
     MozillaFileLogger._foStream.close();

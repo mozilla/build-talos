@@ -66,11 +66,16 @@ var prefs = null;
 if ( KID_CHROME ) {
     // Reset browser.chromeURL so it points to KID_CHROME.
     // This will cause window.open in openWindow to open that chrome.
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-    prefs = Components.classes["@mozilla.org/preferences-service;1"]
-              .getService( Components.interfaces.nsIPrefBranch );
-    SAVED_CHROME = prefs.getCharPref( "browser.chromeURL" );
-    prefs.setCharPref( "browser.chromeURL", KID_CHROME );
+
+    if (useSpecialPowers) {
+        SpecialPowers.setCharPref( "browser.chromeURL", KID_CHROME );
+    } else {
+        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        prefs = Components.classes["@mozilla.org/preferences-service;1"]
+                  .getService( Components.interfaces.nsIPrefBranch );
+        SAVED_CHROME = prefs.getCharPref( "browser.chromeURL" );
+        prefs.setCharPref( "browser.chromeURL", KID_CHROME );
+    }
 }
 
 const CYCLE_SIZE    = PHASE_ONE + PHASE_TWO + PHASE_THREE;
@@ -236,8 +241,13 @@ function tryAgain() {
 function restoreChromeURL() {
     // Restore browser.chromeURL pref.
     if ( KID_CHROME && SAVED_CHROME.length ) {
-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-        prefs.setCharPref( "browser.chromeURL", SAVED_CHROME );
+
+        if (useSpecialPowers) {
+            SpecialPowers.setCharPref( "browser.chromeURL", SAVED_CHROME );
+        } else {
+            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+            prefs.setCharPref( "browser.chromeURL", SAVED_CHROME );
+        }
     }
 }
 

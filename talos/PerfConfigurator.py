@@ -61,7 +61,7 @@ class PerfConfigurator(Configuration):
                              'flags': ['--mozAfterPaint']}),
 
         ('extensions', {'help': 'Extension to install while running',
-                        'default': ['${talos}/pageloader'],
+                        'default': ['${talos}/pageloader', '${talos}/specialpowers'],
                         'flags': ['--extension']}),
         ('fast', {'help': 'Run tp tests as tp_fast',
                   'type': bool}),
