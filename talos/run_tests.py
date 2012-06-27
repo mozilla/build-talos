@@ -79,9 +79,9 @@ def browserInfo(browser_config, devicemanager=None):
 
     if not browser_config.get('buildid'):
       browser_config['buildid'] = config.get('App', 'BuildID')
-    if not browser_config.get('repository', 'NULL') == 'NULL':
+    if browser_config.get('repository', 'NULL') == 'NULL':
       browser_config['repository'] = config.get('App', 'SourceRepository')
-    if not browser_config.get('sourcestamp', 'NULL') == 'NULL':
+    if browser_config.get('sourcestamp', 'NULL') == 'NULL':
       browser_config['sourcestamp'] = config.get('App', 'SourceStamp')
     if not browser_config.get('browser_name'):
       browser_config['browser_name'] = config.get('App', 'Name')

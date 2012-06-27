@@ -109,6 +109,7 @@ the highest value.
         ('tpdelay', {'help': 'length of the pageloader delay',
                      'type': int}),
         ('sourcestamp',  {'help': 'Specify the hg revision or sourcestamp for the changeset we are testing.  This will use the value found in application.ini if it is not specified.'}),
+        ('repository',  {'help': 'Specify the url for the repository we are testing.  This will use the value found in application.ini if it is not specified.'}),
 
         ### arguments without command line options
         ('extra_args', {'help': 'arguments to pass to browser',
