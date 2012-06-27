@@ -137,7 +137,11 @@ SpecialPowersAPI.prototype = {
 
   get ID() {
     var appInfo = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULAppInfo);
-    return appInfo.ID;
+    try {
+      var id = appInfo.ID;
+      return id;
+    } catch(err) {};
+    return null;
   },
 
   get Version() {

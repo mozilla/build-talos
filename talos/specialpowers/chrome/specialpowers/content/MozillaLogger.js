@@ -83,7 +83,12 @@ MozillaFileLogger.prototype = {
     var PR_APPEND       = 0x10;
     this._file = Components.classes["@mozilla.org/file/local;1"].
                             createInstance(Components.interfaces.nsILocalFile);
-    this._file.initWithPath(path);
+    try {
+        this._file.initWithPath(path);
+    } catch (ex) {
+        path = path.replace(/\//g, '\\\\');
+        this._file.initWithPath(path);
+    }
     this._foStream = Components.classes["@mozilla.org/network/file-output-stream;1"].
                                      createInstance(Components.interfaces.nsIFileOutputStream);
     this._foStream.init(this._file, PR_WRITE_ONLY | PR_CREATE_FILE | PR_APPEND,

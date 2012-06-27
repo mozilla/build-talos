@@ -28,6 +28,9 @@
       }
     } else {
       id = SpecialPowers.ID;
+      if (id == null) {
+          id = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
+      }
       version = SpecialPowers.Version;
       buildid = SpecialPowers.BuildID;
     }
@@ -43,24 +46,14 @@
     var version = appinfo[1];
     var buildid = appinfo[2];
 
-    const FIREFOX_ID = '{ec8030f7-c20a-464f-9b0e-13a3a9e97384}';
-    const THUNDERBIRD_ID = '{3550f703-e582-4d05-9a08-453d09bdfdc6}';
-    const SEAMONKEY_ID = '{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}';
-    const FENNEC_ID = '{aa3c5121-dab2-40e2-81ca-7ea25febc110}';
-    const XUL_FENNEC_ID = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
-    product = 'undefined';
+    var productid = [];
+    productid['{ec8030f7-c20a-464f-9b0e-13a3a9e97384}'] = 'Firefox';
+    productid['{3550f703-e582-4d05-9a08-453d09bdfdc6}'] = 'Thunderbird';
+    productid['{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}'] = 'SeaMonkey';
+    productid['{aa3c5121-dab2-40e2-81ca-7ea25febc110}'] = 'Fennec';
+    productid['{a23983c0-fd0e-11dc-95ff-0800200c9a66}'] = 'Fennec';
 
-    if(id == FIREFOX_ID) {  
-      product = 'Firefox';
-    } else if(id == THUNDERBIRD_ID) {  
-      product = 'Thunderbird';
-    } else if(id == SEAMONKEY_ID) {
-      product = 'SeaMonkey';
-    } else if(id == XUL_FENNEC_ID) {
-      product = 'Fennec';
-    } else if(id == FENNEC_ID) {
-      product = 'Fennec';
-    }
+    var product = productid[id];
 
     dumpLog('__browserInfo\nbrowser_name:' + product + '\nbrowser_version:' + version + '\nbuildID:' + buildid + '\n__browserInfo');
 

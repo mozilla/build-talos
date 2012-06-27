@@ -82,8 +82,11 @@ class XPerfAutoLog(object):
       restserver = 'http://10.2.74.141/autologserver'
     )
   
+    tree = self.yaml_config.get('repository', '')
+    if tree:
+      tree = tree.split('/')[-1]
     self.testGroup.set_primary_product(
-      tree = self.yaml_config['repository'].split('/')[-1], 
+      tree = tree,
       buildtype = 'opt', #we only run talos on opt builds
       buildid = self.yaml_config['buildid'],
       revision = self.yaml_config['sourcestamp'],

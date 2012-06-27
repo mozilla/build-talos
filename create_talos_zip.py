@@ -17,6 +17,7 @@ import zipfile
 here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, 'talos')
 manifest = [('https://raw.github.com/mozilla/mozbase/master/mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
+            ('https://raw.github.com/mozilla/mozbase/master/mozhttpd/mozhttpd/iface.py', 'iface.py'),
             ('https://raw.github.com/mozilla/mozbase/master/mozinfo/mozinfo/mozinfo.py', 'mozinfo.py'),
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
             ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
