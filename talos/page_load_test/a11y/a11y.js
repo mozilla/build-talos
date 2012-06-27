@@ -5,16 +5,13 @@ const nsIDOMNode = Components.interfaces.nsIDOMNode;
 gAccRetrieval = 0;
 
 // Detect if we are on older branches that don't have specialpowers enabled talos available
-var ua_plat = window.navigator.userAgent.split('(')[1].split(')')[0];
-var parts = ua_plat.split(';');
 var useSpecialPowers = true;
-if (parts.length >= 2) {
-  var rev = parseInt(parts[2].split(':')[1]);
-  if (parts[0].replace(/^\s+|\s+$/g, '') == 'Android' && parts[1].replace(/^\s+|\s+$/g, '') == 'Mobile' && parseInt(rev) < 16)
-  {
+try {
+  if (SpecialPowers === undefined)
     useSpecialPowers = false;
-  }
-} //else we are on windows xp or windows 7
+} catch (ex) {
+  useSpecialPowers = false;
+}
 
 function initAccessibility()
 {
