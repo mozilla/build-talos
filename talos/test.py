@@ -213,6 +213,12 @@ class tsspider(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/sunspider/sunspider.manifest'
     tpcycles = 5
 
+class sunspider(PageloaderTest):
+    """sunspider 0.9.1 test"""
+    tpmanifest = '${talos}/page_load_test/sunspider091/sunspider.manifest'
+    tpcycles = 1
+    tppagecycles = 1
+
 class tscroll(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 5
@@ -301,6 +307,6 @@ tests = [ts, ts_paint,
          dromaeo_css, dromaeo_dom, dromaeo_jslib, dromaeo_sunspider, dromaeo_v8, dromaeo_basics,
          a11y,
          tdhtml_2, tsvg_2, tsvg_opacity_2, v8_2, tsspider_2, tscroll_2, a11y_2,
-         tdhtmlr, tsvgr, tsvgr_opacity, tsspiderr, tscrollr, a11yr
+         tdhtmlr, tsvgr, tsvgr_opacity, tsspiderr, sunspider, tscrollr, a11yr
          ]
 test_dict = dict([(i.name(), i) for i in tests])
