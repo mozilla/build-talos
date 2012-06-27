@@ -435,7 +435,7 @@ the highest value.
         if not set(activeTests).issubset(availableTests):
             missing = [i for i in activeTests
                        if i not in availableTests]
-            raise Configuration("No definition found for test(s): %s" % missing)
+            raise ConfigurationError("No definition found for test(s): %s" % missing)
 
         # return the tests
         retval = []
