@@ -151,7 +151,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
             # use the last part of the browser_log overridden for the remote log
             # from the global; see
             # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/remotePerfConfigurator.py#l45
-            self.config['preferences']['talos.logfile'] = '%s/%s' % (self.deviceroot, logfile.split('/')[-1])
+            self.config['preferences']['talos.logfile'] = '%s/%s' % (self.deviceroot, os.path.basename(logfile))
 
     def convertUrlToRemote(self, url):
         """
