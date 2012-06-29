@@ -19,9 +19,11 @@
         netscape.security.PrivilegeManager.enablePrivilege('UniversalPreferencesRead UniversalPreferencesWrite UniversalXPConnect');
         var appInfo = Components.classes['@mozilla.org/xre/app-info;1']
                                 .getService(Components.interfaces.nsIXULAppInfo);
-        id = appInfo.ID;
+
+        //NOTE: version and buildid work fine, but appInfo.ID throws an exception on XUL Fennec, so we need to do that last.
         version = appInfo.Version;
         buildid = appInfo.appBuildID;
+        id = appInfo.ID;
       } catch(err) {
           dumpLog('exception getting privileged access, defaulting to XUL_FENNEC');
           id = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
