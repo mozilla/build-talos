@@ -13,6 +13,11 @@ import urlparse
 import utils
 from StringIO import StringIO
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 def filesizeformat(bytes):
     """
     Format the value like a 'human-readable' file size (i.e. 13 KB, 4.1 MB, 102
@@ -331,42 +336,50 @@ class DatazillaOutput(Output):
         for test in self.results.results:
 
             # serialize test results
+            results = {}
             if test.format == 'tsformat':
                 raw_vals = []
                 for result in test.results:
                     raw_vals.extend(result.raw_values())
-                raw = ['"%s": %s' % (test.name(), raw_vals)]
+                results[test.name()] = raw_vals
             elif test.format == 'tpformat':
-                raw_dict = {}
                 for result in test.results:
                     # XXX this will not work for manifests which list
                     # the same page name twice. It also ignores cycles
                     for page, val in result.raw_values():
-                        raw_dict.setdefault(page, []).extend(val)
-                raw = [('"%s": %s' % (page, val))
-                       for page, val in raw_dict.items()]
-            raw_values = '"results": {%s}' % ', '.join(raw)
+                        results.setdefault(page, []).extend(val)
 
-            # serialize test options
-            options = self.run_options(test)
-            raw_testrun = '"testrun": {"date": "%s", "suite": "Talos %s", "options": %s}' % (self.results.date, test.name(), options)
+            # test options
+            testrun = {'date': self.results.date,
+                       'suite': "Talos %s" % test.name(),
+                       'options': self.run_options(test)}
 
-            # serialize platform
-            raw_machine = self.test_machine()
+            # platform
+            machine = self.test_machine()
 
-            # serialize build information
-            raw_build = '"test_build": {"name": "%(browser_name)s", "version": "%(browser_version)s", "revision": "%(sourcestamp)s", "branch":  "%(branch_name)s", "id": "%(buildid)s"}' % self.results.browser_config
+            # build information
+            browser_config = self.results.browser_config
+            test_build = {'name': browser_config['browser_name'],
+                          'version': browser_config['browser_version'],
+                          'revision': browser_config['sourcestamp'],
+                          'branch': browser_config['branch_name'],
+                          'id': browser_config['buildid']}
 
-            # serialize counters
-            aux = []
+            # counters results_aux data
+            results_aux = {}
             for cd in test.all_counter_results:
                 for name, vals in cd.items():
-                    adata = '"%s": %s' % (self.shortName(name), [str(x) for x in vals])
-                aux.append(adata.replace("'", '"'))
-            raw_counters = '"results_aux": {%s}' % ', '.join(aux)
+                    results_aux[self.shortName(name)] = vals
 
             # munge this together
-            retval.append("{%s, %s, %s, %s, %s}" % (raw_machine, raw_build, raw_testrun, raw_values, raw_counters))
+            result = {'test_machine': machine,
+                      'test_build': test_build,
+                      'testrun': testrun,
+                      'results': results,
+                      'results_aux': results_aux}
+
+            # serialize to a JSON string
+            retval.append(json.dumps(result))
 
         return retval
 
@@ -383,17 +396,13 @@ class DatazillaOutput(Output):
     def run_options(self, test):
         """test options for datazilla"""
 
-        options = []
+        options = {}
         test_options = ['rss', 'tpchrome', 'tpmozafterpaint', 'tpcycles', 'tppagecycles', 'tprender', 'tpdelay', 'responsiveness', 'shutdown']
         for option in test_options:
             if option not in test.test_config:
                 continue
-            value = test.test_config[option]
-            if isinstance(value, bool):
-                options.append('"%s": %s' % (option, str(value).lower()))
-            else:
-                options.append('"%s": "%s"' % (option, value))
-        return "{%s}" % ', '.join(options)
+            options[option] = test.test_config[option]
+        return options
 
     def test_machine(self):
         """return test machine platform in a form appropriate to datazilla"""
@@ -408,7 +417,7 @@ class DatazillaOutput(Output):
             version = mozinfo.version
             processor = mozinfo.processor
 
-        return '"test_machine": {"name": "%s", "os": "%s", "osversion": "%s", "platform": "%s"}' % (self.results.title, platform, version, processor)
+        return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
 
 
 # available output formats

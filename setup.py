@@ -13,6 +13,12 @@ version = "0.0"
 dependencies = ['PyYAML', 'mozdevice >= 0.2', 'mozhttpd >= 0.3', 'mozinfo', 'httplib2']
 dependency_links = []
 
+try:
+    import json
+except ImportError:
+    # XXX you will need simplejson == 2.1.6 on python 2.4
+    dependencies.append('simplejson')
+
 if os.name == 'nt':
     base_link = "http://superb-sea2.dl.sourceforge.net/project/pywin32/"\
                 "pywin32/Build216/pywin32-216.%s-py%s.exe"

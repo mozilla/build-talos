@@ -16,31 +16,54 @@ import zipfile
 # globals
 here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, 'talos')
-manifest = [('https://raw.github.com/mozilla/mozbase/master/mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozhttpd/mozhttpd/iface.py', 'iface.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozinfo/mozinfo/mozinfo.py', 'mozinfo.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
-            ('https://raw.github.com/mozilla/mozbase/master/mozdevice/mozdevice/droid.py', 'mozdevice/droid.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/composer.py', 'yaml/composer.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/constructor.py', 'yaml/constructor.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/cyaml.py', 'yaml/cyaml.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/dumper.py', 'yaml/dumper.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/emitter.py', 'yaml/emitter.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/error.py', 'yaml/error.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/events.py', 'yaml/events.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/__init__.py', 'yaml/__init__.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/loader.py', 'yaml/loader.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/nodes.py', 'yaml/nodes.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/parser.py', 'yaml/parser.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/reader.py', 'yaml/reader.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/representer.py', 'yaml/representer.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/resolver.py', 'yaml/resolver.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/scanner.py', 'yaml/scanner.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/serializer.py', 'yaml/serializer.py'),
-            ('http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/tokens.py', 'yaml/tokens.py')]
+
+# mozbase dependencies
+mozbase_src = 'https://raw.github.com/mozilla/mozbase/master/'
+mozbase_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
+                 ('mozhttpd/mozhttpd/iface.py', 'iface.py'),
+                 ('mozinfo/mozinfo/mozinfo.py', 'mozinfo.py'),
+                 ('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
+                 ('mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
+                 ('mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
+                 ('mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
+                 ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py')]
+mozbase = [(mozbase_src + src, destination) for src, destination in mozbase_files]
+
+# PyYAML dependency
+yaml_src = 'http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/'
+yaml_files = ['composer.py',
+              'constructor.py',
+              'cyaml.py',
+              'dumper.py',
+              'emitter.py',
+              'error.py',
+              'events.py',
+              '__init__.py',
+              'loader.py',
+              'nodes.py',
+              'parser.py',
+              'reader.py',
+              'representer.py',
+              'resolver.py',
+              'scanner.py',
+              'serializer.py',
+              'tokens.py']
+yaml = [(yaml_src + f, 'yaml/%s' % f) for f in yaml_files]
+
+# simplejson dependency:
+# https://bugzilla.mozilla.org/show_bug.cgi?id=744405
+simplejson_src = 'https://raw.github.com/simplejson/simplejson/ef460026417ab8cd9d8fae615d4e9b9cc784ccf1'
+simplejson_files = ['decoder.py',
+                    'encoder.py',
+                    '__init__.py',
+                    'ordered_dict.py',
+                    'scanner.py',
+                    'tool.py']
+simplejson = [('%s/simplejson/%s' % (simplejson_src, f), 'simplejson/%s' % f)
+              for f in simplejson_files]
+
+# all dependencies
+manifest = mozbase + yaml + simplejson
 
 def download(*resources):
     """
