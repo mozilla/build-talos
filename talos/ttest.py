@@ -276,7 +276,7 @@ class TTest(object):
                global_counters['responsiveness'] = []
 
             # instantiate an object to hold test results
-            test_results = results.TestResults(test_config, global_counters)
+            test_results = results.TestResults(test_config, global_counters, extensions=self._ffsetup.extensions)
 
             for i in range(test_config['cycles']):
 
@@ -332,7 +332,7 @@ class TTest(object):
                     time.sleep(resolution)
                     total_time += resolution
                     fileData = self._ffprocess.getFile(b_log)
-                    if (len(fileData) > 0):
+                    if len(fileData) > 0:
                         utils.noisy(fileData.replace(dumpResult, ''))
                         dumpResult = fileData
 

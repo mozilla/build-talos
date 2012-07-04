@@ -69,8 +69,9 @@ class FFSetup(object):
     def __init__(self, procmgr, options = None):
         self.ffprocess = procmgr
         self._hostproc = procmgr
-        if options <> None:
+        if options is not None:
             self.intializeRemoteDevice(options)
+        self.extensions = None
 
     def initializeRemoteDevice(self, options, hostproc=None):
         self._remoteWebServer = options['webserver']
@@ -191,6 +192,8 @@ class FFSetup(object):
             # cleanup
             shutil.rmtree(tmpdir, ignore_errors=True)
 
+        return addon_id
+
     def CreateTempProfileDir(self, source_profile, prefs, extensions, webserver):
         """Creates a temporary profile directory from the source profile directory
             and adds the given prefs and links to extensions.
@@ -228,8 +231,9 @@ class FFSetup(object):
         extension_dir = os.path.join(profile_dir, 'extensions', 'staged')
         if not os.path.exists(extension_dir):
             os.makedirs(extension_dir)
+        self.extensions = []
         for addon in extensions:
-            self.install_addon(profile_dir, addon)
+            self.extensions.append(self.install_addon(profile_dir, addon))
 
         if webserver != 'localhost' and self._host != '':
             remote_dir = self.ffprocess.copyDirToDevice(profile_dir)

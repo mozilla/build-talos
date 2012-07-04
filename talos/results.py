@@ -91,12 +91,13 @@ class TestResults(object):
 
     type = 'VALUES'
 
-    def __init__(self, test_config, global_counters=None):
+    def __init__(self, test_config, global_counters=None, extensions=None):
         self.results = []
         self.test_config = test_config
         self.format = None
         self.global_counters = global_counters or {}
         self.all_counter_results = []
+        self.extensions = extensions
 
     def name(self):
         return self.test_config['name']

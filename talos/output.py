@@ -327,10 +327,6 @@ class GraphserverOutput(Output):
 
 class DatazillaOutput(Output):
 
-    # TODO: we would not have to special case this so much if
-    # we used json/simplejson instead of serializing by hand
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=744405
-
     def __call__(self):
         retval = []
         for test in self.results.results:
@@ -402,6 +398,9 @@ class DatazillaOutput(Output):
             if option not in test.test_config:
                 continue
             options[option] = test.test_config[option]
+        if test.extensions is not None:
+            options['extensions'] = [{'name': extension}
+                                     for extension in test.extensions]
         return options
 
     def test_machine(self):
