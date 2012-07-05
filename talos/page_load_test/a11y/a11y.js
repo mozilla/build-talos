@@ -1,5 +1,4 @@
 const nsIAccessible = Components.interfaces.nsIAccessible;
-const nsIAccessNode = Components.interfaces.nsIAccessNode;
 const nsIDOMNode = Components.interfaces.nsIDOMNode;
 
 gAccRetrieval = 0;
@@ -39,7 +38,6 @@ function getAccessible(aAccOrElmOrID, aInterfaces)
   var elm = null;
 
   if (aAccOrElmOrID instanceof nsIAccessible) {
-    aAccOrElmOrID.QueryInterface(nsIAccessNode);
     elm = aAccOrElmOrID.DOMNode;
 
   } else if (aAccOrElmOrID instanceof nsIDOMNode) {
