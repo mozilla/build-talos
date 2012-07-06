@@ -258,9 +258,9 @@ class GraphserverOutput(Output):
                     msg = e.msg
                 except Exception, e:
                     msg = str(e)
-                    times += 1
-                    time.sleep(wait_time)
-                    wait_time *= 2
+                times += 1
+                time.sleep(wait_time)
+                wait_time *= 2
             else:
                 raise utils.talosError("Graph server unreachable (%d attempts)\n%s" % (self.retries, msg))
 
