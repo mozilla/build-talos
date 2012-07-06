@@ -62,15 +62,15 @@ class ts_paint(ts):
     url = 'startup_test/tspaint_test.html?begin='
     shutdown = None
 
-class ts_places_generated_max(ts):
+class ts_places_generated_max(ts_paint):
     profile_path = '${talos}/places_generated_max'
     timeout = None
 
-class ts_places_generated_min(ts):
+class ts_places_generated_min(ts_paint):
     profile_path = '${talos}/places_generated_min'
     timeout = None
 
-class ts_places_generated_med(ts):
+class ts_places_generated_med(ts_paint):
     profile_path = '${talos}/places_generated_med'
     timeout = None
 
