@@ -62,15 +62,23 @@ class ts_paint(ts):
     url = 'startup_test/tspaint_test.html?begin='
     shutdown = None
 
-class ts_places_generated_max(ts_paint):
+class ts_places_generated_max(ts):
     profile_path = '${talos}/places_generated_max'
     timeout = None
 
-class ts_places_generated_min(ts_paint):
+class ts_places_generated_min(ts):
     profile_path = '${talos}/places_generated_min'
     timeout = None
 
-class ts_places_generated_med(ts_paint):
+class ts_places_generated_med(ts):
+    profile_path = '${talos}/places_generated_med'
+    timeout = None
+
+class tspaint_places_generated_max(ts_paint):
+    profile_path = '${talos}/places_generated_max'
+    timeout = None
+
+class tspaint_places_generated_med(ts_paint):
     profile_path = '${talos}/places_generated_med'
     timeout = None
 
@@ -305,6 +313,7 @@ class a11yr(a11y):
 # global test data
 tests = [ts, ts_paint,
          ts_places_generated_max, ts_places_generated_min, ts_places_generated_med,
+         tspaint_places_generated_max, tspaint_places_generated_med,
          tp, tp4, tp4m, tp5, tp5r, tp5row, tp5n, tp_js,
          tdhtml, tsvg, tsvg_opacity,
          v8, tpaint, twinopen, tsspider, tscroll,
