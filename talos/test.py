@@ -136,7 +136,7 @@ class PageloaderTest(Test):
     cycles = None
     timeout = None
     filters = None
-    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome',
+    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint',
             'rss', 'resolution', 'cycles',
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',

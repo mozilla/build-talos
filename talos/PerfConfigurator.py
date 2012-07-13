@@ -424,7 +424,9 @@ the highest value.
         return a list of test dictionaries
         - activeTests: a list of test
         - overrides: a dict of dicts containing overrides for the specific tests
+        - global_overrides: a dict of overrides that win over test-specifics
         """
+
         # ensure overrides of the right form
         overrides = overrides or {}
         for key, value in overrides.items():
