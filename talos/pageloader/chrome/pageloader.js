@@ -77,12 +77,16 @@ var gPaintListener = false;
 //when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
 var gTime = -1;
 var gStartTime = -1;
+var gReference = -1;
 
 var content;
 
 var TEST_DOES_OWN_TIMING = 1;
 
 var browserWindow = null;
+
+var recordedName = null;
+var pageUrls;
 
 // the io service
 var gIOS = null;
@@ -153,11 +157,11 @@ function plInit() {
     }
 
     pages = pages.slice(startIndex,endIndex+1);
-    var pageUrls = pages.map(function(p) { return p.url.spec.toString(); });
-    report = new Report(pageUrls);
+    pageUrls = pages.map(function(p) { return p.url.spec.toString(); });
+    report = new Report();
 
     if (doRenderTest)
-      renderReport = new Report(pageUrls);
+      renderReport = new Report();
 
     pageIndex = 0;
 
@@ -329,6 +333,7 @@ function plNextPage() {
     doNextPage = true;
   } else if (pageIndex < pages.length-1) {
     pageIndex++;
+    recordedName = null;
     pageCycle = 1;
     doNextPage = true;
   }
@@ -338,7 +343,7 @@ function plNextPage() {
       var tccstart = new Date();
       window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
             .getInterface(Components.interfaces.nsIDOMWindowUtils)
-            .garbageCollect(); 
+            .garbageCollect();
       var tccend = new Date();
       report.recordCCTime(tccend - tccstart);
     }
@@ -358,13 +363,21 @@ function plRecordTime(time) {
     i = 0;
   }
   var nextName = pages[i].url.spec;
+  if (!recordedName) {
+    recordedName = pageUrls[pageIndex];
+  }
   if (typeof(time) == "string") {
     var times = time.split(',');
+    var names = recordedName.split(',');
     for (var t = 0; t < times.length; t++) {
-      report.recordTime(pageIndex, times[t]);
+      if (names.length == 1) {
+        report.recordTime(names, times[t]);
+      } else {
+        report.recordTime(names[t], times[t]);
+      }
     }
   } else {
-    report.recordTime(pageIndex, time);
+    report.recordTime(recordedName, time);
   }
   if (noisy) {
     dumpLine("Cycle " + (cycle+1) + "(" + pageCycle + ")" + ": loaded " + pageName + " (next: " + nextName + ")");
@@ -378,9 +391,10 @@ function plLoadHandlerCapturing(evt) {
       return;
 
   //set the tpRecordTime function (called from test pages we load to store a global time.
-  content.contentWindow.wrappedJSObject.tpRecordTime = function (time, startTime) {
+  content.contentWindow.wrappedJSObject.tpRecordTime = function (time, startTime, testName) {
     gTime = time;
     gStartTime = startTime;
+    recordedName = testName;
     setTimeout(plWaitForPaintingCapturing, 0);
   }
 
@@ -571,7 +585,7 @@ function runRenderTest() {
 
   if (browserWindow)
     win = content.contentWindow;
-  else 
+  else
     win = window;
   var wu = win.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
 

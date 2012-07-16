@@ -94,6 +94,45 @@ class Output(object):
     def responsiveness_Metric(cls, val_list):
         return round(sum([int(x)*int(x) / 1000000.0 for x in val_list]))
 
+    @classmethod
+    def v8_Metric(cls, val_list):
+        """v8 benchmark score"""
+        reference = {'Crypto': 266181.,
+                     'DeltaBlue': 66118.,
+                     'EarlyBoyer': 666463.,
+                     'NavierStokes': 1484000.,
+                     'RayTrace': 739989.,
+                     'RegExp': 910985.,
+                     'Richards': 35302.,
+                     'Splay': 81491.
+                     }
+        tests = [('Crypto', ['Encrypt', 'Decrypt']),
+                 ('DeltaBlue', ['DeltaBlue']),
+                 ('EarlyBoyer', ['Earley', 'Boyer']),
+                 ('NavierStokes', ['NavierStokes']),
+                 ('RayTrace', ['RayTrace']),
+                 ('RegExp', ['RegExp']),
+                 ('Richards', ['Richards']),
+                 ('Splay', ['Splay'])]
+        results = dict([(j, i) for i, j in val_list])
+        scores = []
+        utils.noisy("v8 benchmark")
+        for test, benchmarks in tests:
+            vals = [results[benchmark] for benchmark in benchmarks]
+            mean = filter.geometric_mean(vals)
+            score = reference[test] / mean
+            scores.append(score)
+            utils.noisy(" %s: %s" % (test, score * 100))
+        score =  100 * filter.geometric_mean(scores)
+        utils.noisy("Score: %s" % score)
+        return score
+
+    @classmethod
+    def JS_Metric(cls, val_list):
+        """v8 benchmark score"""
+        results = [i for i, j in val_list]
+        utils.noisy("javascript benchmark")
+        return sum(results)
 
 class GraphserverOutput(Output):
 
@@ -200,8 +239,16 @@ class GraphserverOutput(Output):
         info_format = self.info_format
         responsiveness = self.responsiveness_test(testname)
         _type = 'VALUES'
+        average = None
         if responsiveness:
             _type = 'AVERAGE'
+            average = self.responsiveness_Metric([val for (val, page) in vals])
+        elif testname == 'v8_7':
+            _type = 'AVERAGE'
+            average = self.v8_Metric(vals)
+        elif testname == 'sunspider' or testname == 'kraken':
+            _type = 'AVERAGE'
+            average = self.JS_Metric(vals)
         elif self.results.amo:
             _type = 'AMO'
             info_format = self.amo_info_format
@@ -217,9 +264,9 @@ class GraphserverOutput(Output):
         buffer.write("START\n")
         buffer.write("%s\n" % _type)
         buffer.write('%s\n' % info)
-        if responsiveness:
+        if average is not None:
             # write some kind of average
-            buffer.write("%s\n" % self.responsiveness_Metric([val for (val, page) in vals]))
+            buffer.write("%s\n" % average)
         else:
             for i, (val, page) in enumerate(vals):
                 buffer.write("%d,%.2f,%s\n" % (i,float(val), page))

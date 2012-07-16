@@ -108,6 +108,8 @@ BenchmarkSuite.RunSuites = function(runner) {
   var length = suites.length;
   BenchmarkSuite.scores = [];
   BenchmarkSuite.raw_results = [];
+  BenchmarkSuite.names = [];
+  BenchmarkSuite.reference = 0;
   var index = 0;
   function RunStep() {
     while (continuation || index < length) {
@@ -125,17 +127,7 @@ BenchmarkSuite.RunSuites = function(runner) {
     }
     if (runner.NotifyScore) {
       if ( typeof tpRecordTime !== "undefined" ) {
-        first = true;
-        rawValues = "";
-        for (var i=0;i<BenchmarkSuite.raw_results.length; i++) {
-          if (first == true) {
-            rawValues = BenchmarkSuite.raw_results[i];
-            first = false;
-          } else {
-            rawValues += "," + BenchmarkSuite.raw_results[i];
-          }
-        }
-        tpRecordTime( rawValues );
+        tpRecordTime(BenchmarkSuite.raw_results.join(','), null, BenchmarkSuite.names.join(','));
       } else {
         //NOTE: BenchmarkSuite.scores is an array of [reference/GeometricMean(test.results), ...]
         var score = BenchmarkSuite.GeometricMean(BenchmarkSuite.scores);
@@ -192,6 +184,8 @@ BenchmarkSuite.prototype.NotifyStep = function(result) {
 BenchmarkSuite.prototype.NotifyResult = function() {
   for (var i=0; i<this.results.length; i++) {
     BenchmarkSuite.raw_results.push(this.results[i].time);
+    BenchmarkSuite.names.push(this.results[i].benchmark.name)
+    BenchmarkSuite.reference = this.reference;
   }
   var mean = BenchmarkSuite.GeometricMean(this.results);
   var score = this.reference / mean;

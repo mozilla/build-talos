@@ -1,9 +1,1 @@
-% http://localhost/page_load_test/v8_7/run.html?testName=Crypto
-% http://localhost/page_load_test/v8_7/run.html?testName=DeltaBlue
-% http://localhost/page_load_test/v8_7/run.html?testName=EarleyBoyer
-% http://localhost/page_load_test/v8_7/run.html?testName=NavierStokes
-% http://localhost/page_load_test/v8_7/run.html?testName=RayTrace
-% http://localhost/page_load_test/v8_7/run.html?testName=RegExp
-% http://localhost/page_load_test/v8_7/run.html?testName=Richards
-% http://localhost/page_load_test/v8_7/run.html?testName=Splay
-
+% http://localhost/page_load_test/v8_7/run.html

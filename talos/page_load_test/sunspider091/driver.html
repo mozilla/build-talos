@@ -46,6 +46,7 @@ var currentRepeat = -1;
 var repeatCount = 10;
 
 var testName = null;
+var param_index = -1;
 function parseParams() {
   var s = document.location.search.substring(1);
   var params = s.replace("%26", "&").split('&');
@@ -64,8 +65,9 @@ for (var i=0; i < tests.length; i++) {
 }
 if (i < tests.length) {
   tests = [testName];
+  param_index = i;
 }
- 
+
 var output = [];
 output.length = repeatCount;
 for (var i = 0; i < output.length; i++) {
@@ -88,14 +90,21 @@ function reallyNext()
     document.getElementById("frameparent").innerHTML = "<iframe id='testframe'>";
     var testFrame = document.getElementById("testframe");
     testIndex++;
+    var test_data = testContents[testIndex];
+    if (param_index >= 0) {
+        test_data = testContents[param_index];
+    }
     if (testIndex < tests.length) {
         testFrame.contentDocument.open();
-        testFrame.contentDocument.write(testContents[testIndex]);
+        testFrame.contentDocument.write(test_data);
         testFrame.contentDocument.close;
     } else if (++currentRepeat < repeatCount) { 
         testIndex = 0;
+        if (param_index < 0) {
+            test_data = testContents[testIndex];
+        }
         testFrame.contentDocument.open();
-        testFrame.contentDocument.write(testContents[testIndex]);
+        testFrame.contentDocument.write(test_data);
         testFrame.contentDocument.close;
     } else {
         finish();
@@ -113,17 +122,11 @@ function finish()
 {
     if ( typeof tpRecordTime !== "undefined" ) {
         for (var test in output[0]) {
-            first = true;
-            rawValues = "";
+            rawValues = [];
             for (var i=0;i<output.length; i++) {
-                if (first == true) {
-                    rawValues = output[i][test];
-                    first = false;
-                 } else {
-                    rawValues += "," + output[i][test];
-               }
+                rawValues.push(output[i][test]);
             }
-            tpRecordTime( rawValues );
+            tpRecordTime(rawValues.join(','), null, test);
         }
     } else {
         var outputString = "{";

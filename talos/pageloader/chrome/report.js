@@ -38,17 +38,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// Constructor
-function Report(pages) {
-  this.pages = pages;
-  this.timeVals = new Array(pages.length);  // matrix of times
-  for (var i = 0; i < this.timeVals.length; ++i) {
-    this.timeVals[i] = new Array();
-  }
-  this.totalCCTime = 0;
-  this.showTotalCCTime = false;
-}
-
 // given an array of strings, finds the longest common prefix
 function findCommonPrefixLength(strs) {
   if (strs.length < 2)
@@ -82,82 +71,57 @@ function findCommonPrefixLength(strs) {
   return len;
 }
 
-function strPad(o, len, left) {
-  var str = o.toString();
-  if (!len)
-    len = 6;
-  if (left == null)
-    left = true;
-
-  if (str.length < len) {
-    len -= str.length;
-    while (--len) {
-      if (left) {
-        str = " " + str;
-      } else {
-        str += " ";
-      }
-    }
-  }
-
-  str += " ";
-  return str;
+// Constructor
+function Report() {
+  this.timeVals = {};
+  this.totalCCTime = 0;
+  this.showTotalCCTime = false;
 }
 
-function strPadFixed(n, len, left) {
-  return strPad(n.toFixed(0), len, left);
+Report.prototype.pageNames = function() {
+  var retval = new Array();
+  for (var page in this.timeVals) {
+    retval.push(page);
+  }
+  return retval;
 }
 
 Report.prototype.getReport = function(format) {
 
   var report;
-  var prefixLen = findCommonPrefixLength(this.pages);
+  var pages = this.pageNames();
+  var prefixLen = findCommonPrefixLength(pages);
 
-  if (format == "text") {
-    // output text format suitable for dumping
-    report = "============================================================\n";
-    report += "    " + strPad("Page", 40, false) + "raw" + "\n";
-    for (var i = 0; i < this.timeVals.length; i++) {
-      report +=
-        strPad(i, 4, true) +
-        strPad(this.pages[i].substr(prefixLen), 40, false) +
-        this.timeVals[i] +
-        "\n";
-    }
-    if (this.showTotalCCTime) {
-      report += "Cycle collection: " + this.totalCCTime + "\n"
-    }
-    report += "============================================================\n";
-  } else if (format == "tinderbox") {
-    report = "__start_tp_report\n";
-    report += "_x_x_mozilla_page_load\n";
-    report += "_x_x_mozilla_page_load_details\n";
-    report += "|i|pagename|runs|\n";
+  report = "__start_tp_report\n";
+  report += "_x_x_mozilla_page_load\n";
+  report += "_x_x_mozilla_page_load_details\n";
+  report += "|i|pagename|runs|\n";
 
-    for (var i = 0; i < this.timeVals.length; i++) {
-      report += '|'+
-        i + ';'+
-        this.pages[i].substr(prefixLen) + ';'+
-        this.timeVals[i].join(";") +
-        "\n";
-    }
-    report += "__end_tp_report\n";
-    if (this.showTotalCCTime) {
-      report += "__start_cc_report\n";
-      report += "_x_x_mozilla_cycle_collect," + this.totalCCTime + "\n";
-      report += "__end_cc_report\n";
-    }
-    var now = (new Date()).getTime();
-    report += "__startTimestamp" + now + "__endTimestamp\n"; //timestamp for determning shutdown time, used by talos
-  } else {
-    report = "Unknown report format";
+  for (var i=0; i < pages.length; i++) {
+    report += '|'+
+      i + ';'+
+      pages[i].substr(prefixLen) + ';'+
+      this.timeVals[pages[i]].join(";") +
+      "\n";
   }
+  report += "__end_tp_report\n";
+
+  if (this.showTotalCCTime) {
+    report += "__start_cc_report\n";
+    report += "_x_x_mozilla_cycle_collect," + this.totalCCTime + "\n";
+    report += "__end_cc_report\n";
+  }
+  var now = (new Date()).getTime();
+  report += "__startTimestamp" + now + "__endTimestamp\n"; //timestamp for determning shutdown time, used by talos
 
   return report;
 }
 
-Report.prototype.recordTime = function(pageIndex, ms) {
-  this.timeVals[pageIndex].push(ms);
+Report.prototype.recordTime = function(pageName, ms) {
+  if (this.timeVals[pageName] == undefined) {
+    this.timeVals[pageName] = new Array();
+  }
+  this.timeVals[pageName].push(ms);
 }
 
 Report.prototype.recordCCTime = function(ms) {
