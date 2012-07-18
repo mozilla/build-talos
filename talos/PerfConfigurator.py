@@ -54,8 +54,8 @@ class PerfConfigurator(Configuration):
 
         ('noChrome',  {'help': 'do not run tests as chrome',
                        'type': bool}),
-        ('rss', {'help': "Collect RSS counters from pageloader instead of\
- the operating system"}),
+        ('rss', {'help': "Collect RSS counters from pageloader instead of the operating system",
+                 'type': bool}),
         ('tpmozafterpaint', {'help': 'wait for MozAfterPaint event before recording the time',
                              'type': bool,
                              'flags': ['--mozAfterPaint']}),
