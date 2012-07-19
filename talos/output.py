@@ -12,6 +12,7 @@ import urllib
 import urlparse
 import utils
 from StringIO import StringIO
+from amo.amo_api import upload_amo_results, amo_results_data
 
 try:
     import json
@@ -466,39 +467,34 @@ class DatazillaOutput(Output):
         return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
 
 
+class AMOOutput(Output):
+    def __call__(self):
+        # TODO: do we only test ts, if not, can we ensure that we are not trying to uplaod ts_rss, etc...
+        # see http://hg.mozilla.org/build/talos/file/170c100911b6/talos/run_tests.py#l227
+        retval = []
+        for test in self.results.results:
+            if test.name() != 'ts':
+                continue
+            vals = []
+            for cycle in test.results:
+                vals.extend(cycle.raw_values())
+
+            retval.append(amo_results_data(self.results.browser_config['addon_id'],
+                                           self.results.browser_config['browser_version'],
+                                           self.results.browser_config['process'],
+                                           test.name(),
+                                           vals
+                                           )
+                          )
+        return retval
+
+    def post(self, results, server, path, scheme):
+        for result in results:
+            upload_amo_results(result, server, path, scheme)
+
+
 # available output formats
 formats = {'datazilla_urls': DatazillaOutput,
-           'results_urls': GraphserverOutput}
+           'results_urls': GraphserverOutput,
+           'amo': AMOOutput}
 
-try:
-    from amo.amo_api import upload_amo_results, amo_results_data
-    # depends on httplib2 and json/simplejson so we conditionally import it
-
-    class AMOOutput(Output):
-        def __call__(self):
-            # TODO: do we only test ts, if not, can we ensure that we are not trying to uplaod ts_rss, etc...
-            # see http://hg.mozilla.org/build/talos/file/170c100911b6/talos/run_tests.py#l227
-            retval = []
-            for test in self.results.results:
-                if test.name() != 'ts':
-                    continue
-                vals = []
-                for cycle in test.results:
-                    vals.extend(cycle.raw_values())
-
-                retval.append(amo_results_data(self.results.browser_config['addon_id'],
-                                               self.results.browser_config['browser_version'],
-                                               self.results.browser_config['process'],
-                                               test.name(),
-                                               vals
-                                               )
-                              )
-
-        def post(self, results, server, path, scheme):
-            for result in results:
-                upload_amo_results(result, server, path, scheme)
-
-    formats['amo'] = AMOOutput
-
-except ImportError:
-    pass

@@ -2,17 +2,24 @@
 A class to interact with AMO's api, using OAuth.
 Ripped off from Daves test_oauth.py and some notes from python-oauth2
 """
-# Wherein import almost every http or urllib in Python
-import urllib
-import urllib2
-from urlparse import urlparse, urlunparse, parse_qsl
+
 import httplib2
-import oauth2 as oauth
+import mimetools
 import os
 import re
+import urllib
+import urllib2
 import time
-import json
-import mimetools
+
+import oauth2 as oauth
+
+from urlparse import urlparse, urlunparse
+from cgi import parse_qsl
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 from amo_utils import encode_multipart, data_keys
 

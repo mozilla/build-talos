@@ -10,7 +10,7 @@ except IOError, OSError:
 
 version = "0.0"
 
-dependencies = ['PyYAML', 'mozdevice >= 0.2', 'mozhttpd >= 0.3', 'mozinfo', 'httplib2']
+dependencies = ['PyYAML', 'mozdevice >= 0.2', 'mozhttpd >= 0.3', 'mozinfo', 'httplib2', 'oauth2']
 dependency_links = []
 
 try:

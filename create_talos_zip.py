@@ -62,8 +62,31 @@ simplejson_files = ['decoder.py',
 simplejson = [('%s/simplejson/%s' % (simplejson_src, f), 'simplejson/%s' % f)
               for f in simplejson_files]
 
+# oauth2 dependency:
+# https://bugzilla.mozilla.org/show_bug.cgi?id=774480
+oauth2_src = 'https://raw.github.com/simplegeo/python-oauth2/master/oauth2'
+oauth2_files = [
+#    'clients/__init__.py', # clients subdirectory is not needed and is incompatible with create_talos_zip.py hackiness
+#    'clients/imap.py',
+#    'clients/smtp.py',
+    '__init__.py',
+    '_version.py']
+oauth2 = [('%s/%s' % (oauth2_src, f), 'amo/oauth2/%s' % f)
+          for f in oauth2_files]
+
+# httplib2 dependency
+httplib2_src = 'http://httplib2.googlecode.com/hg/python2/httplib2'
+httplib2_files = ['__init__.py',
+                  'cacerts.txt',
+                  'iri2uri.py',
+                  'socks.py']
+httplib2_amo = [('%s/%s' % (httplib2_src, f), 'amo/httplib2/%s' % f)
+                for f in httplib2_files]
+httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'amo/oauth2/httplib2/%s' % f)
+                   for f in httplib2_files]
+
 # all dependencies
-manifest = mozbase + yaml + simplejson
+manifest = mozbase + yaml + simplejson + oauth2 + httplib2_amo + httplib2_oauth2
 
 def download(*resources):
     """
@@ -146,7 +169,8 @@ def main(args=sys.argv[1:]):
         assert os.path.exists(path), "'%s' not found" % path
         os.remove(path)
     for newdir in newdirs:
-        shutil.rmtree(newdir)
+        if os.path.exists(newdir):
+            shutil.rmtree(newdir)
 
     # output the path to the zipfile
     print os.path.abspath(filename)
