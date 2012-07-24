@@ -244,10 +244,10 @@ class GraphserverOutput(Output):
         if responsiveness:
             _type = 'AVERAGE'
             average = self.responsiveness_Metric([val for (val, page) in vals])
-        elif testname == 'v8_7':
+        elif testname.startswith('v8_7'):
             _type = 'AVERAGE'
             average = self.v8_Metric(vals)
-        elif testname == 'sunspider' or testname == 'kraken':
+        elif testname.startswith('sunspider') or testname.startswith('kraken'):
             _type = 'AVERAGE'
             average = self.JS_Metric(vals)
         elif self.results.amo:
