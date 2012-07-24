@@ -195,7 +195,8 @@ the highest value.
         'network.proxy.http_port': 80,
         'network.proxy.type': 1,
         'security.enable_java': False,
-        'security.fileuri.strict_origin_policy': False
+        'security.fileuri.strict_origin_policy': False,
+        'toolkit.telemetry.prompted': 2
         }
 
     # keys to generated self.config that are global overrides to tests
