@@ -90,6 +90,11 @@ class tpaint(TsBase):
     url = 'startup_test/twinopen/winopen.xul?mozafterpaint=1%26phase1=20'
     timeout = 300
 
+class tresize(TsBase):
+    cycles = 20
+    url = 'startup_test/tresize-test.html'
+    timeout = 150
+
 # mobile ts-type tests
 
 class tpan(TsBase):
@@ -324,7 +329,7 @@ tests = [ts, ts_paint,
          tspaint_places_generated_max, tspaint_places_generated_med,
          tp, tp4, tp4m, tp5, tp5r, tp5row, tp5n, tp_js,
          tdhtml, tsvg, tsvg_opacity,
-         v8, tpaint, twinopen, tsspider, tscroll,
+         v8, tpaint, tresize, twinopen, tsspider, tscroll,
          tpan, tzoom, trobopan, tcheckerboard, tprovider, tcheck2, tcheck3,
          dromaeo_css, dromaeo_dom, dromaeo_jslib, dromaeo_sunspider, dromaeo_v8, dromaeo_basics,
          a11y,
