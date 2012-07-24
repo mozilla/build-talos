@@ -278,13 +278,14 @@ class BrowserLogResults(object):
 
         # parse the results
         try:
-            self.parse()
-        except utils.talosError:
-            # see we can find a reason for the failure
             match = self.RESULTS_REGEX_FAIL.search(self.results_raw)
             if match:
                 self.error(match.group(1))
                 raise utils.talosError(match.group(1))
+
+            self.parse()
+        except utils.talosError:
+            # TODO: consider investigating this further or adding additional information
             raise # reraise failing exception
 
         # accumulate counter results
