@@ -27,12 +27,12 @@ mozbase_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
                  ('mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
                  ('mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
                  ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py'),
-                 ('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
-                 ('mozprocess/mozprocess/pid.py', 'mozprocess/pid.py'),
-                 ('mozprocess/mozprocess/processhandler.py', 'mozprocess/processhandler.py'),
-                 ('mozprocess/mozprocess/qijo.py', 'mozprocess/qijo.py'),
-                 ('mozprocess/mozprocess/winprocess.py', 'mozprocess/winprocess.py'),
-                 ('mozprocess/mozprocess/wpk.py', 'mozprocess/wpk.py')]
+                 ('mozprocess/mozprocess/__init__.py', 'mozdevice/mozprocess/__init__.py'),
+                 ('mozprocess/mozprocess/pid.py', 'mozdevice/mozprocess/pid.py'),
+                 ('mozprocess/mozprocess/processhandler.py', 'mozdevice/mozprocess/processhandler.py'),
+                 ('mozprocess/mozprocess/qijo.py', 'mozdevice/mozprocess/qijo.py'),
+                 ('mozprocess/mozprocess/winprocess.py', 'mozdevice/mozprocess/winprocess.py'),
+                 ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py')]
 mozbase = [(mozbase_src + src, destination) for src, destination in mozbase_files]
 
 # PyYAML dependency
