@@ -20,6 +20,7 @@
 #
 # Contributor(s):
 #   Joel Maher <joel.maher@gmail.com>
+#   Nicolas Chaim <nicolas@n1.cl>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -41,6 +42,7 @@ import os
 import optparse
 import sys
 import xtalos
+import subprocess
 
 #required for the autolog stuff
 import yaml
@@ -48,10 +50,24 @@ import time
 from mozautolog import RESTfulAutologTestGroup
 
 EVENTNAME_INDEX = 0
+PROCESS_INDEX = 2
+THREAD_ID_INDEX = 3
 DISKBYTES_COL = "Size"
 FNAME_COL = "FileName"
+IMAGEFUNC_COL = "Image!Function"
+EVENTGUID_COL = "EventGuid"
+ACTIVITY_ID_COL = "etw:ActivityId"
+NUMBYTES_COL = "NumBytes"
 
+CEVT_WINDOWS_RESTORED = "{917b96b1-ecad-4dab-a760-8d49027748ae}"
+CEVT_XPCOM_SHUTDOWN   = "{26d1e091-0ae7-4f49-a554-4214445c505c}"
+stages = ["startup", "normal", "shutdown"]
+net_events = {"TcpDataTransferReceive": "recv", "UdpEndpointReceiveMessages": "recv",
+              "TcpDataTransferSend": "send", "UdpEndpointSendMessages": "send"}
+gThreads = {}
+gConnectionIDs = {}
 gHeaders = {}
+
 def addHeader(eventType, data):
   gHeaders[eventType] = data
 
@@ -115,7 +131,6 @@ class XPerfAutoLog(object):
 
 
 def filterOutHeader(data):
-  retVal = []
   # -1 means we have not yet found the header
   # 0 means we are in the header
   # 1+ means that we are past the header
@@ -143,8 +158,7 @@ def filterOutHeader(data):
     # The line after "EndHeader" is also not useful, so we want to strip that
     # in addition to the header.
     if (state > 2):
-      retVal.append(row)
-  return retVal
+      yield row
 
 def getIndex(eventType, colName):
   if (colName not in gHeaders[eventType]):
@@ -152,81 +166,39 @@ def getIndex(eventType, colName):
 
   return gHeaders[eventType].index(colName)
 
-def readFile(filename, procName = None):
-  if (procName):
-    filename = filterByProcName(filename, procName)
-
-  print "in readfile: %s, %s" % (filename, procName)
+def readFile(filename):
+  print "in readfile: %s" % filename
   data = csv.reader(open(filename, 'rb'), delimiter=',', quotechar='"', skipinitialspace = True)
   data = filterOutHeader(data)
-
   return data
 
-#for large files we need to read chunk by chunk and filter into a temporary file
-def filterByProcName(filename, procname):
-  ffx = re.compile('.*\,\s+' + procname + '.*')
-  cache = open(filename + ".part", 'w')
-  f = open(filename, 'r')
-  data = f.read(4096)
-  lastline = '' #used for reads that are partial lines
-  headers = False
-  while (data != ""):  
-    lines = data.split('\n')
-    for line in lines:
-      if (line == lines[-1]):
-        lastline = lines[-1]
-        continue
-      elif (lastline != ''):
-        line = "%s%s" % (lastline, line)
-        lastline = ''
-        
-      if (headers is False):
-        if re.match('.*EndHeader.*', line):
-          headers = True
-        cache.write(line + "\n")
-      elif ffx.match(line):
-        cache.write(line + "\n")
-    #TODO: ensure our lastline isn't counted twice and valid
-    lastline = lines[-1]
-    data = f.read(4096)
-  cache.write(lastline + "\n")
+def fileSummary(row, retVal):
+  event = row[EVENTNAME_INDEX]
+
+  #TODO: do we care about the other events?
+  if not (event == "FileIoRead" or event == "FileIoWrite"):
+    return
+  fname_index = getIndex(event, FNAME_COL)
+
+  # We only care about events that have a file name.
+  if (fname_index == None):
+    return
+
+  # Some data rows are missing the filename?
+  if (len(row) <= fname_index):
+    return
   
-  f.close()
-  cache.close()
-  return filename + '.part'
+  if (row[fname_index] not in retVal):
+    retVal[row[fname_index]] = {"DiskReadBytes": 0, "DiskReadCount": 0, "DiskWriteBytes": 0, "DiskWriteCount": 0}
 
-def fileSummary(data):
-  retVal = {}
-  for row in data:
-    if (len(row) > EVENTNAME_INDEX):      
-      event = row[EVENTNAME_INDEX]
-
-      #TODO: do we care about the other events?
-      if not (event == "FileIoRead" or event == "FileIoWrite"):
-        continue
-      fname_index = getIndex(event, FNAME_COL)
-      
-      # We only care about events that have a file name.
-      if (fname_index == None):
-        continue
-
-      # Some data rows are missing the filename?
-      if (len(row) <= fname_index):
-        continue
-      
-      if (row[fname_index] not in retVal):
-        retVal[row[fname_index]] = {"DiskReadBytes": 0, "DiskReadCount": 0, "DiskWriteBytes": 0, "DiskWriteCount": 0}
-
-      if (event == "FileIoRead"):
-        retVal[row[fname_index]]['DiskReadCount'] += 1
-        idx = getIndex(event, DISKBYTES_COL)
-        retVal[row[fname_index]]['DiskReadBytes'] += int(row[idx], 16)
-      elif (event == "FileIoWrite"):
-        retVal[row[fname_index]]['DiskWriteCount'] += 1
-        idx = getIndex(event, DISKBYTES_COL)
-        retVal[row[fname_index]]['DiskWriteBytes'] += int(row[idx], 16)
-
-  return retVal
+  if (event == "FileIoRead"):
+    retVal[row[fname_index]]['DiskReadCount'] += 1
+    idx = getIndex(event, DISKBYTES_COL)
+    retVal[row[fname_index]]['DiskReadBytes'] += int(row[idx], 16)
+  elif (event == "FileIoWrite"):
+    retVal[row[fname_index]]['DiskWriteCount'] += 1
+    idx = getIndex(event, DISKBYTES_COL)
+    retVal[row[fname_index]]['DiskWriteBytes'] += int(row[idx], 16)
 
 def etl2csv(options):
   """
@@ -235,6 +207,16 @@ def etl2csv(options):
     This is done to keep things simple and to preserve resources on talos machines (large files == high memory + cpu)
   """
   
+  xperf_cmd = '"%s" -merge %s.user %s.kernel %s' % \
+              (options.xperf_path, 
+               options.etl_filename,
+               options.etl_filename,
+               options.etl_filename)
+             
+  if (options.debug_level >= xtalos.DEBUG_INFO):
+    print "executing '%s'" % xperf_cmd
+  subprocess.call(xperf_cmd)
+
   processing_options = []
   xperf_cmd = '"%s" -i %s -o %s.csv %s' % \
               (options.xperf_path,
@@ -244,8 +226,55 @@ def etl2csv(options):
 
   if (options.debug_level >= xtalos.DEBUG_INFO):
     print "executing '%s'" % xperf_cmd
-  os.system(xperf_cmd)
+  subprocess.call(xperf_cmd)
   return options.etl_filename + ".csv"
+
+def trackThread(row, firefoxPID):
+  event, proc, tid = row[EVENTNAME_INDEX], row[PROCESS_INDEX], row[THREAD_ID_INDEX]
+  if event in ["T-DCStart", "T-Start"]:
+    procName, procID = re.search("^(.*) \(\s*(\d+)\)$", proc).group(1, 2)
+    if procID == firefoxPID:
+      imgIdx = getIndex(event, IMAGEFUNC_COL)      
+      img = re.match("([^!]+)!", row[imgIdx]).group(1)
+      if img == procName:
+        gThreads[tid] = "main"
+      else:
+        "non-main"
+  elif event in ["T-DCEnd", "T-End"] and tid in gThreads:
+    del gThreads[tid]
+
+def trackThreadFileIO(row, io, stage):
+  event, tid = row[EVENTNAME_INDEX], row[THREAD_ID_INDEX]
+  opType = {"FileIoWrite": "write", "FileIoRead": "read"}[event]
+  th, stg = gThreads[tid], stages[stage]
+  sizeIdx = getIndex(event, DISKBYTES_COL)
+  bytes = int(row[sizeIdx], 16)
+  io[(th, stg, "file_%s_ops" % opType)] = io.get((th, stg, "file_%s_ops" % opType), 0) + 1
+  io[(th, stg, "file_%s_bytes" % opType)] = io.get((th, stg, "file_%s_bytes" % opType), 0) + bytes
+  io[(th, stg, "file_io_bytes")] = io.get((th, stg, "file_io_bytes"), 0) + bytes
+
+def trackThreadNetIO(row, io, stage):
+  event, tid = row[EVENTNAME_INDEX], row[THREAD_ID_INDEX]
+  connIdIdx = getIndex(event, ACTIVITY_ID_COL)
+  connID = row[connIdIdx]
+  if connID not in gConnectionIDs:
+    gConnectionIDs[connID] = tid
+  origThread = gConnectionIDs[connID]
+  if origThread in gThreads:
+    netEvt = re.match("[\w-]+\/([\w-]+)", event).group(1) 
+    if netEvt in net_events:
+      opType = net_events[netEvt]  
+      th, stg = gThreads[origThread], stages[stage]
+      lenIdx = getIndex(event, NUMBYTES_COL)
+      bytes = int(row[lenIdx])
+      io[(th, stg, "net_%s_bytes" % opType)] = io.get((th, stg, "net_%s_bytes" % opType), 0) + bytes
+      io[(th, stg, "net_io_bytes")] = io.get((th, stg, "net_io_bytes"), 0) + bytes
+ 
+def updateStage(row, stage):
+  guidIdx = getIndex(row[EVENTNAME_INDEX], EVENTGUID_COL)
+  if row[guidIdx] == CEVT_WINDOWS_RESTORED and stage == 0: stage = 1
+  elif row[guidIdx] == CEVT_XPCOM_SHUTDOWN and stage == 1: stage = 2
+  return stage
 
 def main():
   parser = xtalos.XtalosOptions()
@@ -255,18 +284,43 @@ def main():
     print "Unable to verify options"
     sys.exit(1)
 
+  if not options.processID:
+    print "No process ID option given"
+    sys.exit(1)
+
   if options.outputFile:
     outputFile = open(options.outputFile, 'w')
 
-
+  files = {}
+  io = {}
+  stage = 0
+  
   csvname = etl2csv(options)
-  data = readFile(csvname, options.processName)
-  files = fileSummary(data)
+  for row in readFile(csvname):
+    event = row[EVENTNAME_INDEX]
+    if event in ["T-DCStart", "T-Start", "T-DCEnd", "T-End"]:   
+      trackThread(row, options.processID)
+    elif event in ["FileIoRead", "FileIoWrite"] and row[THREAD_ID_INDEX] in gThreads:
+      fileSummary(row, files)  
+      trackThreadFileIO(row, io, stage)
+    elif event.endswith("Event/Classic") and row[THREAD_ID_INDEX] in gThreads:
+      stage = updateStage(row, stage)
+    elif event.startswith("Microsoft-Windows-TCPIP"):
+      trackThreadNetIO(row, io, stage)
+
   try:
     os.remove(csvname)
-    os.remove(csvname + ".part")
   except:
     pass
+
+  output = "thread, stage, counter, value\n"
+  for cntr in sorted(io.iterkeys()):
+    output += "%s, %s\n" % (", ".join(cntr), str(io[cntr]))
+  if options.outputFile:
+    fname = "%s_thread_stats%s" % os.path.splitext(options.outputFile) 
+    f = open(fname, "w"); f.write(output); f.close()
+  else:
+    print output
 
   header = "filename, readcount, readbytes, writecount, writebytes"
   if options.outputFile:

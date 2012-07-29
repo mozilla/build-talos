@@ -56,6 +56,11 @@ class XtalosOptions(optparse.OptionParser):
                     help = "name of the process we launch, defaults to 'firefox.exe'")
     defaults["processName"] = "firefox.exe"
 
+    self.add_option("--pid",
+                    action = "store", dest = "processID",
+                    help = "process ID of the process we launch")
+    defaults["processID"] = ''
+
     self.add_option("-x", "--xperf",
                     action = "store", dest = "xperf_path",
                     help = "location of xperf tool, defaults to 'xperf.exe'")
@@ -81,6 +86,11 @@ class XtalosOptions(optparse.OptionParser):
                     help = "xperf providers to collect data from")
     defaults["xperf_providers"] = ''
 
+    self.add_option("--user-providers",
+                    action="store", dest = "xperf_user_providers",
+                    help = "user mode xperf providers to collect data from")
+    defaults["xperf_user_providers"] = ''
+    
     self.add_option("-s", "--stackwalk",
                     action="store", dest = "xperf_stackwalk",
                     help = "xperf stackwalk options to collect")

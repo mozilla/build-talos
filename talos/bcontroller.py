@@ -59,7 +59,8 @@ defaults = {'endTime': -1,
             'deviceroot': '',
             'port': 20701,
             'env': '', 'xperf_path': None,
-            'xperf_providers': [], 'xperf_stackwalk': [],
+            'xperf_providers': [], 'xperf_user_providers': [],
+            'xperf_stackwalk': [],
             'configFile': 'bcontroller.yml'}
 
 class BrowserWaiter(threading.Thread):
@@ -114,7 +115,9 @@ class BrowserWaiter(threading.Thread):
         print "Error running '%s'." % subprocess.list2cmdline(cmd)
         self.returncode = 1
 
-      self.returncode = os.system(self.command)
+      proc = subprocess.Popen(self.command)
+      proc.wait()                     
+      self.returncode = proc.returncode
 
       #stop_xperf.py -x <path to xperf.exe>
       #etlparser.py -o <outputname[.csv]> -p <process_name (i.e. firefox.exe)> -c <path to configfile> -e <xperf_output[.etl]>
@@ -130,7 +133,8 @@ class BrowserWaiter(threading.Thread):
              '-o', csvname,
              '-p', self.process,
              '-e', etlname,
-             '-c', self.configFile]
+             '-c', self.configFile,
+             '--pid', str(proc.pid)]
       try:
         subprocess.call(cmd)
       except:

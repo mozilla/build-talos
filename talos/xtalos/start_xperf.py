@@ -39,6 +39,7 @@ import os
 import optparse
 import sys
 import xtalos
+import subprocess
 
 def main():
   parser = xtalos.XtalosOptions()
@@ -52,20 +53,27 @@ def main():
     print "No xperf providers options given"
     sys.exit(1)
 
+  if not options.xperf_user_providers:
+    print "No xperf user providers options given"
+    sys.exit(1)
+
   if not options.xperf_stackwalk:
     print "No xperf stackwalk options given"
     sys.exit(1)
-
-  xperf_cmd = '"%s" -on %s -stackwalk %s -MaxBuffers 1024 -BufferSize 1024 -f %s' % \
+  
+  xperf_cmd = '"%s" -on %s -stackwalk %s -MaxBuffers 1024 -BufferSize 1024 -f %s.kernel' \
+              ' -start talos_ses -on "%s" -MaxBuffers 1024 -BufferSize 1024 -f %s.user' % \
               (options.xperf_path,
                '+'.join(options.xperf_providers),
                '+'.join(options.xperf_stackwalk),
+               options.etl_filename,
+               '"+"'.join(options.xperf_user_providers),
                options.etl_filename)
 
   if (options.debug_level >= xtalos.DEBUG_INFO):
     print "executing '%s'" % xperf_cmd
 
-  os.system(xperf_cmd)
+  subprocess.call(xperf_cmd)
 
 if __name__ == "__main__":
   main()

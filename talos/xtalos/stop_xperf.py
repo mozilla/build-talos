@@ -39,6 +39,7 @@ import os
 import optparse
 import sys
 import xtalos
+import subprocess
 
 def main():
   parser = xtalos.XtalosOptions()
@@ -48,12 +49,12 @@ def main():
     print "Unable to verify options"
     sys.exit(1)
 
-  xperf_cmd = '"%s" -stop' % (options.xperf_path)
+  xperf_cmd = '"%s" -stop -stop talos_ses' % (options.xperf_path)
 
   if (options.debug_level >= xtalos.DEBUG_INFO):
     print "executing '%s'" % xperf_cmd
 
-  os.system(xperf_cmd)
+  subprocess.call(xperf_cmd)
 
 if __name__ == "__main__":
   main()

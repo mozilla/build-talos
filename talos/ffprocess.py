@@ -112,11 +112,13 @@ class FFProcess(object):
             bcontroller_vars.append('url_timestamp')
 
         if (('xperf_providers' in test_config) and
+            ('xperf_user_providers' in test_config) and
             ('xperf_stackwalk' in test_config)):
             print "extending with xperf!"
             browser_config['xperf_providers'] = test_config['xperf_providers']
+            browser_config['xperf_user_providers'] = test_config['xperf_user_providers']
             browser_config['xperf_stackwalk'] = test_config['xperf_stackwalk']
-            bcontroller_vars.extend(['xperf_providers', 'xperf_stackwalk'])
+            bcontroller_vars.extend(['xperf_providers', 'xperf_user_providers', 'xperf_stackwalk'])
 
         content = utils.writeConfigFile(browser_config, bcontroller_vars)
 

@@ -49,7 +49,8 @@ class TestSequel(Test):
 
 class TsBase(Test):
     """abstract base class for ts-style tests"""
-    keys = ['url', 'url_timestamp', 'timeout', 'cycles', 'shutdown', 'profile_path', 'xperf_providers', 'xperf_stackwalk']
+    keys = ['url', 'url_timestamp', 'timeout', 'cycles', 'shutdown', 'profile_path', 
+            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk']
 
 class ts(TsBase):
     cycles = 20
@@ -146,7 +147,7 @@ class PageloaderTest(Test):
             'rss', 'resolution', 'cycles',
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
-            'xperf_providers', 'xperf_stackwalk', 'filters'
+            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters'
             ]
 
 class tp(PageloaderTest):
