@@ -371,14 +371,17 @@ class BrowserLogResults(object):
         """record rss counters in counter_results dictionary"""
 
         counters = ['Main', 'Content']
-        if not set(['%s_RSS' for i in counters]).issubset(counter_results.keys()):
+        if not set(['%s_RSS' % i for i in counters]).intersection(counter_results.keys()):
+            # no RSS counters to accumulate
             return
         for line in self.results_raw.split('\n'):
             rssmatch = self.RSS_REGEX.search(line)
             if rssmatch:
                 (type, value) = (rssmatch.group(1), rssmatch.group(2))
                 # type will be 'Main' or 'Content'
-                counter_results['%s_RSS'].append(value)
+                counter_name = '%s_RSS' % type
+                if counter_name in counter_results:
+                    counter_results[counter_name].append(value)
 
     def shutdown(self, counter_results):
         """record shutdown time in counter_results dictionary"""
