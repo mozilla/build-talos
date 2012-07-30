@@ -214,6 +214,9 @@ the highest value.
     # default filters
     filters = ['ignore_max', 'median']
 
+    # counters turned on by CLI options
+    counters = {'rss': ['Main_RSS']}
+
     # config items to extend vs overwrite
     extend = set(['basetest', 'extraPrefs'])
 
@@ -350,6 +353,12 @@ the highest value.
             filters.append(f)
         self.config['filters'] = filters
 
+        # get counters to add
+        counters = set()
+        for key, values in self.counters.items():
+            if self.config.get(key):
+                counters.update(values)
+
         # get tests
         # get user-selected tests
         activeTests = self.config.pop('activeTests', [])
@@ -371,7 +380,7 @@ the highest value.
 
         # add the tests to the configuration
         # XXX extending vs over-writing?
-        self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides))
+        self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides, counters))
 
     def parse_args(self, *args, **kwargs):
 
@@ -420,12 +429,13 @@ the highest value.
 
     ### PerfConfigurator methods
 
-    def tests(self, activeTests, overrides=None, global_overrides=None):
+    def tests(self, activeTests, overrides=None, global_overrides=None, counters=None):
         """
         return a list of test dictionaries
         - activeTests: a list of test
         - overrides: a dict of dicts containing overrides for the specific tests
         - global_overrides: a dict of overrides that win over test-specifics
+        - counters: counters to add to the tests
         """
 
         # ensure overrides of the right form
@@ -465,6 +475,19 @@ the highest value.
             if tpmanifest:
                 if self.config.get('develop') or self.config.get('deviceroot'):
                     test_instance.tpmanifest = self.buildRemoteManifest(utils.interpolatePath(tpmanifest))
+
+            # add any counters
+            if counters:
+                keys = ['linux_counters', 'mac_counters', 'remote_counters', 'win_counters', 'w7_counters']
+                for key in keys:
+                    if key not in test_instance.keys:
+                        # only populate attributes that will be output
+                        continue
+                    if not isinstance(getattr(test_instance, key, None), list):
+                        setattr(test_instance, key, [])
+                    _counters = getattr(test_instance, key)
+                    _counters.extend([counter for counter in counters
+                                      if counter not in _counters])
 
             # get its dict
             retval.append(dict(test_instance.items()))
