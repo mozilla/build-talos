@@ -25,7 +25,6 @@ class ConfigurationError(Exception):
 class PerfConfigurator(Configuration):
     options = [
         ('browser_path', {'help': "path to executable we are testing",
-                          'required': "Please specify --executablePath",
                           'flags': ['-e', '--executablePath']
                           }),
         # --sampleConfig is handled separately
@@ -262,6 +261,11 @@ the highest value.
         # generic configuration validation
         Configuration.validate(self)
 
+        # ensure the browser_path is specified
+        msg = "Please specify --executablePath"
+        if not 'print_tests' in self.parsed and not self.config.get('browser_path'):
+            self.error(msg)
+
         # add test_name_extension to config
         # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/PerfConfigurator.py#l107
         noChrome = self.config.get('noChrome')
@@ -416,7 +420,7 @@ the highest value.
         or otherwise according to the currentDateString
         """
 
-        if not getattr(options, 'dump') and self._dump:
+        if not getattr(options, 'dump') and self._dump and not 'print_tests' in self.parsed:
             options.dump = "%s_config.yml" % self.currentDateString()
 
         # output the name for buildbot
