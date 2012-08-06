@@ -23,12 +23,11 @@ __all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'Bro
 class TalosResults(object):
     """Container class for Talos results"""
 
-    def __init__(self, title, date, browser_config, filters, remote=False, amo=False, test_name_extension=''):
+    def __init__(self, title, date, browser_config, filters, remote=False, test_name_extension=''):
         self.results = []
         self.filters = filters
         self.test_name_extension = test_name_extension
         self.remote = False
-        self.amo = amo
 
         # info needed for graphserver
         self.title = title
@@ -413,8 +412,7 @@ def main(args=sys.argv[1:]):
                       'buildid': 'testbuildid',
                       'sourcestamp': 'NULL',
                       'browser_name': 'Firefox',
-                      'browser_version': '3.14', # for jmaher
-                      'addon_id': 'NULL'
+                      'browser_version': '3.14'
                       }
 
     # filters

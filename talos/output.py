@@ -12,7 +12,6 @@ import urllib
 import urlparse
 import utils
 from StringIO import StringIO
-from amo.amo_api import upload_amo_results, amo_results_data
 
 try:
     import json
@@ -139,7 +138,6 @@ class GraphserverOutput(Output):
 
     retries = 5   # number of times to attempt to contact graphserver
     info_format = ['title', 'testname', 'branch_name', 'sourcestamp', 'buildid', 'date']
-    amo_info_format = ['browser_name', 'browser_version', 'addon_id']
 
     @classmethod
     def check(cls, urls):
@@ -160,8 +158,7 @@ class GraphserverOutput(Output):
                          sourcestamp=self.results.browser_config['sourcestamp'],
                          buildid=self.results.browser_config['buildid'],
                          browser_name=self.results.browser_config['browser_name'],
-                         browser_version=self.results.browser_config['browser_version'],
-                         addon_id=self.results.browser_config['addon_id']
+                         browser_version=self.results.browser_config['browser_version']
                          )
 
         for test in self.results.results:
@@ -250,9 +247,6 @@ class GraphserverOutput(Output):
         elif testname.startswith('sunspider') or testname.startswith('kraken'):
             _type = 'AVERAGE'
             average = self.JS_Metric(vals)
-        elif self.results.amo:
-            _type = 'AMO'
-            info_format = self.amo_info_format
 
         # ensure that we have all of the info data available
         missing = [i for i in info_format if i not in info]
@@ -318,22 +312,10 @@ class GraphserverOutput(Output):
         lines = links.split('\n')
 
         # print graph results
-        if self.results.amo:
-            self.amo_results_from_graph(lines)
-        else:
-            self.results_from_graph(lines, server)
+        self.results_from_graph(lines, server)
 
         # return links from graphserver
         return links
-
-    def amo_results_from_graph(self, lines):
-        """print results from AMO graphserver POST submission"""
-        #only get a pass/fail back from the graph server
-        for line in lines:
-            if not line:
-                continue
-            if line.lower() in ('success',):
-                print 'RETURN:addon results inserted successfully'
 
     def results_from_graph(self, lines, results_server):
         """print results from graphserver POST submission"""
@@ -466,35 +448,7 @@ class DatazillaOutput(Output):
 
         return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
 
-
-class AMOOutput(Output):
-    def __call__(self):
-        # TODO: do we only test ts, if not, can we ensure that we are not trying to uplaod ts_rss, etc...
-        # see http://hg.mozilla.org/build/talos/file/170c100911b6/talos/run_tests.py#l227
-        retval = []
-        for test in self.results.results:
-            if test.name() != 'ts':
-                continue
-            vals = []
-            for cycle in test.results:
-                vals.extend(cycle.raw_values())
-
-            retval.append(amo_results_data(self.results.browser_config['addon_id'],
-                                           self.results.browser_config['browser_version'],
-                                           self.results.browser_config['process'],
-                                           test.name(),
-                                           vals
-                                           )
-                          )
-        return retval
-
-    def post(self, results, server, path, scheme):
-        for result in results:
-            upload_amo_results(result, server, path, scheme)
-
-
 # available output formats
 formats = {'datazilla_urls': DatazillaOutput,
-           'results_urls': GraphserverOutput,
-           'amo': AMOOutput}
+           'results_urls': GraphserverOutput}
 

@@ -181,15 +181,13 @@ def run_tests(config):
   # set defaults
   title = config.get('title', '')
   testdate = config.get('testdate', '')
-  amo = config.get('amo', False)
 
   # set browser_config
   required = ['preferences', 'extensions',
               'browser_path', 'browser_log', 'browser_wait',
               'extra_args', 'buildid', 'env', 'init_url'
               ]
-  optional = {'addon_id': 'NULL',
-              'bcontroller_config': 'bcontroller.yml',
+  optional = {'bcontroller_config': 'bcontroller.yml',
               'branch_name': '',
               'child_process': 'plugin-container',
               'develop': False,
@@ -263,7 +261,6 @@ def run_tests(config):
                                title=title,
                                date=date,
                                remote=browser_config['remote'],
-                               amo=amo,
                                browser_config=browser_config,
                                test_name_extension=browser_config['test_name_extension'])
 
@@ -271,9 +268,6 @@ def run_tests(config):
   outputs = ['results_urls', 'datazilla_urls']
   results_urls = dict([(key, config[key]) for key in outputs
                        if key in config])
-  if amo:
-    # default amo link
-    results_urls['amo'] = ['https://addons-dev.allizom.org/z']
   talos_results.check_output_formats(**results_urls)
 
   # setup a webserver, if --develop is specified to PerfConfigurator.py
