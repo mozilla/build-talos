@@ -94,6 +94,7 @@ class tresize(TsBase):
     cycles = 20
     url = 'startup_test/tresize-test.html'
     timeout = 150
+    filters = [['mean', []]]
 
 # mobile ts-type tests
 

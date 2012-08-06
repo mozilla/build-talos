@@ -51,10 +51,12 @@ function testCompleted() {
       total += diff;
       diffs.push(diff);
     }
+    var average = (total/count);
     if (dumpDataSet) {
-      dumpLog('diffs: ' + diffs + '\n');
+      dumpLog('__start_reporttresize-test.html,' + diffs + '__end_report\n');
+    } else {
+      dumpLog('__start_report' + average + '__end_report\n');
     }
-    dumpLog('__start_report' + (total / count) + '__end_report\n');
     dumpLog('__startTimestamp' + Date.now() + '__endTimestamp\n');
 
     if (closeOnFinished) {

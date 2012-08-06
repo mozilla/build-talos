@@ -127,7 +127,33 @@ class TestResults(object):
         if counter_results:
             self.all_counter_results.append(counter_results)
 
-class TsResults(object):
+class Results(object):
+    def filter(self, *filters):
+        """
+        filter the results set;
+        applies each of the filters in order to the results data
+        filters should be callables that take a list
+        the last filter should return a scalar (float or int)
+        returns a list of [[data, page], ...]
+        """
+        retval = []
+        for result in self.results:
+            page = result['page']
+            data = result['runs']
+            data = filter.apply(data, filters)
+            retval.append([data, page])
+        return retval
+
+    def raw_values(self):
+        return [(result['page'], result['runs']) for result in self.results]
+
+    def values(self, filters):
+        """return filtered (value, page) for each value"""
+        return [[val, page] for val, page in self.filter(*filters)
+                if val > -1]
+
+
+class TsResults(Results):
     """
     results for Ts tests
     """
@@ -135,17 +161,38 @@ class TsResults(object):
     format = 'tsformat'
 
     def __init__(self, string, counter_results=None):
-        self.vals = [float(val) for val in string.split('|')]
         self.counter_results = counter_results
 
-    def values(self, filters):
-        """return filtered (value, page) for each value"""
-        return [[val, 'NULL'] for val in self.vals]
+        string = string.strip()
+        lines = string.splitlines()
 
-    def raw_values(self):
-        return self.vals[:]
+        # gather the data
+        self.results = []
+        index = 0
 
-class PageloaderResults(object):
+        # Handle the case where we support a pagename in the results (new format)
+        for line in lines:
+            result = {}
+            r = line.strip().split(',')
+            if len(r) == 1:
+                break;
+            result['index'] = index
+            result['page'] = r[0]
+            #note: if we have len(r) >1, then we have pagename,raw_results
+            result['runs'] = [float(i) for i in r[1:]]
+            self.results.append(result)
+            index += 1
+
+        # The original case where we just have numbers and no pagename
+        if not self.results:
+            result = {}
+            result['index'] = index
+            result['page'] = 'NULL'
+            result['runs'] = [float(val) for val in string.split('|')]
+            self.results.append(result)
+
+
+class PageloaderResults(Results):
     """
     results from a browser_dump snippet
     https://wiki.mozilla.org/Buildbot/Talos/DataFormat#browser_output.txt
@@ -193,28 +240,6 @@ class PageloaderResults(object):
             page = page.split('/')[0]
         return page
 
-    def raw_values(self):
-        return [(result['page'], result['runs']) for result in self.results]
-
-    def values(self, filters):
-        return [[val, page] for val, page in self.filter(*filters)
-                if val > -1]
-
-    def filter(self, *filters):
-        """
-        filter the results set;
-        applies each of the filters in order to the results data
-        filters should be callables that take a list
-        the last filter should return a scalar (float or int)
-        returns a list of [[data, page], ...]
-        """
-        retval = []
-        for result in self.results:
-            page = result['page']
-            data = result['runs']
-            data = filter.apply(data, filters)
-            retval.append([data, page])
-        return retval
 
 class BrowserLogResults(object):
     """parse the results from the browser log output"""
