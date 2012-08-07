@@ -88,8 +88,6 @@ class TalosResults(object):
 class TestResults(object):
     """container object for all test results across cycles"""
 
-    type = 'VALUES'
-
     def __init__(self, test_config, global_counters=None, extensions=None):
         self.results = []
         self.test_config = test_config
