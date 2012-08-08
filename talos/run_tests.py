@@ -136,6 +136,28 @@ def buildCommandLine(test):
   # will just make a string for now
   return ' '.join(url)
 
+def setup_webserver(webserver):
+  """use mozhttpd to setup a webserver"""
+
+  scheme = "http://"
+  if (webserver.startswith('http://') or
+      webserver.startswith('chrome://') or
+      webserver.startswith('file:///')):
+    scheme = ""
+  elif (webserver.find('://') >= 0):
+    print "Unable to parse user defined webserver: '%s'" % (webserver)
+    sys.exit(2)
+
+  url = urlparse.urlparse('%s%s' % (scheme, webserver))
+  port = url.port
+
+  if port:
+    import mozhttpd
+    return mozhttpd.MozHttpd(host=url.hostname, port=int(port), docroot=here)
+  else:
+    print "WARNING: unable to start web server without custom port configured"
+    return None
+
 def run_tests(config):
   """Runs the talos tests on the given configuration and generates a report.
 
@@ -273,24 +295,9 @@ def run_tests(config):
   # setup a webserver, if --develop is specified to PerfConfigurator.py
   httpd = None
   if browser_config['develop'] == True:
-    scheme = "http://"
-    if (browser_config['webserver'].startswith('http://') or
-        browser_config['webserver'].startswith('chrome://') or
-        browser_config['webserver'].startswith('file:///')):
-      scheme = ""
-    elif (browser_config['webserver'].find('://') >= 0):
-      print "Unable to parse user defined webserver: '%s'" % (browser_config['webserver'])
-      sys.exit(2)
-
-    url = urlparse.urlparse('%s%s' % (scheme, browser_config['webserver']))
-    port = url.port
-
-    if port:
-      import mozhttpd
-      httpd = mozhttpd.MozHttpd(host=url.hostname, port=int(port), docroot=here)
+    httpd = setup_webserver(browser_config['webserver'])
+    if httpd:
       httpd.start()
-    else:
-      print "WARNING: unable to start web server without custom port configured"
 
   # run the tests
   utils.startTimer()
