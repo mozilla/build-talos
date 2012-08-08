@@ -75,7 +75,7 @@ class TTest(object):
 
     def __init__(self, remote = False):
         cmanager, platformtype, ffprocess = self.getPlatformType(remote)
-        self.cmanager = cmanager
+        self.CounterManager = cmanager
         self.platform_type = platformtype
         self._ffprocess = ffprocess
         self._hostproc = ffprocess
@@ -84,13 +84,15 @@ class TTest(object):
         self._ffsetup = FFSetup(self._ffprocess)
 
     def getPlatformType(self, remote):
-        cmanager = None
+
         _ffprocess = None
         if remote == True:
             platform_type = 'remote_'
-            import cmanager_remote as cmanager
+            import cmanager
+            CounterManager = cmanager.CounterManager
         elif platform.system() == "Linux":
-            import cmanager_linux as cmanager
+            import cmanager_linux
+            CounterManager = cmanager_linux.LinuxCounterManager
             platform_type = 'linux_'
             _ffprocess = LinuxProcess()
         elif platform.system() in ("Windows", "Microsoft"):
@@ -100,22 +102,24 @@ class TTest(object):
                 platform_type = 'w7_'
             else:
                 raise talosError('unsupported windows version')
-            import cmanager_win32 as cmanager
+            import cmanager_win32
+            CounterManager = cmanager_win32.WinCounterManager
             _ffprocess = Win32Process()
         elif platform.system() == "Darwin":
-            import cmanager_mac as cmanager
+            import cmanager_mac
+            CounterManager = cmanager_mac.MacCounterManager
             platform_type = 'mac_'
             _ffprocess = MacProcess()
-        return cmanager, platform_type, _ffprocess
+        return CounterManager, platform_type, _ffprocess
 
     def initializeLibraries(self, browser_config):
         if browser_config['remote'] == True:
             cmanager, platform_type, ffprocess = self.getPlatformType(False)
 
             from ffprocess_remote import RemoteProcess
-            self._ffprocess = RemoteProcess(browser_config['host'], 
-                                           browser_config['port'], 
-                                           browser_config['deviceroot'])
+            self._ffprocess = RemoteProcess(browser_config['host'],
+                                            browser_config['port'],
+                                            browser_config['deviceroot'])
             self._ffsetup = FFSetup(self._ffprocess)
             self._ffsetup.initializeRemoteDevice(browser_config, ffprocess)
             self._hostproc = ffprocess
@@ -126,7 +130,7 @@ class TTest(object):
                                                      browser_config['preferences'],
                                                      browser_config['extensions'],
                                                      browser_config['webserver'])
-        utils.debug("created profile") 
+        utils.debug("created profile")
         return profile_dir, temp_dir
 
     def initializeProfile(self, profile_dir, browser_config):
@@ -321,7 +325,7 @@ class TTest(object):
                 #set up the counters for this test
                 counter_results = None
                 if counters:
-                    cm = self.cmanager.CounterManager(self._ffprocess, browser_config['process'], counters)
+                    cm = self.CounterManager(self._ffprocess, browser_config['process'], counters)
                     counter_results = dict([(counter, []) for counter in counters])
 
                 #the main test loop, monitors counters and checks for browser output

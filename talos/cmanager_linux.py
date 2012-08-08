@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
 import subprocess
 import sys
-import os
+from cmanager import CounterManager
 
 def GetPrivateBytes(pids):
   """Calculate the amount of private, writeable memory allocated to a process.
@@ -76,12 +77,8 @@ def GetXRes(pids):
 
   return XRes
 
-counterDict = {}
-counterDict["Private Bytes"] = GetPrivateBytes
-counterDict["RSS"] = GetResidentSize
-counterDict["XRes"] = GetXRes
 
-class CounterManager(object):
+class LinuxCounterManager(CounterManager):
   """This class manages the monitoring of a process with any number of
      counters.
 
@@ -90,6 +87,11 @@ class CounterManager(object):
      Some examples are: CalcCPUTime, GetResidentSize, and GetPrivateBytes
   """
 
+  counterDict = {"Private Bytes": GetPrivateBytes,
+                 "RSS": GetResidentSize,
+                 "XRes": GetXRes}
+
+
   pollInterval = .25
 
   def __init__(self, ffprocess, process, counters=None, childProcess="plugin-container"):
@@ -97,39 +99,17 @@ class CounterManager(object):
          counters: A list of counters to monitor. Any counters whose name does
          not match a key in 'counterDict' will be ignored.
     """
-    self.allCounters = {}
-    self.registeredCounters = {}
+
+    CounterManager.__init__(self, ffprocess, process, counters)
+
     self.childProcess = childProcess
     self.runThread = False
     self.pidList = []
-    self.ffprocess = ffprocess
     self.primaryPid = self.ffprocess.GetPidsByName(process)[-1]
     os.stat('/proc/%s' % self.primaryPid)
 
     self._loadCounters()
     self.registerCounters(counters)
-
-  def _loadCounters(self):
-    """Loads all of the counters defined in the counterDict"""
-    for counter in counterDict.keys():
-      self.allCounters[counter] = counterDict[counter]
-
-  def registerCounters(self, counters):
-    """Registers a list of counters that will be monitoring.
-       Only counters whose names are found in allCounters will be added
-    """
-    for counter in counters:
-      if counter in self.allCounters:
-        self.registeredCounters[counter] = [self.allCounters[counter], []]
-
-  def unregisterCounters(self, counters):
-    """Unregister a list of counters.
-       Only counters whose names are found in registeredCounters will be
-       paid attention to
-    """
-    for counter in counters:
-      if counter in self.registeredCounters:
-        del self.registeredCounters[counter]
 
   def getCounterValue(self, counterName):
     """Returns the last value of the counter 'counterName'"""
@@ -154,4 +134,4 @@ class CounterManager(object):
     """any final cleanup"""
     # TODO: should probably wait until we know run() is completely stopped
     # before setting self.pid to None. Use a lock?
-    return
+

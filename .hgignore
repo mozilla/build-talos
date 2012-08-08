@@ -20,3 +20,4 @@ remoteapp\.ini
 ^lib$
 ^local$
 ^talos/page_load_test/tp5/.*
+^talos/page_load_test/tp5n/.*
