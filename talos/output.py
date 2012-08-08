@@ -363,16 +363,13 @@ class DatazillaOutput(Output):
 
             # serialize test results
             results = {}
-            if test.format == 'tsformat':
-                raw_vals = []
-                for result in test.results:
-                    raw_vals.extend(result.raw_values())
-                results[test.name()] = raw_vals
-            elif test.format == 'tpformat':
-                for result in test.results:
-                    # XXX this will not work for manifests which list
-                    # the same page name twice. It also ignores cycles
-                    for page, val in result.raw_values():
+            for result in test.results:
+                # XXX this will not work for manifests which list
+                # the same page name twice. It also ignores cycles
+                for page, val in result.raw_values():
+                    if page == 'NULL':
+                        results.setdefault(test.name(), []).extend(val)
+                    else:
                         results.setdefault(page, []).extend(val)
 
             # test options
