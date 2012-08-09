@@ -191,7 +191,8 @@ the highest value.
         'network.proxy.type': 1,
         'security.enable_java': False,
         'security.fileuri.strict_origin_policy': False,
-        'toolkit.telemetry.prompted': 2
+        'toolkit.telemetry.prompted': 2,
+        'security.enablePrivilege.enable_for_tests': True
         }
 
     # keys to generated self.config that are global overrides to tests
