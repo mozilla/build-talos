@@ -1,52 +1,19 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is standalone Firefox Windows performance test.
-#
-# The Initial Developer of the Original Code is Google Inc.
-# Portions created by the Initial Developer are Copyright (C) 2006
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#   Annie Sullivan <annie.sullivan@gmail.com> (original author)
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""A set of functions for process management on Windows.
-"""
-
-__author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
+"""Firefox process management for Talos"""
 
 import os
+import shutil
 import sys
 import time
-from utils import talosError
 import utils
+from utils import talosError
 
 class FFProcess(object):
     testAgent = None
+    _directory_write_mode = 0755
 
     def ProcessesWithNames(self, *process_names):
         """Returns a list of processes running with the given name(s):
@@ -147,7 +114,7 @@ class FFProcess(object):
           scheme = ""
         elif (server.find('://') >= 0):
           raise talosError("Unable to parse user defined webserver: '%s'" % (server))
-          
+
         url = urlparse.urlparse('%s%s' % (scheme, server))
 
         port = url.port
@@ -163,7 +130,43 @@ user_pref("capability.principal.codebase.p2.subjectName", "");
         user_js_file.write(remoteCode)
         user_js_file.close()
 
-#user_pref("network.proxy.type", 1);
-#user_pref("network.proxy.http", "%(host)s");
-#user_pref("network.proxy.http_port", %(port)d);
+    ### functions for dealing with files
+    ### these should really go in mozfile:
+    ### https://bugzilla.mozilla.org/show_bug.cgi?id=774916
+    ### These really don't have anything to do with process management
 
+    def copyFile(self, fromfile, toDir):
+        if not os.path.isfile(os.path.join(toDir, os.path.basename(fromfile))):
+            shutil.copy(fromfile, toDir)
+            utils.debug("insetalled" + fromfile)
+        else:
+            utils.debug("WARNING: file already insetalled (" + fromfile + ")")
+
+    def removeDirectory(self, dir):
+        self.MakeDirectoryContentsWritable(dir)
+        shutil.rmtree(dir)
+
+    def MakeDirectoryContentsWritable(self, dirname):
+        """Recursively makes all the contents of a directory writable.
+
+        Args:
+            dirname: Name of the directory to make contents writable.
+        """
+        try:
+            for (root, dirs, files) in os.walk(dirname):
+                os.chmod(root, self._directory_write_mode)
+                for filename in files:
+                    try:
+                        os.chmod(os.path.join(root, filename), self._directory_write_mode)
+                    except OSError, (errno, strerror):
+                        print 'WARNING: failed to os.chmod(%s): %s : %s' % (os.path.join(root, filename), errno, strerror)
+        except OSError, (errno, strerror):
+            print 'WARNING: failed to MakeDirectoryContentsWritable: %s : %s' % (errno, strerror)
+
+    def getFile(self, handle, localFile=""):
+        fileData = ''
+        if os.path.isfile(handle):
+            results_file = open(handle, "r")
+            fileData = results_file.read()
+            results_file.close()
+        return fileData
