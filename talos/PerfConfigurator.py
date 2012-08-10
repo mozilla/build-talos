@@ -562,6 +562,40 @@ the highest value.
         except ValueError:
             return value
 
+    def browser_config(self):
+
+        # set defaults 
+        title = self.config.get('title', '')
+        testdate = self.config.get('testdate', '')
+
+        required = ['preferences', 'extensions',
+                  'browser_path', 'browser_log', 'browser_wait',
+                  'extra_args', 'buildid', 'env', 'init_url'
+                  ]
+        optional = {'bcontroller_config': 'bcontroller.yml',
+                  'branch_name': '',
+                  'child_process': 'plugin-container',
+                  'develop': False,
+                  'deviceroot': '',
+                  'dirs': {},
+                  'host': self.config.get('deviceip', ''), # XXX names should match!
+                  'port': self.config.get('deviceport', ''), # XXX names should match!
+                  'process': '',
+                  'remote': False,
+                  'fennecIDs': '',
+                  'repository': 'NULL',
+                  'sourcestamp': 'NULL',
+                  'symbols_path': None,
+                  'test_name_extension': '',
+                  'test_timeout': 1200,
+                  'webserver': '',
+                  'xperf_path': None,
+                  }
+        browser_config = dict(title=title)
+        browser_config.update(dict([(i, self.config[i]) for i in required]))
+        browser_config.update(dict([(i, self.config.get(i, j)) for i, j in optional.items()]))
+        return browser_config
+
 def main(args=sys.argv[1:]):
 
     # generate a configuration from command-line arguments
