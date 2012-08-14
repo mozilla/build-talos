@@ -27,7 +27,6 @@ class PerfConfigurator(Configuration):
         ('browser_path', {'help': "path to executable we are testing",
                           'flags': ['-e', '--executablePath']
                           }),
-        # --sampleConfig is handled separately
         ('title', {'help': 'Title of the test run',
                    'default': 'qm-pxp01',
                    'flags': ['-t', '--title']}),
@@ -46,6 +45,10 @@ class PerfConfigurator(Configuration):
         ('datazilla_urls', {'help': 'URL of datazilla server of file:// url for local output',
                             'flags': ['--datazilla-url'],
                             'type': list}),
+        ('authfile', {'help': """File of the form
+http://hg.mozilla.org/build/buildbot-configs/file/default/mozilla/passwords.py.template
+for datazilla auth.  Should have keys 'oauthSecret' and 'oauthKey'"""}),
+
         # XXX activeTests should really use a list-thingy but can't because of
         # the one-off ':' separation :/
         ('activeTests', {'help': "List of tests to run, separated by ':' (ex. ts:tp4:tsvg)",
@@ -287,7 +290,7 @@ the highest value.
         # default raw_results_url
         # TODO: deprecate and set via invoker (buildbot, etc)
         if not self.config.get('datazilla_urls'):
-            self.config['datazilla_urls'] = ["http://10.8.73.29/views/api/load_test"]
+            self.config['datazilla_urls'] = ["https://datazilla.mozilla.org/talos"]
         # include a way to disable
         if self.config['datazilla_urls'] == ['']:
             self.config['datazilla_urls'] = []
@@ -562,9 +565,27 @@ the highest value.
         except ValueError:
             return value
 
+    def output_options(self):
+        """configuration related to outputs;
+        Returns a 2-tuple of
+        - a dictionary of output format -> urls
+        - a dictionary of options for each format
+        """
+
+        outputs = ['results_urls', 'datazilla_urls']
+        results_urls = dict([(key, self.config[key]) for key in outputs
+                             if key in self.config])
+        results_options = {}
+        options = {'datazilla_urls': ['authfile']}
+        for key, values in options.items():
+            for item in values:
+                value = self.config.get(item)
+                if value:
+                    results_options.setdefault(key, {})[item] = value
+        return results_urls, results_options
+
     def browser_config(self):
 
-        # set defaults 
         title = self.config.get('title', '')
         testdate = self.config.get('testdate', '')
 

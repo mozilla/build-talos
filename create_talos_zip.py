@@ -38,6 +38,10 @@ mozbase_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
                  ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py')]
 mozbase = [(mozbase_src + src, destination) for src, destination in mozbase_files]
 
+# datazilla client dependency
+datazilla_client = [('https://raw.github.com/mozilla/datazilla_client/master/dzclient/client.py',
+                     'dzclient.py')]
+
 # PyYAML dependency
 yaml_src = 'http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/'
 yaml_files = ['composer.py',
@@ -80,7 +84,7 @@ oauth2_files = [
 #    'clients/smtp.py',
     '__init__.py',
     '_version.py']
-oauth2 = [('%s/%s' % (oauth2_src, f), 'amo/oauth2/%s' % f)
+oauth2 = [('%s/%s' % (oauth2_src, f), 'oauth2/%s' % f)
           for f in oauth2_files]
 
 # httplib2 dependency
@@ -89,13 +93,11 @@ httplib2_files = ['__init__.py',
                   'cacerts.txt',
                   'iri2uri.py',
                   'socks.py']
-httplib2_amo = [('%s/%s' % (httplib2_src, f), 'amo/httplib2/%s' % f)
-                for f in httplib2_files]
-httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'amo/oauth2/httplib2/%s' % f)
+httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = mozbase + yaml + simplejson + oauth2 + httplib2_amo + httplib2_oauth2
+manifest = mozbase + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
 
 def download(*resources):
     """

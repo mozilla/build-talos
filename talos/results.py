@@ -37,7 +37,7 @@ class TalosResults(object):
     def add(self, test_results):
         self.results.append(test_results)
 
-    def check_output_formats(self, **output_formats):
+    def check_output_formats(self, output_formats, **output_options):
         """check output formats"""
 
         # ensure formats are available
@@ -49,7 +49,7 @@ class TalosResults(object):
         # perform per-format check
         for format, urls in output_formats.items():
             cls = output.formats[format]
-            cls.check(urls)
+            cls.check(urls, **(output_options.get(format, {})))
 
     @classmethod
     def check_formats_exist(cls, formats):
@@ -59,16 +59,19 @@ class TalosResults(object):
         """
         return [i for i in formats if i not in output.formats]
 
-    def output(self, **output_formats):
+    def output(self, output_formats, **output_options):
         """
         output all results to appropriate URLs
+        - output_formats: a dict mapping formats to a list of URLs
+        - output_options: a dict mapping formats to options for each format
         """
 
         utils.noisy("Outputting talos results => %s" % output_formats)
         try:
 
             for key, urls in output_formats.items():
-                _output = output.formats[key](self)
+                options = output_options.get(key, {})
+                _output = output.formats[key](self, **options)
                 results = _output()
                 for url in urls:
                     _output.output(results, url)
@@ -407,7 +410,7 @@ class BrowserLogResults(object):
 
     def shutdown(self, counter_results):
         """record shutdown time in counter_results dictionary"""
-        counter_results.setdefault('shutdown', []).append(self.endTime - self.startTime)
+        counter_results.setdefault('shutdown', []).append(int(self.endTime - self.startTime))
 
     def responsiveness(self):
         return self.RESULTS_RESPONSIVENESS_REGEX.findall(self.results_raw)

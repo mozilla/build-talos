@@ -5,13 +5,16 @@
 """output formats for Talos"""
 
 import filter
+import imp
 import mozinfo
+import os
 import post_file
 import time
 import urllib
 import urlparse
 import utils
 from StringIO import StringIO
+from dzclient import DatazillaRequest, DatazillaResult, DatazillaResultsCollection
 
 try:
     import json
@@ -35,7 +38,7 @@ class Output(object):
     """abstract base class for Talos output"""
 
     @classmethod
-    def check(cls, urls):
+    def check(cls, urls, **options):
         """check to ensure that the urls are valid"""
 
     def __init__(self, results):
@@ -356,10 +359,65 @@ class GraphserverOutput(Output):
 
 
 class DatazillaOutput(Output):
+    """send output to datazilla"""
+
+    def __init__(self, results, authfile=None):
+        Output.__init__(self, results)
+        self.authfile = authfile
+        self.oauth_secret = None
+        self.oauth_key = None
+        if authfile is not None:
+            assert os.path.exists(authfile), "Auth file not found: %s" % authfile
+            module_name = 'passwords'
+            module = imp.load_source(module_name, authfile)
+            oauth_key = getattr(module, 'oauthKey', None)
+            oauth_secret = getattr(module, 'oauthSecret', None)
+            if oauth_key and oauth_secret:
+                self.oauth_key = oauth_key
+                self.oauth_secret = oauth_secret
+            elif not (oauth_key or oauth_secret):
+                utils.noisy("File '%s' does not contain the oauth key or secret")
+            else:
+                raise utils.talosError("Auth file contains partial oauth information: key=%s, secret=%s" % (repr(oauth_key), repr(oauth_secret)))
+
+    def output(self, results, results_url):
+        """output to the results_url
+        - results : DatazillaResults instance
+        - results_url : http:// or file:// URL
+        """
+
+        # print out where we're sending
+        utils.noisy("Outputting datazilla results to %s; oauth=%s" % (results_url, bool(self.oauth_key and self.oauth_secret)))
+
+        # parse the results url
+        results_url_split = urlparse.urlsplit(results_url)
+        results_scheme, results_server, results_path, _, _ = results_url_split
+
+        if results_scheme in ('http', 'https'):
+            self.post(results, results_server, results_path, results_scheme)
+        elif results_scheme == 'file':
+            f = file(results_path, 'w')
+            f.write(json.dumps(results.datasets(), indent=2, sort_keys=True))
+            f.close()
+        else:
+            raise NotImplementedError("%s: %s - only http://, https://, and file:// supported" % (self.__class__.__name__, results_url))
 
     def __call__(self):
-        retval = []
+
+        # platform
+        machine = self.test_machine()
+
+        # build information
+        browser_config = self.results.browser_config
+
+        # a place to put results
+        res = DatazillaResult()
+
         for test in self.results.results:
+
+            suite = "Talos %s" % test.name()
+            res.add_testsuite(suite, options=self.run_options(test))
+
 
             # serialize test results
             results = {}
@@ -371,50 +429,34 @@ class DatazillaOutput(Output):
                         results.setdefault(test.name(), []).extend(val)
                     else:
                         results.setdefault(page, []).extend(val)
-
-            # test options
-            testrun = {'date': self.results.date,
-                       'suite': "Talos %s" % test.name(),
-                       'options': self.run_options(test)}
-
-            # platform
-            machine = self.test_machine()
-
-            # build information
-            browser_config = self.results.browser_config
-            test_build = {'name': browser_config['browser_name'],
-                          'version': browser_config['browser_version'],
-                          'revision': browser_config['sourcestamp'],
-                          'branch': browser_config['branch_name'],
-                          'id': browser_config['buildid']}
+                for result, values in results.items():
+                    res.add_test_results(suite, result, values)
 
             # counters results_aux data
-            results_aux = {}
             for cd in test.all_counter_results:
                 for name, vals in cd.items():
-                    results_aux[self.shortName(name)] = vals
+                    res.add_auxiliary_results(suite, name, vals)
 
-            # munge this together
-            result = {'test_machine': machine,
-                      'test_build': test_build,
-                      'testrun': testrun,
-                      'results': results,
-                      'results_aux': results_aux}
-
-            # serialize to a JSON string
-            retval.append(json.dumps(result))
-
-        return retval
+        # make a datazilla test result collection
+        collection = DatazillaResultsCollection(machine_name=machine['name'],
+                                                os=machine['os'],
+                                                os_version=machine['osversion'],
+                                                platform=machine['platform'],
+                                                build_name=browser_config['browser_name'],
+                                                version=browser_config['browser_version'],
+                                                revision=browser_config['sourcestamp'],
+                                                branch=browser_config['branch_name'],
+                                                id=browser_config['buildid'],
+                                                test_date=self.results.date)
+        collection.add_datazilla_result(res)
+        return collection
 
     def post(self, results, server, path, scheme):
+        """post the data to datazilla"""
 
-        try:
-            for result in results:
-                post_file.post_multipart(results_server, results_path, fields=[("data", urllib.quote(result))])
-            print "done posting raw results to staging server"
-        except:
-            # This is for posting to a staging server, we can ignore the error
-            print "was not able to post raw results to staging server"
+        project = path.strip('/')
+        req = DatazillaRequest.create(scheme, server, project, self.oauth_key, self.oauth_secret, results)
+        req.submit()
 
     def run_options(self, test):
         """test options for datazilla"""
@@ -448,4 +490,3 @@ class DatazillaOutput(Output):
 # available output formats
 formats = {'datazilla_urls': DatazillaOutput,
            'results_urls': GraphserverOutput}
-
