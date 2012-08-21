@@ -376,7 +376,7 @@ class DatazillaOutput(Output):
                 self.oauth_key = oauth_key
                 self.oauth_secret = oauth_secret
             elif not (oauth_key or oauth_secret):
-                utils.noisy("File '%s' does not contain the oauth key or secret")
+                utils.noisy("File '%s' does not contain the oauth key or secret" % authfile)
             else:
                 raise utils.talosError("Auth file contains partial oauth information: key=%s, secret=%s" % (repr(oauth_key), repr(oauth_secret)))
 
@@ -456,7 +456,10 @@ class DatazillaOutput(Output):
 
         project = path.strip('/')
         req = DatazillaRequest.create(scheme, server, project, self.oauth_key, self.oauth_secret, results)
-        req.submit()
+        responses = req.submit()
+        for response in responses:
+            if response.status != 200:
+                print "Error posting to %s://%s/%s: %s %s" % (scheme, server, project, response.status, response.reason)
 
     def run_options(self, test):
         """test options for datazilla"""
