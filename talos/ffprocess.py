@@ -9,11 +9,11 @@ import shutil
 import sys
 import time
 import utils
-from utils import talosError
+from utils import talosError,MakeDirectoryContentsWritable
 
 class FFProcess(object):
     testAgent = None
-    _directory_write_mode = 0755
+    
 
     def ProcessesWithNames(self, *process_names):
         """Returns a list of processes running with the given name(s):
@@ -143,25 +143,9 @@ user_pref("capability.principal.codebase.p2.subjectName", "");
             utils.debug("WARNING: file already insetalled (" + fromfile + ")")
 
     def removeDirectory(self, dir):
-        self.MakeDirectoryContentsWritable(dir)
+        MakeDirectoryContentsWritable(dir)
         shutil.rmtree(dir)
 
-    def MakeDirectoryContentsWritable(self, dirname):
-        """Recursively makes all the contents of a directory writable.
-
-        Args:
-            dirname: Name of the directory to make contents writable.
-        """
-        try:
-            for (root, dirs, files) in os.walk(dirname):
-                os.chmod(root, self._directory_write_mode)
-                for filename in files:
-                    try:
-                        os.chmod(os.path.join(root, filename), self._directory_write_mode)
-                    except OSError, (errno, strerror):
-                        print 'WARNING: failed to os.chmod(%s): %s : %s' % (os.path.join(root, filename), errno, strerror)
-        except OSError, (errno, strerror):
-            print 'WARNING: failed to MakeDirectoryContentsWritable: %s : %s' % (errno, strerror)
 
     def getFile(self, handle, localFile=""):
         fileData = ''

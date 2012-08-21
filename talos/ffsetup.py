@@ -53,7 +53,7 @@ import glob
 import zipfile
 from xml.dom import minidom
 
-from utils import talosError, zip_extractall
+from utils import talosError, zip_extractall,MakeDirectoryContentsWritable
 import utils
 import subprocess
 
@@ -214,7 +214,7 @@ class FFSetup(object):
         temp_dir = tempfile.mkdtemp()
         profile_dir = os.path.join(temp_dir, 'profile')
         shutil.copytree(source_profile, profile_dir)
-        self._hostproc.MakeDirectoryContentsWritable(profile_dir)
+        MakeDirectoryContentsWritable(profile_dir)
 
         # Copy the user-set prefs to user.js
         user_js_filename = os.path.join(profile_dir, 'user.js')

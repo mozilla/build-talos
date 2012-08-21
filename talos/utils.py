@@ -304,3 +304,28 @@ def getLanIp():
   port = findOpenPort(ip)
   return "%s:%s" % (ip, port)
 
+def MakeDirectoryContentsWritable(dirname):
+  """Recursively makes all the contents of a directory writable.
+     Uses os.chmod(filename, mod ), which works on Windows and Unix based systems.
+
+  Args:
+    dirname: Name of the directory to make contents writable.
+  """
+  os_name=os.name
+  if os_name=='posix':
+    mod=0755
+  elif os_name=='nt':
+    mod=0777
+  else:
+   print('WARNING : this action is not supported on your current os')
+  try:
+    for (root, dirs, files) in os.walk(dirname):
+      os.chmod(root, mod)
+      for filename in files:
+        try:
+          os.chmod(os.path.join(root, filename), mod)
+        except OSError, (errno, strerror):
+          print 'WARNING: failed to os.chmod(%s): %s : %s' % (os.path.join(root, filename), errno, strerror)
+  except OSError, (errno, strerror):
+    print 'WARNING: failed to MakeDirectoryContentsWritable: %s : %s' % (errno, strerror)
+
