@@ -364,21 +364,15 @@ class DatazillaOutput(Output):
     def __init__(self, results, authfile=None):
         Output.__init__(self, results)
         self.authfile = authfile
-        self.oauth_secret = None
-        self.oauth_key = None
+        self.oauth = None
         if authfile is not None:
+            # get datazilla oauth credentials
             assert os.path.exists(authfile), "Auth file not found: %s" % authfile
             module_name = 'passwords'
             module = imp.load_source(module_name, authfile)
-            oauth_key = getattr(module, 'oauthKey', None)
-            oauth_secret = getattr(module, 'oauthSecret', None)
-            if oauth_key and oauth_secret:
-                self.oauth_key = oauth_key
-                self.oauth_secret = oauth_secret
-            elif not (oauth_key or oauth_secret):
-                utils.noisy("File '%s' does not contain the oauth key or secret" % authfile)
-            else:
-                raise utils.talosError("Auth file contains partial oauth information: key=%s, secret=%s" % (repr(oauth_key), repr(oauth_secret)))
+            self.oauth = getattr(module, 'datazillaAuth', None)
+            if self.oauth is None:
+                utils.noisy("File '%s' does not contain datazilla oauth information" % authfile)
 
     def output(self, results, results_url):
         """output to the results_url
@@ -387,7 +381,7 @@ class DatazillaOutput(Output):
         """
 
         # print out where we're sending
-        utils.noisy("Outputting datazilla results to %s; oauth=%s" % (results_url, bool(self.oauth_key and self.oauth_secret)))
+        utils.noisy("Outputting datazilla results to %s" % results_url)
 
         # parse the results url
         results_url_split = urlparse.urlsplit(results_url)
@@ -454,9 +448,30 @@ class DatazillaOutput(Output):
     def post(self, results, server, path, scheme):
         """post the data to datazilla"""
 
+        # datazilla project
         project = path.strip('/')
-        req = DatazillaRequest.create(scheme, server, project, self.oauth_key, self.oauth_secret, results)
+
+        # oauth credentials
+        oauth_key = None
+        oauth_secret = None
+        if self.oauth:
+            project_oauth = self.oauth.get(project)
+            if project_oauth:
+                required = ['oauthKey', 'oauthSecret']
+                if set(required).issubset(project_oauth.keys()):
+                    oauth_key = project_oauth['oauthKey']
+                    oauth_secret = project_oauth['oauthSecret']
+                else:
+                    utils.noisy("%s not found for project '%s' in '%s' (found: %s)" % (required, project, self.authfile, project_oauth.keys()))
+            else:
+                utils.noisy("No oauth credentials found for project '%s' in '%s'" % (project, self.authfile))
+        utils.noisy("datazilla: %s//%s/%s; oauth=%s" % (scheme, server, project, bool(oauth_key and oauth_secret)))
+
+        # submit the request
+        req = DatazillaRequest.create(scheme, server, project, oauth_key, oauth_secret, results)
         responses = req.submit()
+
+        # print error responses
         for response in responses:
             if response.status != 200:
                 print "Error posting to %s://%s/%s: %s %s" % (scheme, server, project, response.status, response.reason)
