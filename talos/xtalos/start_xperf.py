@@ -1,81 +1,81 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is mozilla.org code.
-#
-# The Initial Developer of the Original Code is
-# the Mozilla Foundation.
-# Portions created by the Initial Developer are Copyright (C) 2011
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#   Joel Maher <joel.maher@gmail.com>
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+#!/usr/bin/env python
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
-import optparse
 import sys
 import xtalos
 import subprocess
 
-def main():
-  parser = xtalos.XtalosOptions()
-  options, args = parser.parse_args()
-  options = parser.verifyOptions(options)
-  if options == None:
-    print "Unable to verify options"
-    sys.exit(1)
+def start(xperf_path, xperf_providers, xperf_stackwalk, xperf_user_providers, etl_filename, debug=False):
 
-  if not options.xperf_providers:
-    print "No xperf providers options given"
-    sys.exit(1)
+    xperf_cmd = [xperf_path,
+                 '-on', '+'.join(xperf_providers),
+                 '-stackwalk', '+'.join(xperf_stackwalk),
+                 '-MaxBuffers', '1024',
+                 '-BufferSize', '1024',
+                 '-f', '%s.kernel' % etl_filename,
+                 '-start', 'talos_ses',
+                 '-on', '+'.join(xperf_user_providers),
+                 '-MaxBuffers', '1024',
+                 '-BufferSize', '1024',
+                 '-f', '%s.user' % etl_filename
+                 ]
+    if debug:
+        print "executing '%s'" % subprocess.list2cmdline(xperf_cmd)
+    subprocess.call(xperf_cmd)
 
-  if not options.xperf_user_providers:
-    print "No xperf user providers options given"
-    sys.exit(1)
+def start_from_config(config_file=None, debug=False, **kwargs):
+    """start from a YAML config file"""
 
-  if not options.xperf_stackwalk:
-    print "No xperf stackwalk options given"
-    sys.exit(1)
-  
-  xperf_cmd = '"%s" -on %s -stackwalk %s -MaxBuffers 1024 -BufferSize 1024 -f %s.kernel' \
-              ' -start talos_ses -on "%s" -MaxBuffers 1024 -BufferSize 1024 -f %s.user' % \
-              (options.xperf_path,
-               '+'.join(options.xperf_providers),
-               '+'.join(options.xperf_stackwalk),
-               options.etl_filename,
-               '"+"'.join(options.xperf_user_providers),
-               options.etl_filename)
+    # required options and associated error messages
+    required = {'xperf_path': "xperf_path not given",
+                'xperf_providers': "No xperf providers given",
+                'xperf_user_providers': "No xperf user providers given",
+                'xperf_stackwalk': "No xperf stackwalk options given",
+                "etl_filename": "No etl_filename given"}
+    for key in required:
+        if key not in kwargs:
+            kwargs[key] = None
 
-  if (options.debug_level >= xtalos.DEBUG_INFO):
-    print "executing '%s'" % xperf_cmd
+    if config_file:
+        # override options from YAML config file
+        kwargs = xtalos.options_from_config(kwargs, config_file)
 
-  subprocess.call(xperf_cmd)
+    # ensure the required options are given
+    for key, msg in required.items():
+        if not kwargs.get(key):
+            raise xtalos.xtalosError(msg)
+
+    # ensure path to xperf actually exists
+    if not os.path.exists(kwargs['xperf_path']):
+        raise xtalos.xtalosError("ERROR: xperf_path '%s' does not exist" % kwargs['xperf_path'])
+
+    # make calling arguments
+    args = dict([(key, kwargs[key]) for key in required.keys()])
+    args['debug'] = debug
+
+    # call start
+    start(**args)
+
+def main(args=sys.argv[1:]):
+
+    # parse command line options
+    parser = xtalos.XtalosOptions()
+    options, args = parser.parse_args(args)
+    options = parser.verifyOptions(options)
+    if options is None:
+        parser.error("Unable to verify options")
+
+    # start xperf
+    try:
+        start_from_config(config_file=None,
+                          debug=options.debug_level >= xtalos.DEBUG_INFO,
+                          **options.__dict__)
+    except xtalos.xtalosError, e:
+        parser.error(str(e))
 
 if __name__ == "__main__":
-  main()
-
-
+    main()
