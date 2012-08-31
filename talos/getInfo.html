@@ -21,7 +21,7 @@
                                 .getService(Components.interfaces.nsIXULAppInfo);
 
         //NOTE: version and buildid work fine, but appInfo.ID throws an exception on XUL Fennec, so we need to do that last.
-        version = appInfo.Version;
+        version = appInfo.version;
         buildid = appInfo.appBuildID;
         id = appInfo.ID;
       } catch(err) {
