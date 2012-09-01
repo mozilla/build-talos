@@ -21,6 +21,7 @@ class WinCounterManager(CounterManager):
       path = win32pdh.MakeCounterPath((None, 'process', process,
                                        None, -1, counter))
       hq = win32pdh.OpenQuery()
+      hc = None
       try:
         hc = win32pdh.AddCounter(hq, path)
       except:
@@ -33,8 +34,9 @@ class WinCounterManager(CounterManager):
         except:
           win32pdh.CloseQuery(hq)
 
-      self.registeredCounters[counter] = [hq, [(hc, path)]]
-      self.updateCounterPathsForChildProcesses(counter)
+      if hc:
+        self.registeredCounters[counter] = [hq, [(hc, path)]]
+        self.updateCounterPathsForChildProcesses(counter)
 
 
   def registerCounters(self, counters):

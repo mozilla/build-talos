@@ -49,7 +49,7 @@ class TestSequel(Test):
 
 class TsBase(Test):
     """abstract base class for ts-style tests"""
-    keys = ['url', 'url_timestamp', 'timeout', 'cycles', 'shutdown', 'profile_path', 
+    keys = ['url', 'url_timestamp', 'timeout', 'cycles', 'shutdown', 'profile_path', 'xperf_counters',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk']
 
 class ts(TsBase):
@@ -62,6 +62,7 @@ class ts(TsBase):
 class ts_paint(ts):
     url = 'startup_test/tspaint_test.html?begin='
     shutdown = None
+    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
 
 class ts_places_generated_max(ts):
     profile_path = '${talos}/places_generated_max'
@@ -145,7 +146,7 @@ class PageloaderTest(Test):
     filters = None
     keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint',
             'rss', 'resolution', 'cycles',
-            'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters',
+            'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters', 'xperf_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters'
             ]
@@ -197,6 +198,7 @@ class tp5n(tp5):
     w7_counters = ['Main_RSS', 'Content_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS', 'Content_RSS']
     mac_counters = ['Private Bytes', 'Main_RSS', 'Content_RSS']
+    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
 
 class tp_js(PageloaderTest):
     url = """'"http://localhost/page_load_test/framecycler.html?quit=1&cycles=5"'"""

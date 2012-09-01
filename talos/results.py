@@ -265,6 +265,9 @@ class BrowserLogResults(object):
     # regular expression for responsiveness results
     RESULTS_RESPONSIVENESS_REGEX = re.compile('MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*?)$', re.DOTALL|re.MULTILINE)
 
+    # regular expression for xperf io data
+    XPERF_REGEX = re.compile('([a-z, \-\_]+)_io_bytes, ([0-9]+)')
+
     # classes for results types
     classes = {'tsformat': TsResults,
                'tpformat': PageloaderResults}
@@ -391,6 +394,36 @@ class BrowserLogResults(object):
                 self.shutdown(global_counters)
             if 'responsiveness' in global_counters:
                 global_counters['responsiveness'].extend(self.responsiveness())
+            self.xperf(global_counters)
+
+    def xperf(self, counter_results):
+        """record xperf counters in counter_results dictionary"""
+
+        counters = ['main_startup_fileio', 
+                    'main_startup_netio',
+                    'main_normal_fileio',
+                    'main_normal_netio',
+                    'main_shutdown_fileio',
+                    'main_shutdown_netio',
+                    'nonmain_startup_fileio', 
+                    'nonmain_startup_netio',
+                    'nonmain_normal_fileio',
+                    'nonmain_normal_netio',
+                    'nonmain_shutdown_fileio',
+                    'nonmain_shutdown_netio']
+
+        if not set(counters).intersection(counter_results.keys()):
+            # no xperf counters to accumulate
+            return
+        for line in self.results_raw.split('\n'):
+            xperfmatch = self.XPERF_REGEX.search(line)
+            if xperfmatch:
+                (type, value) = (xperfmatch.group(1), xperfmatch.group(2))
+                # type will be similar to 'main, startup, file'
+                cname = ('_').join(type.split(', '))
+                counter_name = '%sio' % cname
+                if counter_name in counter_results:
+                    counter_results[counter_name].append(value)
 
     def rss(self, counter_results):
         """record rss counters in counter_results dictionary"""

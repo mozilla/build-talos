@@ -143,6 +143,7 @@ the highest value.
                                   'w7_counters': [],
                                   'linux_counters': [],
                                   'mac_counters': [],
+                                  'xperf_counters': [],
                                   },
                       'flags': []}),
         ('test_overrides', {'help': 'test overrides from .config file',
@@ -482,7 +483,7 @@ the highest value.
 
             # add any counters
             if counters:
-                keys = ['linux_counters', 'mac_counters', 'remote_counters', 'win_counters', 'w7_counters']
+                keys = ['linux_counters', 'mac_counters', 'remote_counters', 'win_counters', 'w7_counters', 'xperf_counters']
                 for key in keys:
                     if key not in test_instance.keys:
                         # only populate attributes that will be output

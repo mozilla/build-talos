@@ -73,7 +73,9 @@ class BrowserWaiter(threading.Thread):
             self.returncode = 1
           else:
             self.returncode = 0
-    elif (self.xperf_path is not None) and os.path.exists(self.xperf_path):
+    elif self.xperf_path and os.path.exists(self.xperf_path) and \
+         self.xperf_stackwalk and \
+         self.xperf_providers:
       csvname = 'etl_output.csv'
       etlname = 'test.etl'
 
@@ -109,11 +111,13 @@ class BrowserWaiter(threading.Thread):
         print "Error running etlparser: %s" % e
         self.returncode = 1
 
-      print "__xperf_data_begin__"
-      fhandle = open(csvname, 'r')
-      print fhandle.read()
+      results_file = open(self.browser_log, "a")
+      results_file.write("__xperf_data_begin__")
+      fhandle = open("etl_output_thread_stats.csv", 'r')
+      results_file.write(fhandle.read())
       fhandle.close()
-      print "__xperf_data_end__"
+      results_file.write("__xperf_data_end__")
+      results_file.close()
     else:    #blocking call to system, non-remote device
       self.returncode = os.system(self.command + " > " + self.browser_log)
 
