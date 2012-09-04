@@ -17,6 +17,7 @@ import re
 import sys
 import time
 import utils
+import csv
 
 __all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'BrowserLogResults', 'main']
 
@@ -265,9 +266,6 @@ class BrowserLogResults(object):
     # regular expression for responsiveness results
     RESULTS_RESPONSIVENESS_REGEX = re.compile('MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*?)$', re.DOTALL|re.MULTILINE)
 
-    # regular expression for xperf io data
-    XPERF_REGEX = re.compile('([a-z, \-\_]+)_io_bytes, ([0-9]+)')
-
     # classes for results types
     classes = {'tsformat': TsResults,
                'tpformat': PageloaderResults}
@@ -415,15 +413,34 @@ class BrowserLogResults(object):
         if not set(counters).intersection(counter_results.keys()):
             # no xperf counters to accumulate
             return
-        for line in self.results_raw.split('\n'):
-            xperfmatch = self.XPERF_REGEX.search(line)
-            if xperfmatch:
-                (type, value) = (xperfmatch.group(1), xperfmatch.group(2))
-                # type will be similar to 'main, startup, file'
-                cname = ('_').join(type.split(', '))
-                counter_name = '%sio' % cname
-                if counter_name in counter_results:
-                    counter_results[counter_name].append(value)
+
+        filename = 'etl_output_thread_stats.csv'
+        if not os.path.exists(filename):
+            print "Warning: we are looking for xperf results file %s, and didn't find it" % filename
+            return
+
+        contents = file(filename).read()
+        lines = contents.splitlines()
+        reader = csv.reader(lines)
+        header = None
+        for row in reader:
+            # Read CSV
+            row = [i.strip() for i in row]
+            if not header:
+                # Assume header is the first row and all other rows contain results
+                header = row
+                continue
+            values = dict(zip(header, row))
+
+            # Format for talos
+            thread = values['thread']
+            counter = values['counter'].rsplit('_io_bytes', 1)[0]
+            counter_name = '%s_%s_%sio' % (thread, values['stage'], counter)
+            value = float(values['value'])
+
+            # Accrue counter
+            if counter_name in counter_results:
+                counter_results.setdefault(counter_name, []).append(value)
 
     def rss(self, counter_results):
         """record rss counters in counter_results dictionary"""

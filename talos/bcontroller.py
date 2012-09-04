@@ -111,13 +111,6 @@ class BrowserWaiter(threading.Thread):
         print "Error running etlparser: %s" % e
         self.returncode = 1
 
-      results_file = open(self.browser_log, "a")
-      results_file.write("__xperf_data_begin__")
-      fhandle = open("etl_output_thread_stats.csv", 'r')
-      results_file.write(fhandle.read())
-      fhandle.close()
-      results_file.write("__xperf_data_end__")
-      results_file.close()
     else:    #blocking call to system, non-remote device
       self.returncode = os.system(self.command + " > " + self.browser_log)
 

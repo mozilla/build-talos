@@ -137,7 +137,7 @@ def trackThread(row, firefoxPID):
             if img == procName:
                 gThreads[tid] = "main"
             else:
-                gThreads[tid] = "non-main"
+                gThreads[tid] = "nonmain"
     elif event in ["T-DCEnd", "T-End"] and tid in gThreads:
         del gThreads[tid]
 

@@ -83,6 +83,12 @@ class WinCounterManager(CounterManager):
     # have been launched since last call.  Then iterate through all
     # counter paths for this counter, and return a combined value.
     aggregateValue = 0
+    if counter not in self.registeredCounters:
+      return None
+
+    if self.registeredCounters[counter] == []:
+      return None
+
     self.updateCounterPathsForChildProcesses(counter)
     hq = self.registeredCounters[counter][0]
 
