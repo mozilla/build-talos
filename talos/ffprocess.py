@@ -13,7 +13,7 @@ from utils import talosError,MakeDirectoryContentsWritable
 
 class FFProcess(object):
     testAgent = None
-    
+    extra_prog=["crashreporter"] #list of extra programs to be killed
 
     def ProcessesWithNames(self, *process_names):
         """Returns a list of processes running with the given name(s):
@@ -35,19 +35,14 @@ class FFProcess(object):
         return processes_with_names
 
 
-    def checkBrowserAlive(self, process_name):
-        #is the browser actually up?
-        return (self.ProcessesWithNames(process_name) and
-                not self.ProcessesWithNames("crashreporter", "talkback", "dwwin"))
-
     def checkAllProcesses(self, process_name, child_process):
         #is anything browser related active?
-        return self.ProcessesWithNames(process_name, child_process, "crashreporter", "talkback", "dwwin")
+        return self.ProcessesWithNames(*([process_name, child_process]+self.extra_prog))
 
     def cleanupProcesses(self, process_name, child_process, browser_wait):
         #kill any remaining browser processes
         #returns string of which process_names were terminated and with what signal
-        terminate_result = self.TerminateAllProcesses(browser_wait, process_name, child_process, "crashreporter", "dwwin", "talkback")
+        terminate_result = self.TerminateAllProcesses(*([browser_wait, process_name, child_process] + self.extra_prog))
         #check if anything is left behind
         if self.checkAllProcesses(process_name, child_process):
             #this is for windows machines.  when attempting to send kill messages to win processes the OS
