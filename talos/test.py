@@ -111,27 +111,27 @@ class tzoom(TsBase):
     timeout = 300
 
 class trobopan(TsBase):
-    url = 'am instrument -w -e class org.mozilla.fennec.tests.testPan org.mozilla.roboexample.test/android.test.InstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testPan org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
 
 class tcheckerboard(TsBase):
-    url = 'am instrument -w -e class org.mozilla.fennec.tests.testCheck org.mozilla.roboexample.test/android.test.InstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testCheck org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
 
 class tprovider(TsBase):
-    url = 'am instrument -w -e class org.mozilla.fennec.tests.testBrowserProviderPerf org.mozilla.roboexample.test/android.test.InstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testBrowserProviderPerf org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
 
 class tcheck2(TsBase):
-    url = 'am instrument -w -e class org.mozilla.fennec.tests.testCheck2 org.mozilla.roboexample.test/android.test.InstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testCheck2 org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
 
 class tcheck3(TsBase):
-    url = 'am instrument -w -e class org.mozilla.fennec.tests.testCheck3 org.mozilla.roboexample.test/android.test.InstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testCheck3 org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
 

@@ -210,12 +210,11 @@ class TTest(object):
         fHandle.write("rawhost=http://%s\n" % browser_config['webserver'])
         fHandle.close()
 
-        # Note, we are pushing to /sdcard since we have this location hard coded in robocop
-        self._ffprocess.testAgent.removeFile("/sdcard/fennec_ids.txt")
-        self._ffprocess.testAgent.removeFile("/sdcard/robotium.config")
+        self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "fennec_ids.txt"))
+        self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "robotium.config"))
         self._ffprocess.testAgent.removeFile(remoteLog)
-        self._ffprocess.testAgent.pushFile("robotium.config", "/sdcard/robotium.config")
-        self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'], "/sdcard/fennec_ids.txt")
+        self._ffprocess.testAgent.pushFile("robotium.config", os.path.join(deviceRoot, "robotium.config"))
+        self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'], os.path.join(deviceRoot, "fennec_ids.txt"))
 
     def runTest(self, browser_config, test_config):
         """
@@ -304,6 +303,7 @@ class TTest(object):
                 url = test_config['url']
                 command_line = self._ffprocess.GenerateBrowserCommandLine(browser_config['browser_path'],
                                                                         browser_config['extra_args'],
+                                                                        browser_config['deviceroot'],
                                                                         profile_dir,
                                                                         url)
 

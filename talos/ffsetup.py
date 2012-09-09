@@ -268,6 +268,7 @@ class FFSetup(object):
 
         command_line = self.ffprocess.GenerateBrowserCommandLine(browser_config["browser_path"], 
                                                                  browser_config["extra_args"], 
+                                                                 browser_config["deviceroot"],
                                                                  profile_dir, 
                                                                  browser_config["init_url"])
 

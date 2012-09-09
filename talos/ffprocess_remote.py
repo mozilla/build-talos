@@ -67,7 +67,7 @@ class RemoteProcess(FFProcess):
         return self.testAgent.getProcessList()
 
 
-    def GenerateBrowserCommandLine(self, browser_path, extra_args, profile_dir, url):
+    def GenerateBrowserCommandLine(self, browser_path, extra_args, deviceroot, profile_dir, url):
         """Generates the command line for a process to run Browser
 
         Args:
@@ -77,8 +77,9 @@ class RemoteProcess(FFProcess):
         """
 
         # For the robocop tests they use 'am instrument ...' and do not launch fennec or a url proper
+        # However we need to fill in the device root path into the placeholder in the test definition
         if url.startswith('am instrument'):
-            return url
+            return url % deviceroot
 
         profile_arg = ''
         if profile_dir:
