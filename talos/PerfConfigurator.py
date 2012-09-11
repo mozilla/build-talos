@@ -379,6 +379,11 @@ the highest value.
         if noChrome:
             global_overrides['tpchrome'] = False
 
+        # HACK: currently xperf tests post results to graph server and we want to ensure we don't publish shutdown numbers
+        # This is also hacked because "--noShutdown -> shutdown:True"
+        if self.config.get('xperf_path', ''):
+            global_overrides['shutdown'] = False
+
         if isinstance(activeTests, basestring):
             activeTests = activeTests.strip()
             activeTests = activeTests.split(':')

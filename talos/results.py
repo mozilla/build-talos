@@ -99,6 +99,7 @@ class TestResults(object):
         self.global_counters = global_counters or {}
         self.all_counter_results = []
         self.extensions = extensions
+        self.using_xperf = False
 
     def name(self):
         return self.test_config['name']
@@ -116,8 +117,10 @@ class TestResults(object):
                 raise talosError("no output from browser [%s]" % results)
 
             # convert to a results class via parsing the browser log
-            results = BrowserLogResults(filename=results, counter_results=counter_results, global_counters=self.global_counters).results()
+            browserLog = BrowserLogResults(filename=results, counter_results=counter_results, global_counters=self.global_counters)
+            results = browserLog.results()
 
+        self.using_xperf = browserLog.using_xperf
         # ensure the results format matches previous results
         if self.results:
             if not results.format == self.results[0].format:
@@ -126,6 +129,7 @@ class TestResults(object):
             self.format = results.format
 
         self.results.append(results)
+            
         if counter_results:
             self.all_counter_results.append(counter_results)
 
@@ -269,6 +273,9 @@ class BrowserLogResults(object):
     # classes for results types
     classes = {'tsformat': TsResults,
                'tpformat': PageloaderResults}
+
+    # If we are using xperf, we do not upload the regular results, only xperf counters
+    using_xperf = False
 
     def __init__(self, filename=None, results_raw=None, counter_results=None, global_counters=None):
         """
@@ -427,7 +434,7 @@ class BrowserLogResults(object):
             # Read CSV
             row = [i.strip() for i in row]
             if not header:
-                # Assume header is the first row and all other rows contain results
+                # We are assuming the first row is the header and all other data is counters
                 header = row
                 continue
             values = dict(zip(header, row))
@@ -441,6 +448,7 @@ class BrowserLogResults(object):
             # Accrue counter
             if counter_name in counter_results:
                 counter_results.setdefault(counter_name, []).append(value)
+                self.using_xperf = True
 
     def rss(self, counter_results):
         """record rss counters in counter_results dictionary"""

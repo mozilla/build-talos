@@ -178,24 +178,26 @@ class GraphserverOutput(Output):
 
             utils.stamped_msg("Generating results file: %s" % test.name(), "Started")
 
-            vals = []
-            for result in test.results:
-                # per test filters
-                _filters = self.results.filters
-                if 'filters' in test.test_config:
-                    try:
-                        _filters = filter.filters_args(test.test_config['filters'])
-                    except AssertionError, e:
-                        raise utils.talosError(str(e))
+            # HACK: when running xperf, we upload xperf counters to the graph server but we do not want to
+            # upload the test results as they will confuse the graph server
+            if not test.using_xperf:
+                vals = []
+                for result in test.results:
+                    # per test filters
+                    _filters = self.results.filters
+                    if 'filters' in test.test_config:
+                        try:
+                            _filters = filter.filters_args(test.test_config['filters'])
+                        except AssertionError, e:
+                            raise utils.talosError(str(e))
 
-                vals.extend(result.values(_filters))
-            result_strings.append(self.construct_results(vals, testname=testname, **info_dict))
-            utils.stamped_msg("Generating results file: %s" % test.name(), "Stopped")
+                    vals.extend(result.values(_filters))
+                result_strings.append(self.construct_results(vals, testname=testname, **info_dict))
+                utils.stamped_msg("Generating results file: %s" % test.name(), "Stopped")
 
             # counter results
             for cd in test.all_counter_results:
                 for counter_type, values in cd.items():
-
                     # get the counter name
                     counterName = '%s_%s' % (test.name() , self.shortName(counter_type))
                     if not values:
@@ -217,7 +219,6 @@ class GraphserverOutput(Output):
                     utils.stamped_msg("Generating results file: %s" % counterName, "Started")
                     result_strings.append(self.construct_results(vals, **info))
                     utils.stamped_msg("Generating results file: %s" % counterName, "Stopped")
-
 
         return result_strings
 
@@ -408,23 +409,22 @@ class DatazillaOutput(Output):
         res = DatazillaResult()
 
         for test in self.results.results:
-
             suite = "Talos %s" % test.name()
             res.add_testsuite(suite, options=self.run_options(test))
 
-
             # serialize test results
             results = {}
-            for result in test.results:
-                # XXX this will not work for manifests which list
-                # the same page name twice. It also ignores cycles
-                for page, val in result.raw_values():
-                    if page == 'NULL':
-                        results.setdefault(test.name(), []).extend(val)
-                    else:
-                        results.setdefault(page, []).extend(val)
-                for result, values in results.items():
-                    res.add_test_results(suite, result, values)
+            if not test.using_xperf:
+                for result in test.results:
+                    # XXX this will not work for manifests which list
+                    # the same page name twice. It also ignores cycles
+                    for page, val in result.raw_values():
+                        if page == 'NULL':
+                            results.setdefault(test.name(), []).extend(val)
+                        else:
+                            results.setdefault(page, []).extend(val)
+                    for result, values in results.items():
+                        res.add_test_results(suite, result, values)
 
             # counters results_aux data
             for cd in test.all_counter_results:
