@@ -64,10 +64,14 @@ class Output(object):
         if results_scheme in ('http', 'https'):
             self.post(results, results_server, results_path, results_scheme)
         elif results_scheme == 'file':
-            f = file(results_path, 'w')
-            for result in results:
-                f.write(str(result))
-            f.close()
+            try:
+                f = file(results_path, 'w')
+                for result in results:
+                    f.write(str(result))
+                f.close()
+            except Exception, e:
+                print "Exception in writing file '%s' from results_url: %s" % (results_path, results_url)
+                raise
         else:
             raise NotImplementedError("%s: %s - only http://, https://, and file:// supported" % (self.__class__.__name__, results_url))
 
