@@ -77,7 +77,11 @@ simplejson = [('%s/simplejson/%s' % (simplejson_src, f), 'simplejson/%s' % f)
 
 # oauth2 dependency:
 # https://bugzilla.mozilla.org/show_bug.cgi?id=774480
-oauth2_src = 'https://raw.github.com/simplegeo/python-oauth2/master/oauth2'
+#oauth2_src = 'https://raw.github.com/simplegeo/python-oauth2/master/oauth2'
+# oauth2 is incompatible with python 2.4 as we use on windows, so point to
+# a vendor branch until upstream is fixed
+# https://bugzilla.mozilla.org/show_bug.cgi?id=792989
+oauth2_src = 'https://raw.github.com/k0s/python-oauth2/master/oauth2'
 oauth2_files = [
 #    'clients/__init__.py', # clients subdirectory is not needed and is incompatible with create_talos_zip.py hackiness
 #    'clients/imap.py',
