@@ -1,3 +1,0 @@
-content fennecbench  jar:fennecbench.jar!/content/
-skin    fennecbench  classic/1.0  jar:fennecbench.jar!/skin/
-overlay	chrome://browser/content/browser.xul	chrome://fennecbench/content/overlay.xul

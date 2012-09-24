@@ -36,15 +36,6 @@ class Test(object):
         return '\n'.join(lines)
 
 
-class TestSequel(Test):
-    """abstract class to handle names in the form of 'tdhtml.2'"""
-    @classmethod
-    def name(cls):
-        name = cls.__name__
-        if '_' in name:
-            name = '.'.join(name.rsplit('_', 1))
-        return name
-
 ### ts-style tests
 
 class TsBase(Test):
@@ -64,18 +55,6 @@ class ts_paint(ts):
     shutdown = None
     xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
 
-class ts_places_generated_max(ts):
-    profile_path = '${talos}/places_generated_max'
-    timeout = None
-
-class ts_places_generated_min(ts):
-    profile_path = '${talos}/places_generated_min'
-    timeout = None
-
-class ts_places_generated_med(ts):
-    profile_path = '${talos}/places_generated_med'
-    timeout = None
-
 class tspaint_places_generated_max(ts_paint):
     profile_path = '${talos}/places_generated_max'
     timeout = None
@@ -83,10 +62,6 @@ class tspaint_places_generated_max(ts_paint):
 class tspaint_places_generated_med(ts_paint):
     profile_path = '${talos}/places_generated_med'
     timeout = None
-
-class twinopen(TsBase):
-    url = 'startup_test/twinopen/winopen.xul?phase1=20'
-    timeout = 300
 
 class tpaint(TsBase):
     url = 'startup_test/twinopen/winopen.xul?mozafterpaint=1%26phase1=20'
@@ -99,17 +74,6 @@ class tresize(TsBase):
     filters = [['mean', []]]
 
 # mobile ts-type tests
-
-class tpan(TsBase):
-    url = 'startup_test/fennecmark/fennecmark.html?test=PanDown%26webServer='
-    cycles = 10
-    timeout = 300
-
-class tzoom(TsBase):
-    url = 'startup_test/fennecmark/fennecmark.html?test=Zoom%26webServer='
-    cycles = 10
-    timeout = 300
-
 class trobopan(TsBase):
     url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testPan org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
@@ -161,35 +125,14 @@ class tp(PageloaderTest):
     mac_counters = ['Private Bytes', 'RSS']
     shutdown = True
 
-class tp4(tp):
-    tpmanifest = '${talos}/page_load_test/tp4.manifest'
-
-class tp4m(tp4):
+class tp4m(tp):
     tpmanifest = '${talos}/page_load_test/tp4m.manifest'
     tpcycles = 2
     win_counters = w7_counters = linux_counters = mac_counters = None
     remote_counters = ['Main_RSS', 'Content_RSS']
     timeout = 14400
 
-class tp5(tp):
-    tpmanifest = '${talos}/page_load_test/tp5/tp5.manifest'
-
-class tp5r(tp5):
-    rss = True
-    cycles = 1
-    responsiveness = False
-    profile_path = '${talos}/base_profile'
-
-class tp5row(tp5):
-    tpcycles = 1
-    tppagecycles = 25
-    rss = True
-    win_counters = ['Main_RSS', 'Content_RSS', 'Private Bytes', '% Processor Time']
-    w7_counters = ['Main_RSS', 'Content_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
-    linux_counters = ['Private Bytes', 'XRes', 'Main_RSS', 'Content_RSS']
-    mac_counters = ['Private Bytes', 'Main_RSS', 'Content_RSS']
-
-class tp5n(tp5):
+class tp5n(tp):
     tpmanifest = '${talos}/page_load_test/tp5n/tp5n.manifest'
     tpcycles = 1
     tppagecycles = 25
@@ -199,14 +142,6 @@ class tp5n(tp5):
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS', 'Content_RSS']
     mac_counters = ['Private Bytes', 'Main_RSS', 'Content_RSS']
     xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
-
-class tp_js(PageloaderTest):
-    url = """'"http://localhost/page_load_test/framecycler.html?quit=1&cycles=5"'"""
-    win_counters = ['Working Set', 'Private Bytes', '% Processor Time']
-    w7_counters = ['Working Set', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
-    linux_counters = ['Private Bytes', 'RSS', 'XRes']
-    mac_counters = ['Private Bytes', 'RSS']
-    keys = ['url', 'win_counters', 'w7_counters', 'linux_counters', 'mac_counters']
 
 class tdhtml(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/dhtml/dhtml.manifest'
@@ -220,20 +155,10 @@ class tsvg_opacity(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/svg_opacity/svg_opacity.manifest'
     tpcycles = 5
 
-class v8(PageloaderTest):
-    tpmanifest = '${talos}/page_load_test/v8/v8.manifest'
-    tpcycles = 20
-    resolution = 20
-
 class v8_7(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/v8_7/v8.manifest'
     tpcycles = 1
     resolution = 20
-
-class tsspider(PageloaderTest):
-    """sunspider pageloader test"""
-    tpmanifest = '${talos}/page_load_test/sunspider/sunspider.manifest'
-    tpcycles = 5
 
 class sunspider(PageloaderTest):
     """sunspider 0.9.1 test"""
@@ -263,44 +188,9 @@ class dromaeo_css(dromaeo):
 class dromaeo_dom(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/dom.manifest'
 
-class dromaeo_jslib(dromaeo):
-    tpmanifest = '${talos}/page_load_test/dromaeo/jslib.manifest'
-
-class dromaeo_sunspider(dromaeo):
-    tpmanifest = '${talos}/page_load_test/dromaeo/sunspider.manifest'
-
-class dromaeo_v8(dromaeo):
-    tpmanifest = '${talos}/page_load_test/dromaeo/v8.manifest'
-
-class dromaeo_basics(dromaeo):
-    tpmanifest = '${talos}/page_load_test/dromaeo/dromaeo.manifest'
-
 class a11y(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpcycles = 5
-
-### test sequels
-
-class tdhtml_2(TestSequel, tdhtml):
-    pass
-
-class tsvg_2(TestSequel, tsvg):
-    pass
-
-class tsvg_opacity_2(TestSequel, tsvg_opacity):
-    pass
-
-class v8_2(TestSequel, v8):
-    pass
-
-class tsspider_2(TestSequel, tsspider):
-    pass
-
-class tscroll_2(TestSequel, tscroll):
-    pass
-
-class a11y_2(TestSequel, a11y):
-    pass
 
 # 'r' tests are row based vs column based.
 class tdhtmlr(tdhtml):
@@ -315,29 +205,22 @@ class tsvgr_opacity(tsvg_opacity):
     tpcycles = 1
     tppagecycles = 25
 
-class tsspiderr(tsspider):
+class tscrollr(PageloaderTest):
+    tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 1
     tppagecycles = 25
 
-class tscrollr(tscroll):
-    tpcycles = 1
-    tppagecycles = 25
-
-class a11yr(a11y):
+class a11yr(PageloaderTest):
+    tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpcycles = 1
     tppagecycles = 25
 
 # global test data
-tests = [ts, ts_paint,
-         ts_places_generated_max, ts_places_generated_min, ts_places_generated_med,
+tests = [ts_paint, ts, tsvg, tdhtml,
          tspaint_places_generated_max, tspaint_places_generated_med,
-         tp, tp4, tp4m, tp5, tp5r, tp5row, tp5n, tp_js,
-         tdhtml, tsvg, tsvg_opacity,
-         v8, tpaint, tresize, twinopen, tsspider, tscroll,
-         tpan, tzoom, trobopan, tcheckerboard, tprovider, tcheck2, tcheck3,
-         dromaeo_css, dromaeo_dom, dromaeo_jslib, dromaeo_sunspider, dromaeo_v8, dromaeo_basics,
-         a11y,
-         tdhtml_2, tsvg_2, tsvg_opacity_2, v8_2, v8_7, tsspider_2, tscroll_2, a11y_2,
-         tdhtmlr, tsvgr, tsvgr_opacity, tsspiderr, sunspider, kraken, tscrollr, a11yr
+         tp4m, tp5n, tpaint, tresize,
+         trobopan, tcheckerboard, tprovider, tcheck2, tcheck3,
+         dromaeo_css, dromaeo_dom, v8_7, sunspider, kraken,
+         tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr
          ]
 test_dict = dict([(i.name(), i) for i in tests])

@@ -1,3 +1,0 @@
-content fennecbench  content/
-skin    fennecbench  classic/1.0  skin/
-overlay	chrome://browser/content/browser.xul	chrome://fennecbench/content/overlay.xul
