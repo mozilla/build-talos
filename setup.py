@@ -75,4 +75,5 @@ setup(name='talos',
       talos = talos.run_tests:main
       talos-results = talos.results:main
       """,
+      test_suite = "runtests.runtests"
       )
