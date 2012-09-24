@@ -14,6 +14,8 @@ import sys
 import utils
 import optparse
 
+from utils import talosError
+
 defaults = {'endTime': -1,
             'returncode': -1,
             'command': '',
@@ -156,11 +158,14 @@ class BrowserController(object):
     prev_size = 0
     while not self.bwaiter.hasTime():
       if noise > self.test_timeout: # check for frozen browser
-        if os.path.isfile(self.browser_log):
-          os.chmod(self.browser_log, 0777)
-        results_file = open(self.browser_log, "a")
-        results_file.write("\n__FAILbrowser frozen__FAIL\n")
-        results_file.close()
+        try:
+          if os.path.isfile(self.browser_log):
+            os.chmod(self.browser_log, 0777)
+          results_file = open(self.browser_log, "a")
+          results_file.write("\n__FAILbrowser frozen__FAIL\n")
+          results_file.close()
+        except IOError, e:
+          raise talosError(str(e))
         return
       time.sleep(1)
       try:
