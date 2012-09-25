@@ -11,7 +11,6 @@ import os
 import post_file
 import time
 import urllib
-import urlparse
 import utils
 from StringIO import StringIO
 from dzclient import DatazillaRequest, DatazillaResult, DatazillaResultsCollection
@@ -58,7 +57,7 @@ class Output(object):
         """
 
         # parse the results url
-        results_url_split = urlparse.urlsplit(results_url)
+        results_url_split = utils.urlsplit(results_url)
         results_scheme, results_server, results_path, _, _ = results_url_split
 
         if results_scheme in ('http', 'https'):
@@ -389,7 +388,7 @@ class DatazillaOutput(Output):
         utils.noisy("Outputting datazilla results to %s" % results_url)
 
         # parse the results url
-        results_url_split = urlparse.urlsplit(results_url)
+        results_url_split = utils.urlsplit(results_url)
         results_scheme, results_server, results_path, _, _ = results_url_split
 
         if results_scheme in ('http', 'https'):

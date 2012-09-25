@@ -9,6 +9,7 @@ import shlex
 import subprocess
 import sys
 import time
+import urlparse
 import yaml
 import string
 
@@ -313,3 +314,16 @@ def MakeDirectoryContentsWritable(dirname):
   except OSError, (errno, strerror):
     print 'WARNING: failed to MakeDirectoryContentsWritable: %s : %s' % (errno, strerror)
 
+def urlsplit(url, default_scheme='file'):
+    """front-end to urlparse.urlsplit"""
+
+    if '://' not in url:
+        url = '%s://%s' % (default_scheme, url)
+
+    if url.startswith('file://'):
+        # file:// URLs do not play nice with windows
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=793875
+        return ['file', '', url[len('file://'):], '', '']
+
+    # split the URL and return a list
+    return [i for i in urlparse.urlsplit(url)]
