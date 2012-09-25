@@ -67,7 +67,7 @@ class Output(object):
             try:
                 f = file(results_path, 'w')
                 for result in results:
-                    f.write(str(result))
+                    f.write("%s\n" % result)
                 f.close()
             except Exception, e:
                 print "Exception in writing file '%s' from results_url: %s" % (results_path, results_url)
