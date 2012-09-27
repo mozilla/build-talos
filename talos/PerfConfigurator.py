@@ -404,8 +404,10 @@ the highest value.
                 serializer._write(sys.stdout, self.config['tests'])
             else:
                 print 'Available tests:'
-                for test_class in test.tests:
-                    print test_class.name()
+                test_class_names = [test_class.name() for test_class in test.tests]
+                test_class_names.sort()
+                for name in test_class_names:
+                    print name
             self.exit()
 
         # if no tests err out
