@@ -5,7 +5,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
 # taken from
-# http://k0s.org/mozilla/hg/configuration/raw-file/09642528be02/configuration/configuration.py
+# http://k0s.org/mozilla/hg/configuration/raw-file/9d19ed8fd883/configuration/configuration.py
 # Please notify jhammel@mozilla.com if you change this file so that development
 # can be upstreamed
 
@@ -112,8 +112,9 @@ if yaml:
 
     configuration_providers.append(YAML())
 
-# TODO: add a configuration provider for taking command-line arguments
-# from a file
+# TODO: add configuration providers
+# - for taking command-line arguments from a file
+# - for .ini files
 
 __all__.extend([i.__class__.__name__ for i in configuration_providers])
 
@@ -194,7 +195,6 @@ class ListCLI(BaseCLI):
         # TODO: could use 'extend'
         # - http://hg.mozilla.org/build/mozharness/file/5f44ba08f4be/mozharness/base/config.py#l41
 
-        # TODO: what about nested types?
         kw['action'] = 'append'
         return args, kw
 
@@ -231,8 +231,6 @@ class DictCLI(ListCLI):
             raise AssertionError("Each value must be delimited by '%s': %s" % (self.delimeter, value))
         return value.split(self.delimeter, 1)
 
-# TODO: 'dict'-type cli interface
-
 types = {bool:  BoolCLI(),
          int:   IntCLI(),
          float: FloatCLI(),
@@ -265,6 +263,7 @@ class Configuration(optparse.OptionParser):
         self.config = {}
         self.configuration_providers = configuration_providers
         self.types = types
+        self.added = set() # set of items added to the configuration
 
         # setup optionparser
         if 'description' not in parser_args:
@@ -302,7 +301,7 @@ class Configuration(optparse.OptionParser):
     ### TODO: make the class a real iterator
 
     def items(self):
-        # TODO: allow options to be a list of 2-tuples
+        # allow options to be a list of 2-tuples
         if isinstance(self.options, dict):
             return self.options.items()
         return self.options
@@ -324,11 +323,19 @@ class Configuration(optparse.OptionParser):
             _type = self.option_dict[key].get('type')
             if _type is None and 'default' in self.option_dict[key]:
                 _type = type(self.option_dict[key]['default'])
-            if _type is not None and not isinstance(value, _type):
+            if _type is not None:
+                tocast = True
                 try:
-                    config[key] = _type(value)
-                except BaseException, e:
-                    raise TypeCastException("Could not coerce %s, %s, to type %s: %s" % (key, value, _type.__name__, e))
+                    if isinstance(value, _type):
+                        tocast = False
+                except TypeError:
+                    # type is a type-casting function, not a proper type
+                    pass
+                if tocast:
+                    try:
+                        config[key] = _type(value)
+                    except BaseException, e:
+                        raise TypeCastException("Could not coerce %s, %s, to type %s: %s" % (key, value, _type.__name__, e))
 
         return config
 
@@ -360,6 +367,7 @@ class Configuration(optparse.OptionParser):
 
     def __call__(self, *args):
         """add items to configuration and check it"""
+        # TODO: configuration should be locked after this is called
 
         # start with defaults
         self.config = self.default_config()
@@ -370,7 +378,9 @@ class Configuration(optparse.OptionParser):
 
         # validate total configuration
         self.validate()
-        # TODO: configuration should be locked after this is called
+
+        # return the configuration
+        return self.config
 
     def add(self, config, check=True):
         """update configuration: not undoable"""
@@ -393,6 +403,8 @@ class Configuration(optparse.OptionParser):
                     raise NotImplementedError
             else:
                 self.config[key] = value
+            self.added.add(key)
+
 
     ### methods for optparse
     ### XXX could go in a subclass
@@ -419,12 +431,10 @@ class Configuration(optparse.OptionParser):
         for key, value in self.items():
             try:
                 handler = self.types[self.option_type(key)]
-            except:
-                # XXX print this for now
-                # ultimately, if an option can't be coerced to a type
+            except KeyError:
+                # if an option can't be coerced to a type
                 # we should just not add a CLI handler for it
-                print key, value
-                raise
+                continue
             args, kw = handler(key, value)
             if not args:
                 # No CLI interface
