@@ -326,13 +326,12 @@ class GraphserverOutput(Output):
 
     def results_from_graph(self, lines, results_server):
         """print results from graphserver POST submission"""
-        # TODO: document what response is actually supposed to look like
+        # For each result, outputs something like:
+        # RETURN: <a href='http://graphs.mozilla.org/graph.html#tests=[[220,131,1]]'>tdhtmlr_paint: 619.03</a>
 
         url_format = "http://%s/%s"
         link_format= "<a href=\'%s\'>%s</a>"
-        first_results = 'RETURN:<br>'
-        last_results = ''
-        full_results = '\nRETURN:<p style="font-size:smaller;">Details:<br>'
+        results = ''
 
         for line in lines:
             if not line:
@@ -346,20 +345,16 @@ class GraphserverOutput(Output):
             else:
                 linkvalue = float(values[1])
                 linkdetail = values[2]
-            if linkvalue > -1:
-                if self.isMemoryMetric(linkName):
-                    linkName += ": " + filesizeformat(linkvalue)
-                else:
-                    linkName += ": %s" % linkvalue
-                url = url_format % (results_server, linkdetail)
-                link = link_format % (url, linkName)
-                first_results = first_results + "\nRETURN:" + link + "<br>"
+            if linkvalue < 0:
+                continue
+            if self.isMemoryMetric(linkName):
+                linkName += ": " + filesizeformat(linkvalue)
             else:
-                url = url_format % (results_server, linkdetail)
-                link = link_format % (url, linkName)
-                last_results = last_results + '| ' + link + ' '
-        full_results = first_results + full_results + last_results + '|</p>'
-        print full_results
+                linkName += ": %s" % linkvalue
+            url = url_format % (results_server, linkdetail)
+            link = link_format % (url, linkName)
+            results += "\nRETURN: " + link
+        print results
 
 
 class DatazillaOutput(Output):
