@@ -248,8 +248,6 @@ def run_tests(configurator):
       talos_results.add(mytest.runTest(browser_config, test))
     except talosError, e:
       utils.stamped_msg("Failed " + testname, "Stopped")
-      print 'FAIL: Busted: ' + testname
-      print 'FAIL: ' + e.msg.replace('\n','\nRETURN:')
       talosError_tb = sys.exc_info()
       traceback.print_exception(*talosError_tb)
       if httpd:
