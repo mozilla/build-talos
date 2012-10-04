@@ -257,7 +257,7 @@ def run_tests(configurator):
       raise e
     utils.stamped_msg("Completed test " + testname, "Stopped")
   elapsed = utils.stopTimer()
-  print "RETURN: cycle time: " + elapsed + "<br>"
+  print "cycle time: " + elapsed
   utils.stamped_msg(title, "Stopped")
 
   # stop the webserver if running
