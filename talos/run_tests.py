@@ -52,9 +52,7 @@ def browserInfo(browser_config, devicemanager=None):
       browser_config['browser_name'] = config.get('App', 'Name')
     if not browser_config.get('browser_version'):
       browser_config['browser_version'] = config.get('App', 'Version')
-  if ('repository' in browser_config) and ('sourcestamp' in browser_config):
-    print 'RETURN:<a href = "' + browser_config['repository'] + '/rev/' + browser_config['sourcestamp'] + '">rev:' + browser_config['sourcestamp'] + '</a>'
-  else:
+  if not (('repository' in browser_config) and ('sourcestamp' in browser_config)):
     browser_config['repository'] = 'NULL'
     browser_config['sourcestamp'] = 'NULL'
   return browser_config
