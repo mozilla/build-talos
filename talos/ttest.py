@@ -291,7 +291,10 @@ class TTest(object):
                 if os.path.isfile(browser_config['browser_log']):
                     os.chmod(browser_config['browser_log'], 0777)
                     os.remove(browser_config['browser_log'])
-                time.sleep(browser_config['browser_wait']) #wait out the browser closing
+
+                # on remote devices we do not have the fast launch/shutdown as we do on desktop
+                if not browser_config['remote']:
+                    time.sleep(browser_config['browser_wait']) #wait out the browser closing
 
                 # check to see if the previous cycle is still hanging around
                 if (i > 0) and self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
@@ -324,7 +327,9 @@ class TTest(object):
                 # this could mean that we are losing the first couple of data points
                 # as the tests starts, but if we don't provide
                 # some time for the browser to start we have trouble connecting the CounterManager to it
-                time.sleep(browser_config['browser_wait'])
+                # on remote devices we do not have the fast launch/shutdown as we do on desktop
+                if not browser_config['remote']:
+                    time.sleep(browser_config['browser_wait'])
 
                 #set up the counters for this test
                 counter_results = None
@@ -335,7 +340,6 @@ class TTest(object):
                 #the main test loop, monitors counters and checks for browser output
                 dumpResult = ""
                 while total_time < timeout:
-
                     # Sleep for [resolution] seconds
                     time.sleep(resolution)
                     total_time += resolution
@@ -377,7 +381,10 @@ class TTest(object):
                 # add the results from the browser output
                 test_results.add(browser_log_filename, counter_results=counter_results)
 
-                time.sleep(browser_config['browser_wait'])
+                # on remote devices we do not have the fast launch/shutdown as we do on desktop
+                if not browser_config['remote']:
+                    time.sleep(browser_config['browser_wait'])
+
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir)
                 #clean up the bcontroller process
