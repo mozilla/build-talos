@@ -102,6 +102,7 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
 
 # all dependencies
 manifest = mozbase + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
+manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
 def download(*resources):
     """
