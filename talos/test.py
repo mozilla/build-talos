@@ -6,6 +6,8 @@ class Test(object):
     """abstract base class for a Talos test case"""
     cycles = None # number of cycles
     keys = []
+    desktop = True
+    mobile = True
 
     @classmethod
     def name(cls):
@@ -58,14 +60,17 @@ class ts_paint(ts):
 class tspaint_places_generated_max(ts_paint):
     profile_path = '${talos}/places_generated_max'
     timeout = None
+    mobile = False # This depends on a custom profile and mobile requires it's own profile
 
 class tspaint_places_generated_med(ts_paint):
     profile_path = '${talos}/places_generated_med'
     timeout = None
+    mobile = False # This depends on a custom profile and mobile requires it's own profile
 
 class tpaint(TsBase):
-    url = 'startup_test/twinopen/winopen.xul?mozafterpaint=1%26phase1=20'
+    url = 'file://${talos}/startup_test/twinopen/winopen.xul?mozafterpaint=1%26phase1=20'
     timeout = 300
+    mobile = False # XUL based tests with local files.
 
 class tresize(TsBase):
     cycles = 20
@@ -78,26 +83,31 @@ class trobopan(TsBase):
     url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testPan org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
+    desktop = False
 
 class tcheckerboard(TsBase):
     url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testCheck org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
+    desktop = False
 
 class tprovider(TsBase):
     url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testBrowserProviderPerf org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
+    desktop = False
 
 class tcheck2(TsBase):
     url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testCheck2 org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
+    desktop = False
 
 class tcheck3(TsBase):
     url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testCheck3 org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
+    desktop = False
 
 ### pageloader tests
 
@@ -142,6 +152,7 @@ class tp5n(tp):
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS', 'Content_RSS']
     mac_counters = ['Private Bytes', 'Main_RSS', 'Content_RSS']
     xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
+    mobile = False # too many files to run, we will hit OOM
 
 class tdhtml(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/dhtml/dhtml.manifest'
@@ -191,6 +202,7 @@ class dromaeo_dom(dromaeo):
 class a11y(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpcycles = 5
+    mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
 
 # 'r' tests are row based vs column based.
 class tdhtmlr(tdhtml):
@@ -214,6 +226,7 @@ class a11yr(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpcycles = 1
     tppagecycles = 25
+    mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
 
 # global test data
 tests = [ts_paint, ts, tsvg, tdhtml,

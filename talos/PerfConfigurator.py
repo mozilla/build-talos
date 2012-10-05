@@ -468,6 +468,12 @@ the highest value.
         for test_name in activeTests:
             test_class = test.test_dict[test_name]
 
+            if self.config.get('deviceroot'):
+                if not test_class.mobile:
+                    raise ConfigurationError("Test %s is not able to run on mobile devices at this time" % test_name)
+            elif not test_class.desktop:
+                raise ConfigurationError("Test %s is not able to run on desktop builds at this time" % test_name)
+
             # use test-specific overrides
             test_overrides = overrides.get(test_name, {})
 

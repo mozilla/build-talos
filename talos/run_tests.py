@@ -153,6 +153,7 @@ def run_tests(configurator):
     if not test.get('url'):
       # build 'url' for tptest
       test['url'] = buildCommandLine(test)
+    test['url'] = utils.interpolatePath(test['url'])
 
     # ensure test-specific filters are valid
     if 'filters' in test:
