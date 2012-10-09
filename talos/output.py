@@ -472,7 +472,11 @@ class DatazillaOutput(Output):
         # print error responses
         for response in responses:
             if response.status != 200:
-                print "Error posting to %s://%s/%s: %s %s" % (scheme, server, project, response.status, response.reason)
+                # use lower-case string because buildbot is sensitive to upper case error
+                # as in 'INTERNAL SERVER ERROR'
+                # https://bugzilla.mozilla.org/show_bug.cgi?id=799576
+                reason = response.reason.lower()
+                print "Error posting to %s://%s/%s: %s %s" % (scheme, server, project, response.status, reason)
 
     def run_options(self, test):
         """test options for datazilla"""
