@@ -21,8 +21,12 @@ dest = os.path.join(here, 'talos')
 mozbase_src = 'https://raw.github.com/mozilla/mozbase/master/'
 mozbase_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
                  ('mozhttpd/mozhttpd/iface.py', 'iface.py'),
-                 ('mozinfo/mozinfo/mozinfo.py', 'mozinfo.py'),
-                 ('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
+                 ('mozinfo/mozinfo/mozinfo.py', 'mozinfo.py')]
+mozbase = [(mozbase_src + src, destination) for src, destination in mozbase_files]
+
+# use mozdevice 0.9 explicitly
+mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.9/'
+mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                  ('mozdevice/mozdevice/emulator.py', 'mozdevice/emulator.py'),
                  ('mozdevice/mozdevice/b2gemulator.py', 'mozdevice/b2gemulator.py'),
                  ('mozdevice/mozdevice/emulator_battery.py', 'mozdevice/emulator_battery.py'),
@@ -36,7 +40,7 @@ mozbase_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
                  ('mozprocess/mozprocess/qijo.py', 'mozdevice/mozprocess/qijo.py'),
                  ('mozprocess/mozprocess/winprocess.py', 'mozdevice/mozprocess/winprocess.py'),
                  ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py')]
-mozbase = [(mozbase_src + src, destination) for src, destination in mozbase_files]
+mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
 
 # datazilla client dependency
 datazilla_client = [('https://raw.github.com/mozilla/datazilla_client/master/dzclient/client.py',
@@ -101,7 +105,7 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = mozbase + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
+manifest = mozbase + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
 manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
 def download(*resources):
