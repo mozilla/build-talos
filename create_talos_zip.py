@@ -17,29 +17,32 @@ import zipfile
 here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, 'talos')
 
-# mozbase dependencies
-mozbase_src = 'https://raw.github.com/mozilla/mozbase/master/'
-mozbase_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
-                 ('mozhttpd/mozhttpd/iface.py', 'iface.py'),
-                 ('mozinfo/mozinfo/mozinfo.py', 'mozinfo.py')]
-mozbase = [(mozbase_src + src, destination) for src, destination in mozbase_files]
+# use mozhttpd 0.4 excplitly
+mozhttpd_src = 'https://raw.github.com/mozilla/mozbase/mozhttpd-0.4/'
+mozhttpd_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
+                  ('mozhttpd/mozhttpd/iface.py', 'iface.py')]
+mozhttpd = [(mozhttpd_src + src, destination) for src, destination in mozhttpd_files]
+
+# use mozinfo 0.4 explicitly
+mozinfo_src = 'https://raw.github.com/mozilla/mozbase/mozinfo-0.4/mozinfo/mozinfo/mozinfo.py'
+mozinfo = [(mozinfo_src, 'mozinfo.py')]
 
 # use mozdevice 0.9 explicitly
 mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.9/'
 mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
-                 ('mozdevice/mozdevice/emulator.py', 'mozdevice/emulator.py'),
-                 ('mozdevice/mozdevice/b2gemulator.py', 'mozdevice/b2gemulator.py'),
-                 ('mozdevice/mozdevice/emulator_battery.py', 'mozdevice/emulator_battery.py'),
-                 ('mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
-                 ('mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
-                 ('mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
-                 ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py'),
-                 ('mozprocess/mozprocess/__init__.py', 'mozdevice/mozprocess/__init__.py'),
-                 ('mozprocess/mozprocess/pid.py', 'mozdevice/mozprocess/pid.py'),
-                 ('mozprocess/mozprocess/processhandler.py', 'mozdevice/mozprocess/processhandler.py'),
-                 ('mozprocess/mozprocess/qijo.py', 'mozdevice/mozprocess/qijo.py'),
-                 ('mozprocess/mozprocess/winprocess.py', 'mozdevice/mozprocess/winprocess.py'),
-                 ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py')]
+                   ('mozdevice/mozdevice/emulator.py', 'mozdevice/emulator.py'),
+                   ('mozdevice/mozdevice/b2gemulator.py', 'mozdevice/b2gemulator.py'),
+                   ('mozdevice/mozdevice/emulator_battery.py', 'mozdevice/emulator_battery.py'),
+                   ('mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
+                   ('mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
+                   ('mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
+                   ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py'),
+                   ('mozprocess/mozprocess/__init__.py', 'mozdevice/mozprocess/__init__.py'),
+                   ('mozprocess/mozprocess/pid.py', 'mozdevice/mozprocess/pid.py'),
+                   ('mozprocess/mozprocess/processhandler.py', 'mozdevice/mozprocess/processhandler.py'),
+                   ('mozprocess/mozprocess/qijo.py', 'mozdevice/mozprocess/qijo.py'),
+                   ('mozprocess/mozprocess/winprocess.py', 'mozdevice/mozprocess/winprocess.py'),
+                   ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py')]
 mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
 
 # datazilla client dependency
@@ -105,7 +108,7 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = mozbase + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
+manifest = mozhttpd + mozinfo + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
 manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
 def download(*resources):
