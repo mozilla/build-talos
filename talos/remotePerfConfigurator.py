@@ -170,7 +170,7 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         url = url.replace('webServer=', 'webServer=%s' % self.config['webserver'])
 
         # Take care of the robocop based tests
-        url = url.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.config['browser_path'])
+        url = url.replace('org.mozilla.fennec', self.config['browser_path'])
         return url
 
     def buildRemoteManifest(self, manifestName):
