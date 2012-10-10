@@ -120,7 +120,7 @@ class RemoteProcess(FFProcess):
         processes_with_names = []
         for process_name in process_names:
             try:
-                procre = re.compile(".*" + process_name + ".*")
+                procre = re.compile(process_name)
                 for pid, appname, userid in data:
                     if procre.match(appname):
                         processes_with_names.append((pid, process_name))

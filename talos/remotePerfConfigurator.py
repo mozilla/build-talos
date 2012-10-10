@@ -159,6 +159,8 @@ class remotePerfConfigurator(pc.PerfConfigurator):
             # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/remotePerfConfigurator.py#l45
             self.config['preferences']['talos.logfile'] = '%s/%s' % (self.deviceroot, os.path.basename(logfile))
 
+        self.config['process'] = self.config['browser_path']
+
     def convertUrlToRemote(self, url):
         """
         For a give url, add a webserver.

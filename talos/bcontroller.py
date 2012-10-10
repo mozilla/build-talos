@@ -151,7 +151,7 @@ class BrowserController(object):
       self.remoteProcess = RemoteProcess(self.host, self.port, self.deviceroot)
       if self.env:
         self.command = ' "%s" %s' % (self.env, self.command)
-
+        options['command'] = self.command
   def run(self):
     self.bwaiter = BrowserWaiter(self.remoteProcess, **self.options)
     noise = 0

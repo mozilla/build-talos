@@ -361,7 +361,7 @@ class TTest(object):
                     time.sleep(resolution)
                     total_time += resolution
                     fileData = self._ffprocess.getFile(b_log)
-                    if len(fileData) > 0:
+                    if fileData and len(fileData) > 0:
                         utils.noisy(fileData.replace(dumpResult, ''))
                         dumpResult = fileData
 
