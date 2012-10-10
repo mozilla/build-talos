@@ -13,6 +13,12 @@ import os
 import sys
 import utils
 import PerfConfigurator as pc
+try:
+    import mozdevice
+except:
+    # mozdevice is known not to import correctly with python 2.4, which we
+    # still support
+    pass
 
 class remotePerfConfigurator(pc.PerfConfigurator):
 
@@ -181,9 +187,12 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         newManifestName = pc.PerfConfigurator.buildRemoteManifest(self, manifestName)
 
         remoteName += '/' + os.path.basename(manifestName)
-        if self.testAgent.pushFile(newManifestName, remoteName) == False:
-            msg = "Unable to copy remote manifest file %s to %s" % (newManifestName, remoteName)
-            raise pc.ConfigurationError(msg)
+        try:
+            self.testAgent.pushFile(newManifestName, remoteName)
+        except mozdevice.DMError:
+            print "Remote Device Error: Unable to copy remote manifest file " \
+                "%s to %s" % (newManifestName, remoteName)
+            raise
         return remoteName
 
     ### remotePerfConfigurator specific methods
@@ -193,11 +202,9 @@ class remotePerfConfigurator(pc.PerfConfigurator):
         try:
             self.testAgent = utils.testAgent(deviceip, deviceport)
             self.deviceroot = self.testAgent.getDeviceRoot()
-        except:
-            raise pc.ConfigurationError("Unable to connect to remote device '%s'" % deviceip)
-
-        if self.deviceroot is None:
-            raise pc.ConfigurationError("Unable to connect to remote device '%s'" % deviceip)
+        except mozdevice.DMError:
+            print "Remote Device Error: Unable to connect to remote device '%s'" % deviceip
+            raise
 
         self.config['deviceroot'] = self.deviceroot
         self.remote = True
@@ -220,9 +227,12 @@ class remotePerfConfigurator(pc.PerfConfigurator):
 
         talosRoot = self.deviceroot + '/talos/'
         for file in files:
-            if self.testAgent.pushFile(file, talosRoot + file) == False:
-                raise pc.ConfigurationError("Unable to copy twinopen file "
-                                            + file + " to " + talosRoot + file)
+            try:
+                self.testAgent.pushFile(file, talosRoot + file)
+            except mozdevice.DMError:
+                print "Remote Device Error: Unable to copy twinopen file %s " \
+                    "to %s" % (file, talosRoot + file)
+                raise
 
 def main(args=sys.argv[1:]):
 

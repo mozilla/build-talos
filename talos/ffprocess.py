@@ -42,7 +42,10 @@ class FFProcess(object):
     def cleanupProcesses(self, process_name, child_process, browser_wait):
         #kill any remaining browser processes
         #returns string of which process_names were terminated and with what signal
-        terminate_result = self.TerminateAllProcesses(*([browser_wait, process_name, child_process] + self.extra_prog))
+        processes_to_kill = filter(lambda n: n, ([process_name, child_process] +
+                                                 self.extra_prog))
+        utils.debug("Terminating: %s" % ", ".join(str(p) for p in processes_to_kill))
+        terminate_result = self.TerminateAllProcesses(browser_wait, processes_to_kill)
         #check if anything is left behind
         if self.checkAllProcesses(process_name, child_process):
             #this is for windows machines.  when attempting to send kill messages to win processes the OS

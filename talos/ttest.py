@@ -61,6 +61,13 @@ import tempfile
 import time
 import utils
 
+try:
+    import mozdevice
+except:
+    # mozdevice is known not to import correctly with python 2.4, which we
+    # still support
+    pass
+
 from utils import talosError
 from ffprocess_linux import LinuxProcess
 from ffprocess_win32 import Win32Process
@@ -169,7 +176,13 @@ class TTest(object):
         minidumpdir = os.path.join(profile_dir, 'minidumps')
         if browser_config['remote'] == True:
             minidumpdir = tempfile.mkdtemp()
-            self._ffprocess.testAgent.getDirectory(profile_dir + '/minidumps/', minidumpdir)
+            try:
+                remoteminidumpdir = profile_dir + '/minidumps/'
+                if self._ffprocess.testAgent.dirExists(remoteminidumpdir):
+                    self._ffprocess.testAgent.getDirectory(remoteminidumpdir, minidumpdir)
+            except mozdevice.DMError:
+                print "Remote Device Error: Error getting crash minidumps from device"
+                raise
         
         for dump in glob.glob(os.path.join(minidumpdir, '*.dmp')):
             utils.noisy("Found crashdump: " + dump)
@@ -200,21 +213,25 @@ class TTest(object):
                 raise talosError("crash during run (stack found)")
 
     def setupRobocopTests(self, browser_config, profile_dir):
-        deviceRoot = self._ffprocess.testAgent.getDeviceRoot()
-        fHandle = open("robotium.config", "w")
-        fHandle.write("profile=%s\n" % profile_dir)
+        try:
+            deviceRoot = self._ffprocess.testAgent.getDeviceRoot()
+            fHandle = open("robotium.config", "w")
+            fHandle.write("profile=%s\n" % profile_dir)
 
-        remoteLog = deviceRoot + "/" + browser_config['browser_log']
-        fHandle.write("logfile=%s\n" % remoteLog)
-        fHandle.write("host=http://%s\n" % browser_config['webserver'])
-        fHandle.write("rawhost=http://%s\n" % browser_config['webserver'])
-        fHandle.close()
+            remoteLog = deviceRoot + "/" + browser_config['browser_log']
+            fHandle.write("logfile=%s\n" % remoteLog)
+            fHandle.write("host=http://%s\n" % browser_config['webserver'])
+            fHandle.write("rawhost=http://%s\n" % browser_config['webserver'])
+            fHandle.close()
 
-        self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "fennec_ids.txt"))
-        self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "robotium.config"))
-        self._ffprocess.testAgent.removeFile(remoteLog)
-        self._ffprocess.testAgent.pushFile("robotium.config", os.path.join(deviceRoot, "robotium.config"))
-        self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'], os.path.join(deviceRoot, "fennec_ids.txt"))
+            self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "fennec_ids.txt"))
+            self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "robotium.config"))
+            self._ffprocess.testAgent.removeFile(remoteLog)
+            self._ffprocess.testAgent.pushFile("robotium.config", os.path.join(deviceRoot, "robotium.config"))
+            self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'], os.path.join(deviceRoot, "fennec_ids.txt"))
+        except mozdevice.DMError:
+            print "Remote Device Error: Error copying files for robocop setup"
+            raise
 
     def runTest(self, browser_config, test_config):
         """

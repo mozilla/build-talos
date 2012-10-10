@@ -36,6 +36,12 @@ import tempfile
 import re
 import shutil
 from utils import talosError, testAgent
+try:
+    import mozdevice
+except:
+    # mozdevice is known not to import correctly with python 2.4, which we
+    # still support
+    pass
 
 DEFAULT_PORT = 20701
 
@@ -64,8 +70,11 @@ class RemoteProcess(FFProcess):
         self.testAgent = testAgent(host, port)
 
     def GetRunningProcesses(self):
-        return self.testAgent.getProcessList()
-
+        try:
+            return self.testAgent.getProcessList()
+        except mozdevice.DMError:
+            print "Remote Device Error: Error getting list of processes on remote device"
+            raise
 
     def GenerateBrowserCommandLine(self, browser_path, extra_args, deviceroot, profile_dir, url):
         """Generates the command line for a process to run Browser
@@ -120,7 +129,7 @@ class RemoteProcess(FFProcess):
                 continue
         return processes_with_names
 
-    def TerminateAllProcesses(self, *process_names):
+    def TerminateAllProcesses(self, timeout, process_names):
         """Helper function to terminate all processes with the given process name
 
         Args:
@@ -132,10 +141,10 @@ class RemoteProcess(FFProcess):
                 self.testAgent.killProcess(process_name)
                 if result:
                     result = result + ', '
-                result = result + process_name + ': terminated by testAgent.killProcess'
-            except:
-                # Might get an exception if there are no instances of the process running.
-                continue
+                result += process_name + ': terminated by testAgent.killProcess'
+            except mozdevice.DMError:
+                print "Remote Device Error: Error while killing process '%s'" % process_name
+                raise
         return result
 
 
@@ -158,81 +167,92 @@ class RemoteProcess(FFProcess):
         except:
             return (0, output)
 
-    def getFile(self, handle, localFile = ""):
-        temp = False
-        if (localFile == ""):
-            if (os.path.exists(handle)):
-                #TODO
-                return ""
-            tempdir = tempfile.mkdtemp()
-            localFile = os.path.join(tempdir, "temp.txt")
-            temp = True
+    def getFile(self, remote_filename, local_filename = None):
+        data = ''
+        try:
+            if self.testAgent.fileExists(remote_filename):
+                data = self.testAgent.pullFile(remote_filename)
+        except mozdevice.DMError:
+            print "Remote Device Error: Error pulling file %s from " \
+                "device" % remote_filename
+            raise
 
-        re_nofile = re.compile("error:.*")
-        data = self.testAgent.getFile(handle, localFile)
-        time.sleep(1.0) #allow for data transfer before deleting file
-        if (temp == True):
-          shutil.rmtree(tempdir)
-        if data == None:
-          return ''
-        if (re_nofile.match(data)):
-            fileData = ''
-            if (os.path.isfile(handle)):
-                results_file = open(handle, "r")
-                fileData = results_file.read()
-                results_file.close()
-            return fileData
+        # if localfile is defined we need to cache its output for later
+        # reading
+        if local_filename:
+            f = open(local_filename, 'w')
+            f.write(data)
+            f.close()
+
         return data
 
     def launchProcess(self, cmd, outputFile = "process.txt", timeout = -1):
         if (outputFile == "process.txt"):
             outputFile = self.rootdir + self.dirSlash + "process.txt"
             cmd += " > " + outputFile
-        if (self.testAgent.fireProcess(cmd) is None):
-            return None
-        handle = outputFile
-  
-        timed_out = True
-        if (timeout > 0):
-            total_time = 0
-            while total_time < timeout:
-                time.sleep(1)
-                if not self.testAgent.processExist(cmd):
-                    timed_out = False
-                    break
-                total_time += 1
-
-            if (timed_out == True):
+        try:
+            if (self.testAgent.fireProcess(cmd) is None):
                 return None
-      
-        return handle
+            handle = outputFile
+
+            timed_out = True
+            if (timeout > 0):
+                total_time = 0
+                while total_time < timeout:
+                    time.sleep(1)
+                    if not self.testAgent.processExist(cmd):
+                        timed_out = False
+                        break
+                    total_time += 1
+
+                if (timed_out == True):
+                    return None
+
+                return handle
+        except mozdevice.DMError:
+            print "Remote Device Error: Error launching process '%s'" % cmd
+            raise
 
     #currently this is only used during setup of newprofile from ffsetup.py
     def copyDirToDevice(self, localDir):
         head, tail = os.path.split(localDir)
 
         remoteDir = self.rootdir + self.dirSlash + tail
-        if (self.testAgent.pushDir(localDir, remoteDir) is None):
-            raise talosError("Unable to copy '%s' to remote device '%s'" % (localDir, remoteDir))
+        try:
+            self.testAgent.pushDir(localDir, remoteDir)
+        except mozdevice.DMError:
+            print "Remote Device Error: Unable to copy '%s' to remote " \
+                "device '%s'" % (localDir, remoteDir)
+            raise
+
         return remoteDir
   
     def removeDirectory(self, dir):
-        if (self.testAgent.removeDir(dir) is None):
-            raise talosError("Unable to remove directory on remote device")
+        try:
+            self.testAgent.removeDir(dir)
+        except mozdevice.DMError:
+            print "Remote Device Error: Unable to remove directory on remote device"
+            raise
 
     def MakeDirectoryContentsWritable(self, dir):
         pass
 
     def removeFile(self, filename):
-        if self.testAgent.fileExists(filename):
-            retval = self.testAgent.removeFile(filename)
-            if retval is None:
-                raise talosError("Unable to remove file '%s' on remote device")
+        try:
+            self.testAgent.removeFile(filename)
+        except mozdevice.DMError:
+            print "Remote Device Error: Unable to remove file '%s' on " \
+                "remote device" % dir
+            raise
 
     def copyFile(self, fromfile, toDir):
-        toDir = toDir.replace("/", self.dirSlash) 
-        if (self.testAgent.pushFile(fromfile, toDir + self.dirSlash + os.path.basename(fromfile)) is False):
-            raise talosError("Unable to copy file '%s' to directory '%s' on the remote device" % (fromfile, toDir))
+        toDir = toDir.replace("/", self.dirSlash)
+        toFile = toDir + self.dirSlash + os.path.basename(fromfile)
+        try:
+            self.testAgent.pushFile(fromfile, toFile)
+        except mozdevice.DMError:
+            print "Remote Device Error: Unable to copy file '%s' to directory '%s' on the remote device" % (fromfile, toDir)
+            raise
 
     def getCurrentTime(self):
         #we will not raise an error here because the functions that depend on this do their own error handling
