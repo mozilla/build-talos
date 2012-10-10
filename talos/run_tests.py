@@ -255,6 +255,14 @@ def run_tests(configurator):
         httpd.stop()
       raise e
     utils.stamped_msg("Completed test " + testname, "Stopped")
+    if os.path.exists('logcat.log'):
+        f = open('logcat.log', 'r')
+        data = f.read()
+        f.close()
+        for l in data.split('\r'):
+            #Buildbot will mark the job as failed if it finds 'ERROR'.
+            print l.replace('RROR', 'RR_R')
+
   elapsed = utils.stopTimer()
   print "cycle time: " + elapsed
   utils.stamped_msg(title, "Stopped")

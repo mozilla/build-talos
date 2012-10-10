@@ -65,7 +65,13 @@ class BrowserWaiter(threading.Thread):
         self.returncode = 1
       else:
         remoteLog = devroot + '/' + self.browser_log.split('/')[-1]
+        self.remoteProcess.recordLogcat()
         retVal = self.remoteProcess.launchProcess(self.command, outputFile=remoteLog, timeout=self.test_timeout)
+        logcat = self.remoteProcess.getLogcat()
+        if logcat:
+            f = open('logcat.log', 'w')
+            f.write(''.join(logcat[-500:-1]))
+            f.close()
         if retVal <> None:
           self.remoteProcess.getFile(retVal, self.browser_log)
           self.returncode = 0

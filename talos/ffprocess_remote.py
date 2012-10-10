@@ -186,6 +186,12 @@ class RemoteProcess(FFProcess):
 
         return data
 
+    def recordLogcat(self):
+        self.testAgent.recordLogcat()
+
+    def getLogcat(self):
+        return self.testAgent.getLogcat()
+
     def launchProcess(self, cmd, outputFile = "process.txt", timeout = -1):
         if (outputFile == "process.txt"):
             outputFile = self.rootdir + self.dirSlash + "process.txt"
@@ -199,7 +205,7 @@ class RemoteProcess(FFProcess):
             if (timeout > 0):
                 total_time = 0
                 while total_time < timeout:
-                    time.sleep(1)
+                    time.sleep(5)
                     if not self.testAgent.processExist(cmd):
                         timed_out = False
                         break
