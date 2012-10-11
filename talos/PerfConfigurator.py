@@ -17,10 +17,18 @@ from configuration import Configuration
 from configuration import YAML
 from datetime import datetime
 
+try:
+    import mozdevice
+except:
+    # mozdevice is known not to import correctly with python 2.4, which we
+    # still support
+    mozdevice = None
+
 __all__ = ['ConfigurationError', 'PerfConfigurator', 'main']
 
 class ConfigurationError(Exception):
     """error when parsing Talos configuration"""
+
 
 class PerfConfigurator(Configuration):
     options = [
@@ -155,15 +163,60 @@ the highest value.
                      'flags': []}),
         ('tests', {'help': 'tests to run',
                    'flags': []}),
+        ('remote', {'flags': []}),
 
-        ### options for remotePerfConfigurator
-        ### needed here for run_tests.py
-        ('deviceip', {'flags': []}),
-        ('deviceport', {'flags': []}),
-        ('deviceroot', {'flags': []}),
-        ('fennecIDs', {'flags': []}),
-        ('remote', {'flags': []})
+        ### remote-specific options
+        ('nativeUI', {'help': 'Run tests on Fennec with a Native Java UI instead of the XUL UI',
+                      'default': False}),
+        ('deviceip', {'help': 'Device IP (when using SUTAgent)',
+                      'flags': ['-r', '--remoteDevice']}),
+        ('deviceport', {'help': "SUTAgent port (defaults to 20701, specify -1 to use ADB)",
+                        'default': 20701,
+                        'flags': ['-p', '--remotePort']}),
+        ('deviceroot', {'help': 'path on the device that will hold files and the profile',
+                        'flags': ['--deviceRoot']}),
+        ('fennecIDs', {'help': 'Location of the fennec_ids.txt map file, used for robocop based tests',
+                       'flags': ['--fennecIDs']}),
         ]
+
+    # remote-specific defaults
+    remote_defaults = {'basetest': {
+            'timeout': 3600,
+            'profile_path': '${talos}/mobile_profile',
+            'remote_counters': [],
+            'tpcycles': 3,
+            'tpdelay': 1000
+            },
+                       'browser_wait': 20,
+                       'test_timeout': 3600,
+                       'env': {'MOZ_CRASHREPORTER_NO_REPORT': '1',
+                               'MOZ_CRASHREPORTER_SHUTDOWN': '1'},
+                       'dirs': {'chrome': '${talos}/page_load_test/chrome',
+                                'components': '${talos}/page_load_test/components'},
+                       'process': 'fennec',
+                       'title': 'mobile',
+                       'test_overrides': {'ts':
+                                              {'cycles': 20,
+                                               'timeout': 150},
+                                          'ts_paint':
+                                              {'cycles': 20},
+                                          'ts_places_generated_max':
+                                              {'cycles': 10,
+                                               'timeout': 150},
+                                          'ts_places_generated_min':
+                                              {'cycles': 10,
+                                               'timeout': 150},
+                                          'ts_places_generated_med':
+                                              {'cycles': 10,
+                                               'timeout': 150},
+                                          'tdhtml':
+                                              {'tpcycles': 3},
+                                          'tsvg':
+                                              {'tpcycles': 3},
+                                          'tsspider':
+                                              {'tpcycles': 3}
+                                          }
+                       }
 
     # default preferences to run with
     # these are updated with --extraPrefs from the commandline
@@ -223,11 +276,14 @@ the highest value.
     # whether to dump by default
     _dump = True
 
-    ### methods overrided from configuration.py
+    ### methods overridden from configuration.py
 
     def __init__(self, **kwargs):
 
+        self.remote = False
+
         # add preferences to the configuration
+        # TODO: do at class level
         self.options.append(('preferences', {'help': 'browser preferences',
                                              'default': self.preferences,
                                              'flags': []}))
@@ -256,8 +312,58 @@ the highest value.
                           action='store_true', default=False,
                           help="Print the resulting tests configuration to stdout (or print available tests if --activeTests not specified)")
 
+    def __call__(self, *args):
+
+        # determine if remote
+        self.remote = self.is_remote(args)
+
+        # if remote ensure mozdevice package is available
+        if self.remote and (mozdevice is None):
+            raise ConfigurationError("Configuration is for a remote device but mozdevice is not available")
+
+        # add remote-specific defaults before parsing
+        if self.remote:
+            for key, value in self.remote_defaults.items():
+                default = self.option_dict[key].get('default')
+                if isinstance(default, dict):
+                    default.update(value)
+                else:
+                    self.option_dict[key]['default'] = value
+
+        return Configuration.__call__(self, *args)
+
     def validate(self):
         """validate and finalize configuration"""
+
+        self.config['remote'] = self.remote
+
+        if self.remote:
+            # setup remote
+            deviceip = self.config.get('deviceip')
+            deviceport = self.config['deviceport']
+            if deviceip or deviceport == -1:
+                self._setupRemote(deviceip, deviceport)
+
+            # For NativeUI Fennec, we are working around bug 708793 and uploading a
+            # unique machine name (defined via title) with a .n.  Currently a machine name
+            # is a 1:1 mapping with the OS+hardware
+            if self.config.pop('nativeUI') and not self.config['title'].endswith(".n"):
+                self.config['title'] = "%s.n" % self.config['title']
+
+            # fix webserver for --develop mode
+            if self.config.get('develop'):
+                webserver = self.config.get('webserver')
+                if (not webserver) or (webserver == 'localhost'):
+                    self.config['webserver'] = utils.getLanIp()
+
+            # webServer can be used without remoteDevice, but is required when using remoteDevice
+            if self.config.get('deviceip') or self.config.get('deviceroot'):
+                if self.config.get('webserver', 'localhost') == 'localhost' or not self.config.get('deviceip'):
+                    raise ConfigurationError("When running Talos on a remote device, you need to provide a webServer and optionally a remotePort")
+
+            fennecIDs = self.config.get('fennecIDs')
+            if fennecIDs and not os.path.exists(fennecIDs):
+                raise ConfigurationError("Unable to find fennce IDs file, please ensure this file exists: %s" % fennecIDs)
 
         # generic configuration validation
         Configuration.validate(self)
@@ -392,6 +498,16 @@ the highest value.
         # XXX extending vs over-writing?
         self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides, counters))
 
+        if self.remote:
+
+            # fix up logfile preference
+            logfile = self.config['preferences'].get('talos.logfile')
+            if logfile:
+                # use the last part of the browser_log overridden for the remote log
+                # from the global; see
+                # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/remotePerfConfigurator.py#l45
+                self.config['preferences']['talos.logfile'] = '%s/%s' % (self.deviceroot, os.path.basename(logfile))
+
     def parse_args(self, *args, **kwargs):
 
         # parse the arguments to configuration
@@ -454,7 +570,7 @@ the highest value.
         overrides = overrides or {}
         for key, value in overrides.items():
             if not isinstance(value, dict):
-                raise ConfiguratonError('test overrides must be a dict: (%s, %s)' % (key, value))
+                raise ConfigurationError('test overrides must be a dict: (%s, %s)' % (key, value))
 
         # ensure tests are available
         availableTests = test.test_dict.keys()
@@ -518,7 +634,7 @@ the highest value.
 
     def convertUrlToRemote(self, url):
         """
-        For a give url add a webserver.
+        For a given url add a webserver.
         In addition if there is a .manifest file specified, covert
         and copy that file to the remote device.
         """
@@ -537,6 +653,18 @@ the highest value.
         if '.html' in url:
             return 'http://%s/%s' % (webserver , url)
         else:
+            return url
+
+        if 'winopen.xul' in url:
+            self.buildRemoteTwinopen()
+            url = 'file://' + self.deviceroot + '/talos/' + url
+
+        if self.remote:
+            # Take care of tpan/tzoom tests
+            url = url.replace('webServer=', 'webServer=%s' % self.config['webserver'])
+
+            # Take care of the robocop based tests
+            url = url.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.config['browser_path'])
             return url
 
     def buildRemoteManifest(self, manifestName):
@@ -563,8 +691,21 @@ the highest value.
             newHandle.write(line.replace('localhost', self.config['webserver']))
         newHandle.close()
 
+        newManifestName = manifestName + '.develop'
+
+        if self.remote:
+            remoteName = self.deviceroot
+
+            remoteName += '/' + os.path.basename(manifestName)
+            try:
+                self.testAgent.pushFile(newManifestName, remoteName)
+            except mozdevice.DMError:
+                print "Remote Device Error: Unable to copy remote manifest file %s to %s" % (newManifestName, remoteName)
+                raise
+            return remoteName
+
         # return new manifest
-        return manifestName + '.develop'
+        return newManifestName
 
     def parsePref(self, value):
         """parse a preference value from a string"""
@@ -601,35 +742,99 @@ the highest value.
     def browser_config(self):
 
         title = self.config.get('title', '')
-        testdate = self.config.get('testdate', '')
 
         required = ['preferences', 'extensions',
-                  'browser_path', 'browser_log', 'browser_wait',
-                  'extra_args', 'buildid', 'env', 'init_url'
-                  ]
+                    'browser_path', 'browser_log', 'browser_wait',
+                    'extra_args', 'buildid', 'env', 'init_url'
+                    ]
         optional = {'bcontroller_config': 'bcontroller.yml',
-                  'branch_name': '',
-                  'child_process': 'plugin-container',
-                  'develop': False,
-                  'deviceroot': '',
-                  'dirs': {},
-                  'host': self.config.get('deviceip', ''), # XXX names should match!
-                  'port': self.config.get('deviceport', ''), # XXX names should match!
-                  'process': '',
-                  'remote': False,
-                  'fennecIDs': '',
-                  'repository': 'NULL',
-                  'sourcestamp': 'NULL',
-                  'symbols_path': None,
-                  'test_name_extension': '',
-                  'test_timeout': 1200,
-                  'webserver': '',
-                  'xperf_path': None,
-                  }
+                    'branch_name': '',
+                    'child_process': 'plugin-container',
+                    'develop': False,
+                    'deviceroot': '',
+                    'dirs': {},
+                    'host': self.config.get('deviceip', ''), # XXX names should match!
+                    'port': self.config.get('deviceport', ''), # XXX names should match!
+                    'process': '',
+                    'remote': False,
+                    'fennecIDs': '',
+                    'repository': 'NULL',
+                    'sourcestamp': 'NULL',
+                    'symbols_path': None,
+                    'test_name_extension': '',
+                    'test_timeout': 1200,
+                    'webserver': '',
+                    'xperf_path': None,
+                    }
         browser_config = dict(title=title)
         browser_config.update(dict([(i, self.config[i]) for i in required]))
         browser_config.update(dict([(i, self.config.get(i, j)) for i, j in optional.items()]))
         return browser_config
+
+    def _setupRemote(self, deviceip, deviceport):
+
+        # Init remotePerfConfigurator
+
+        # remote-specific preferences
+        self.config['preferences'].update({'talos.logfile': 'browser_output.txt',
+                                           'network.manage-offline-status': False})
+        for pref in ('network.proxy.http',
+                     'network.proxy.http_port',
+                     'network.proxy.type',
+                     'browser.bookmarks.max_backups',
+                     'dom.max_chrome_script_run_time'):
+            # remove preferences not applicable to remote
+            self.config['preferences'].pop(pref, None)
+
+        # setup remote device
+        try:
+            self.testAgent = utils.testAgent(deviceip, deviceport)
+            self.deviceroot = self.testAgent.getDeviceRoot()
+        except mozdevice.DMError:
+            print "Remote Device Error: Unable to connect to remote device '%s'" % deviceip
+
+        self.config['deviceroot'] = self.deviceroot
+
+    def buildRemoteTwinopen(self):
+        """
+        twinopen needs to run locally as it is a .xul file.
+        copy bits to <deviceroot>/talos and fix line to reference that
+        """
+        # XXX this should live in run_test.py or similar
+
+        if self.remote == False:
+            return
+
+        files = ('page_load_test/quit.js',
+                 'scripts/MozillaFileLogger.js',
+                 'startup_test/twinopen/winopen.xul',
+                 'startup_test/twinopen/winopen.js',
+                 'startup_test/twinopen/child-window.html')
+
+        talosRoot = self.deviceroot + '/talos/'
+        for f in files:
+            try:
+                self.testAgent.pushFile(f, talosRoot + f) == False
+            except mozdevice.DMError:
+                print ("Remote Device Error: Unable to copy twinopen file "
+                       + f + " to " + talosRoot + f)
+
+    def is_remote(self, args):
+        """
+        determines if the configuration is for testing a remote device;
+        - args : dictionary of configuration to check
+        """
+
+        deviceroot = None
+        deviceip = None
+
+        for config in args:
+            deviceroot = config.get('deviceroot', deviceroot)
+            deviceip = config.get('deviceip', deviceip)
+
+        if deviceroot or deviceip:
+            return True
+        return False
 
 def main(args=sys.argv[1:]):
 
@@ -644,6 +849,7 @@ def main(args=sys.argv[1:]):
 
     # parse the arguments and dump an output file
     options, args = conf.parse_args(args)
+
     if args:
         conf.error("PerfConfigurator takes no arguments")
         return 1

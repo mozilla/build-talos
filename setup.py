@@ -71,7 +71,6 @@ setup(name='talos',
       # -*- Entry points: -*-
       [console_scripts]
       PerfConfigurator = talos.PerfConfigurator:main
-      remotePerfConfigurator = talos.remotePerfConfigurator:main
       talos = talos.run_tests:main
       talos-results = talos.results:main
       """,
