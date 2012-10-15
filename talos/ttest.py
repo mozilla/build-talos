@@ -222,6 +222,18 @@ class TTest(object):
             fHandle.write("logfile=%s\n" % remoteLog)
             fHandle.write("host=http://%s\n" % browser_config['webserver'])
             fHandle.write("rawhost=http://%s\n" % browser_config['webserver'])
+            envstr = ""
+            delim = ""
+            # This is not foolproof and the ideal solution would be to have one env/line instead of a single string
+            for key, value in browserEnv.items():
+                try:
+                    value.index(',')
+                    print "Error: Found an ',' in our value, unable to process value."
+                except ValueError, e:
+                    envstr += "%s%s=%s" % (delim, key, value)
+                    delim = ","
+
+            fHandle.write("envvars=%s\n" % envstr)
             fHandle.close()
 
             self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "fennec_ids.txt"))
@@ -279,6 +291,7 @@ class TTest(object):
             self.initializeProfile(profile_dir, browser_config)
 
             if browser_config['fennecIDs']:
+                # This pushes environment variables to the device, be careful of placement
                 self.setupRobocopTests(browser_config, profile_dir)
 
             utils.debug("initialized " + browser_config['process'])
