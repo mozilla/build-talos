@@ -86,8 +86,7 @@ class Output(object):
                  "RSS": "rss",
                  "XRes": "xres",
                  "Modified Page List Bytes": "modlistbytes",
-                 "Main_RSS": "main_rss",
-                 "Content_RSS": "content_rss"}
+                 "Main_RSS": "main_rss"}
         return names.get(name, name)
 
     @classmethod
@@ -206,7 +205,7 @@ class GraphserverOutput(Output):
                     if not values:
                         # failed to collect any data for this counter
                         utils.stamped_msg("No results collected for: " + counterName, "Error")
-                        continue
+                        raise utils.talosError("Unable to proceed with missing counter '%s'" % counterName)
 
                     # counter values
                     vals = [[x, 'NULL'] for x in values]

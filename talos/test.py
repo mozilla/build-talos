@@ -139,7 +139,7 @@ class tp4m(tp):
     tpmanifest = '${talos}/page_load_test/tp4m.manifest'
     tpcycles = 2
     win_counters = w7_counters = linux_counters = mac_counters = None
-    remote_counters = ['Main_RSS', 'Content_RSS']
+    remote_counters = ['Main_RSS']
     timeout = 14400
 
 class tp5n(tp):
@@ -147,11 +147,11 @@ class tp5n(tp):
     tpcycles = 1
     tppagecycles = 25
     rss = True
-    win_counters = ['Main_RSS', 'Content_RSS', 'Private Bytes', '% Processor Time']
-    w7_counters = ['Main_RSS', 'Content_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
-    linux_counters = ['Private Bytes', 'XRes', 'Main_RSS', 'Content_RSS']
-    mac_counters = ['Private Bytes', 'Main_RSS', 'Content_RSS']
-    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
+    win_counters = ['Main_RSS', 'Private Bytes', '% Processor Time']
+    w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
+    linux_counters = ['Private Bytes', 'XRes', 'Main_RSS']
+    mac_counters = ['Private Bytes', 'Main_RSS']
+    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio', 'nonmain_normal_netio']
     mobile = False # too many files to run, we will hit OOM
 
 class tdhtml(PageloaderTest):
