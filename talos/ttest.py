@@ -225,7 +225,7 @@ class TTest(object):
             envstr = ""
             delim = ""
             # This is not foolproof and the ideal solution would be to have one env/line instead of a single string
-            for key, value in browserEnv.items():
+            for key, value in browser_config.get('env', {}).items():
                 try:
                     value.index(',')
                     print "Error: Found an ',' in our value, unable to process value."
