@@ -249,9 +249,8 @@ the highest value.
         'security.enable_java': False,
         'security.fileuri.strict_origin_policy': False,
         'toolkit.telemetry.prompted': 2,
-        'security.enablePrivilege.enable_for_tests': True,
-        'security.turn_off_all_sеcurity_so_that_viruses_can_take_over_this_computer': True
-        }
+        'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer': True
+    }
 
     # keys to generated self.config that are global overrides to tests
     global_overrides = ['cycles',
@@ -500,7 +499,6 @@ the highest value.
         self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides, counters))
 
         if self.remote:
-
             # fix up logfile preference
             logfile = self.config['preferences'].get('talos.logfile')
             if logfile:
@@ -508,6 +506,8 @@ the highest value.
                 # from the global; see
                 # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/remotePerfConfigurator.py#l45
                 self.config['preferences']['talos.logfile'] = '%s/%s' % (self.deviceroot, os.path.basename(logfile))
+
+            self.config['process'] = self.config['browser_path']
 
     def parse_args(self, *args, **kwargs):
 
@@ -652,9 +652,7 @@ the highest value.
         # We cannot load .xul remotely and winopen.xul is the only instance.
         # winopen.xul is handled in remotePerfConfigurator.py
         if '.html' in url:
-            return 'http://%s/%s' % (webserver , url)
-        else:
-            return url
+            url = 'http://%s/%s' % (webserver , url)
 
         if 'winopen.xul' in url:
             self.buildRemoteTwinopen()
@@ -665,8 +663,8 @@ the highest value.
             url = url.replace('webServer=', 'webServer=%s' % self.config['webserver'])
 
             # Take care of the robocop based tests
-            url = url.replace('class org.mozilla.fennec.tests', 'class %s.tests' % self.config['browser_path'])
-            return url
+            url = url.replace('org.mozilla.fennec', self.config['browser_path'])
+        return url
 
     def buildRemoteManifest(self, manifestName):
         """
