@@ -15,7 +15,8 @@ branch_map = {}
 branch_map['Try'] = {'pgo': 23, 'nonpgo': 113}
 branch_map['Firefox'] = {'pgo': 1, 'nonpgo': 94}
 branch_map['Inbound'] = {'pgo': 63, 'nonpgo': 131}
-branches = ['Try', 'Firefox', 'Inbound']
+branch_map['Cedar'] = {'pgo': 26, 'nonpgo': 26}
+branches = ['Try', 'Firefox', 'Inbound', 'Cedar']
 
 # TODO: pull test names and reverse_tests from test.py in the future
 test_map = {}
@@ -23,17 +24,23 @@ test_map['tdhtmlr'] = {'id':220, 'tbplname': 'tdhtmlr_paint'}
 test_map['tdhtmlr_nochrome'] = {'id': 221, 'tbplname': 'tdhtmlr_nochrome_paint'}
 test_map['ts_places_med'] = {'id': 53, 'tbplname': 'ts_places_generated_med'}
 test_map['ts_places_max'] = {'id': 54, 'tbplname': 'ts_places_generated_max'}
+test_map['tspaint_places_med'] = {'id': 226, 'tbplname': 'tspaint_places_generated_med'}
+test_map['tspaint_places_max'] = {'id': 227, 'tbplname': 'tspaint_places_generated_max'}
 test_map['dromaeo_css'] = {'id': 72, 'tbplname': 'dromaeo_css'}
 test_map['dromaeo_dom'] = {'id': 73, 'tbplname': 'dromaeo_dom'}
+test_map['kraken'] = {'id': 232, 'tbplname': 'kraken'}
+test_map['sunspider'] = {'id': 228, 'tbplname': 'sunspider'}
+test_map['v8'] = {'id': 230, 'tbplname': 'v8_7'}
 test_map['tscrollr'] = {'id': 222, 'tbplname': 'tscrollr_paint'}
 test_map['a11yr'] = {'id': 223, 'tbplname': 'a11yr_paint'}
 test_map['ts_paint'] = {'id': 83, 'tbplname': 'ts_paint'}
 test_map['tpaint'] = {'id': 82, 'tbplname': 'tpaint'}
 test_map['tsvgr'] = {'id': 224, 'tbplname': 'tsvgr'}
 test_map['tsvgr_opacity'] = {'id': 225, 'tbplname': 'tsvgr_opacity'}
+test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
 #tests['tp5r_paint'] = 139
 test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
-tests = ['tdhtmlr', 'tdhtmlr_nochrome', 'ts_places_med', 'ts_places_max', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n']
+tests = ['tdhtmlr', 'tresize', 'tdhtmlr_nochrome', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'sunspider', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n']
 
 reverse_tests = ['dromaeo_css', 'dromaeo_dom']
 
