@@ -11,7 +11,7 @@ except IOError, OSError:
 version = "0.0"
 
 dependencies = ['PyYAML',
-                'mozdevice == 0.9',
+                'mozdevice == 0.12',
                 'mozhttpd == 0.4',
                 'mozinfo == 0.4',
                 'httplib2',
