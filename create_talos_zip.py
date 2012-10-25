@@ -17,8 +17,8 @@ import zipfile
 here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, 'talos')
 
-# use mozhttpd 0.4 excplitly
-mozhttpd_src = 'https://raw.github.com/mozilla/mozbase/mozhttpd-0.4/'
+# use mozhttpd 0.5 excplitly
+mozhttpd_src = 'https://raw.github.com/mozilla/mozbase/mozhttpd-0.5/'
 mozhttpd_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
                   ('mozhttpd/mozhttpd/iface.py', 'iface.py')]
 mozhttpd = [(mozhttpd_src + src, destination) for src, destination in mozhttpd_files]
