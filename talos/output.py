@@ -420,8 +420,8 @@ class DatazillaOutput(Output):
                             results.setdefault(test.name(), []).extend(val)
                         else:
                             results.setdefault(page, []).extend(val)
-                    for result, values in results.items():
-                        res.add_test_results(suite, result, values)
+                for result, values in results.items():
+                    res.add_test_results(suite, result, values)
 
             # counters results_aux data
             for cd in test.all_counter_results:
