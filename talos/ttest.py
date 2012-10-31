@@ -107,6 +107,8 @@ class TTest(object):
                 platform_type = 'win_'
             elif '6.1' in platform.version(): #w7
                 platform_type = 'w7_'
+            elif '6.2' in platform.version(): #w8
+                platform_type = 'w8_'
             else:
                 raise talosError('unsupported windows version')
             import cmanager_win32
