@@ -28,7 +28,7 @@ class TalosResults(object):
         self.results = []
         self.filters = filters
         self.test_name_extension = test_name_extension
-        self.remote = False
+        self.remote = remote
 
         # info needed for graphserver
         self.title = title

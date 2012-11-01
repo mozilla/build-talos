@@ -45,7 +45,7 @@ class FFProcess(object):
         processes_to_kill = filter(lambda n: n, ([process_name, child_process] +
                                                  self.extra_prog))
         utils.debug("Terminating: %s" % ", ".join(str(p) for p in processes_to_kill))
-        terminate_result = self.TerminateAllProcesses(browser_wait, processes_to_kill)
+        terminate_result = self.TerminateAllProcesses(browser_wait, *processes_to_kill)
         #check if anything is left behind
         if self.checkAllProcesses(process_name, child_process):
             #this is for windows machines.  when attempting to send kill messages to win processes the OS

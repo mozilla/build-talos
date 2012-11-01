@@ -497,8 +497,16 @@ class DatazillaOutput(Output):
             # TODO: figure out how to not hardcode this, specifically the version !!
             # should probably come from the agent (sut/adb) and passed in
             platform = "Android"
-            version = "4.0.3"
-            processor = "arm"
+            processor = "ARMv7"
+            if 'tegra' in self.results.title:
+                version = "2.2"
+            elif 'panda' in self.results.title:
+                version = "4.0.4"
+            elif 'apcio' in self.results.title:
+                processor = "ARMv6"
+                version = "2.3"
+            else:
+                version = "unknown"
         else:
             platform = mozinfo.os
             version = mozinfo.version

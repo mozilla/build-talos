@@ -129,7 +129,7 @@ class RemoteProcess(FFProcess):
                 continue
         return processes_with_names
 
-    def TerminateAllProcesses(self, timeout, process_names):
+    def TerminateAllProcesses(self, timeout, *process_names):
         """Helper function to terminate all processes with the given process name
 
         Args:

@@ -219,11 +219,11 @@ def run_tests(configurator):
       dm.killProcess(procName)
 
   # results container
-  talos_results = TalosResults(filters=filters,
-                               title=title,
+  talos_results = TalosResults(title=title,
                                date=date,
-                               remote=browser_config['remote'],
                                browser_config=browser_config,
+                               filters=filters,
+                               remote=browser_config['remote'],
                                test_name_extension=browser_config['test_name_extension'])
 
   # results links
