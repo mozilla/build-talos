@@ -99,6 +99,15 @@ def buildCommandLine(test):
   # will just make a string for now
   return ' '.join(url)
 
+def print_logcat():
+    if os.path.exists('logcat.log'):
+        f = open('logcat.log')
+        data = f.read()
+        f.close()
+        for l in data.split('\r'):
+            # Buildbot will mark the job as failed if it finds 'ERROR'.
+            print l.replace('RROR', 'RR_R')
+
 def setup_webserver(webserver):
   """use mozhttpd to setup a webserver"""
 
@@ -244,6 +253,9 @@ def run_tests(configurator):
     testname = test['name']
     utils.stamped_msg("Running test " + testname, "Started")
 
+    if os.path.exists('logcat.log'):
+        os.unlink('logcat.log')
+
     try:
       mytest = TTest(browser_config['remote'])
       talos_results.add(mytest.runTest(browser_config, test))
@@ -251,17 +263,13 @@ def run_tests(configurator):
       utils.stamped_msg("Failed " + testname, "Stopped")
       talosError_tb = sys.exc_info()
       traceback.print_exception(*talosError_tb)
+      print_logcat()
       if httpd:
         httpd.stop()
       raise e
+
     utils.stamped_msg("Completed test " + testname, "Stopped")
-    if os.path.exists('logcat.log'):
-        f = open('logcat.log', 'r')
-        data = f.read()
-        f.close()
-        for l in data.split('\r'):
-            #Buildbot will mark the job as failed if it finds 'ERROR'.
-            print l.replace('RROR', 'RR_R')
+    print_logcat()
 
   elapsed = utils.stopTimer()
   print "cycle time: " + elapsed
