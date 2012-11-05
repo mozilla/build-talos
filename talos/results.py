@@ -404,8 +404,7 @@ class BrowserLogResults(object):
     def xperf(self, counter_results):
         """record xperf counters in counter_results dictionary"""
 
-        counters = ['main_startup_fileio', 
-                    'main_startup_netio',
+        counters = ['main_startup_netio',
                     'main_normal_fileio',
                     'main_normal_netio',
                     'main_shutdown_fileio',

@@ -55,7 +55,7 @@ class ts(TsBase):
 class ts_paint(ts):
     url = 'startup_test/tspaint_test.html?begin='
     shutdown = None
-    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
+    xperf_counters = ['main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'nonmain_shutdown_fileio', 'nonmain_shutdown_netio']
 
 class tspaint_places_generated_max(ts_paint):
     profile_path = '${talos}/places_generated_max'
@@ -151,7 +151,7 @@ class tp5n(tp):
     w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS']
     mac_counters = ['Private Bytes', 'Main_RSS']
-    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio']
+    xperf_counters = ['main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'main_shutdown_fileio', 'main_shutdown_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio']
     mobile = False # too many files to run, we will hit OOM
 
 class tdhtml(PageloaderTest):
