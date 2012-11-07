@@ -5,7 +5,7 @@ Tests for PerfConfigurator.py
 
 Classes:
     PerfConfiguratorUnitTest
-        A class inheriting from unittest.TestCase to test the 
+        A class inheriting from unittest.TestCase to test the
         PerfConfigurator class.
 
         Methods:
@@ -15,6 +15,7 @@ Classes:
 """
 
 import os
+import tempfile
 import unittest
 
 from talos.PerfConfigurator import PerfConfigurator
@@ -27,7 +28,6 @@ ffox_path = 'test/path/to/firefox'
 class PerfConfiguratorUnitTest(unittest.TestCase):
     """
     A class inheriting from unittest.TestCase to test the PerfConfigurator class.
-    
     """
 
     def test_cli(self):
@@ -47,7 +47,9 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
         example = PerfConfigurator()
 
         # parse the standard commands
-        options, args = example.parse_args(['--activeTests', 'ts', '--develop',  '-e', ffox_path, '-o', 'test.yaml'])
+        outfile = tempfile.mktemp(suffix='.yaml')
+        options, args = example.parse_args(['--activeTests', 'ts', '--develop',  '-e', ffox_path, '-o', outfile])
+        self.assertTrue(os.path.exists(outfile))
 
         # ensure that the options appropriately get set
         self.assertEqual(bool(args), False) # no arguments
@@ -66,6 +68,9 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
         self.assertEqual(content['browser_path'], ffox_path)
         self.assertEqual(content['tests'][0]['name'], 'ts')
         self.assertEqual(content['develop'], True)
+
+        # cleanup
+        os.remove(outfile)
 
 if __name__ == '__main__':
     unittest.main()
