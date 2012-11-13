@@ -3,9 +3,73 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import re
 import subprocess
 import sys
 from cmanager import CounterManager
+
+
+def xrestop(binary='xrestop'):
+    """
+    python front-end to running xrestop:
+    http://www.freedesktop.org/wiki/Software/xrestop
+
+    For each monitored process, `xrestop -m 1 -b` produces output like:
+
+    0 - Thunderbird ( PID: 2035 ):
+        res_base      : 0x1600000
+	res_mask      : 0x1fffff
+	windows       : 69
+	GCs           : 35
+	fonts         : 1
+	pixmaps       : 175
+	pictures      : 272
+	glyphsets     : 73
+	colormaps     : 0
+	passive grabs : 0
+	cursors       : 9
+	unknowns      : 42
+	pixmap bytes  : 4715737
+	other bytes   : ~13024
+	total bytes   : ~4728761
+    """
+
+    process_regex = re.compile(r'([0-9]+) - (.*) \( PID: *(.*) *\):')
+
+    args = ['-m', '1', '-b']
+    command = [binary] + args
+    process = subprocess.Popen(command,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode:
+        raise Exception("Unexpected error executing '%s':\n%s" % (subprocess.list2cmdline(command), stdout))
+
+    # process output
+    retval = {}
+    index = name = pid = None
+    for line in stdout.strip().splitlines():
+        line = line.rstrip()
+        match = process_regex.match(line)
+        if match:
+            index, name, pid = match.groups()
+            try:
+                pid = int(pid)
+            except ValueError:
+                # ignore processes without PIDs
+                index = name = pid = None
+                continue
+            index = int(index)
+            retval[pid] = dict(index=index, name=name)
+        else:
+            if not pid:
+                continue
+            counter, value = line.split(':', 1)
+            counter = counter.strip()
+            value = value.strip()
+            retval[pid][counter] = value
+
+    return retval
+
 
 def GetPrivateBytes(pids):
   """Calculate the amount of private, writeable memory allocated to a process.
@@ -56,25 +120,23 @@ def GetResidentSize(pids):
 
   return RSS
 
+
 def GetXRes(pids):
   """Returns the total bytes used by X or raises an error if total bytes is not available"""
   XRes = 0
+  xres_output = xrestop()
   for pid in pids:
-    cmdline = "xrestop -m 1 -b | grep -A 15 " + str(pid) + " | tr -d \"\n\" | sed \"s/.*total bytes.*: ~//g\""
-    try:
-      pipe = subprocess.Popen(cmdline, shell=True, stdout=-1).stdout
-      data = pipe.read()
-      pipe.close()
-    except:
-      print "Unexpected error executing '%s': %s", (cmdline, sys.exc_info())
-      raise
-    try:
-      data = float(data)
-      XRes += data
-    except:
-      print "Invalid data, not a float"
-      raise
-
+    if pid in xres_output:
+      data = xres_output[pid]['total bytes']
+      data = data.lstrip('~')  # total bytes is like '~4728761'
+      try:
+        data = float(data)
+        XRes += data
+      except ValueError:
+        print "Invalid data, not a float"
+        raise
+    else:
+      raise Exception("Could not find PID=%s in xrestop output" % pid)
   return XRes
 
 

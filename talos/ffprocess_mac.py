@@ -4,9 +4,9 @@
 
 import subprocess
 #HACK - http://www.gossamer-threads.com/lists/python/bugs/593800
-#To stop non-threadsafe popen nonsense, should be removed when we upgrade to 
+#To stop non-threadsafe popen nonsense, should be removed when we upgrade to
 #python 2.5 or later
-subprocess._cleanup = lambda: None 
+subprocess._cleanup = lambda: None
 import signal
 import os
 import time
@@ -75,7 +75,7 @@ class MacProcess(FFProcess):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
 
-    def TerminateAllProcesses(self, timeout, process_names):
+    def TerminateAllProcesses(self, timeout, *process_names):
         """Helper function to terminate all processes with the given process name
 
         Args:

@@ -65,7 +65,7 @@ class LinuxProcess(FFProcess):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
 
-    def TerminateAllProcesses(self, timeout, process_names):
+    def TerminateAllProcesses(self, timeout, *process_names):
         """Helper function to terminate all processes with the given process name
 
         Args:
