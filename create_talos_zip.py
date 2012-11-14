@@ -27,6 +27,7 @@ mozhttpd = [(mozhttpd_src + src, destination) for src, destination in mozhttpd_f
 mozinfo_src = 'https://raw.github.com/mozilla/mozbase/mozinfo-0.4/mozinfo/mozinfo/mozinfo.py'
 mozinfo = [(mozinfo_src, 'mozinfo.py')]
 
+# use mozdevice 0.15 explicitly
 mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.15/'
 mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                    ('mozdevice/mozdevice/emulator.py', 'mozdevice/emulator.py'),
