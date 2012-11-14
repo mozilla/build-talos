@@ -453,9 +453,17 @@ the highest value.
         # convert options.filters to [[filter, [args]]]
         filters = []
         _filters = self.config.get('filters', self.filters[:])
-        for filter_name in _filters:
+        for position, filter_name in enumerate(_filters):
             if isinstance(filter_name, basestring):
                 try:
+                    # Check if last filter is scalar filter
+                    # and if all the rest are series filters
+                    if position == len(_filters)-1:
+                        assert filter_name in filter.scalar_filters,\
+                               "Last filter has to be a scalar filter."
+                    else:
+                        assert filter_name in filter.series_filters,\
+                               "Any filter except the last has to be a series filter."
                     f = filter.parse(filter_name)
                 except Exception, e:
                     raise ConfigurationError("Bad value for filter '%s': %s" % (filter_name, e))

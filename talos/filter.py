@@ -139,6 +139,9 @@ def parse(filter_name):
         filter_name, args = filter_name.split(sep, 1)
         args = [convert_to_number(arg)
                 for arg in args.split(',')]
+    # check validity of filter
+    assert (filter_name in scalar_filters) or (filter_name in series_filters),\
+           "--filter value not found in filters."
     return [filter_name, args]
 
 def filters(*filter_names):
