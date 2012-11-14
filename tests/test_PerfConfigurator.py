@@ -64,7 +64,7 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # ensure that the yaml information are accurate with respect to the data given
         yaml = YAML()
-        content = yaml.read('test.yaml')
+        content = yaml.read(outfile)
         self.assertEqual(content['browser_path'], ffox_path)
         self.assertEqual(content['tests'][0]['name'], 'ts')
         self.assertEqual(content['develop'], True)
