@@ -655,7 +655,6 @@ the highest value.
             url = 'http://%s/%s' % (webserver , url)
 
         if 'winopen.xul' in url:
-            self.buildRemoteTwinopen()
             url = 'file://' + self.deviceroot + '/talos/' + url
 
         if self.remote:
@@ -793,30 +792,6 @@ the highest value.
             print "Remote Device Error: Unable to connect to remote device '%s'" % deviceip
 
         self.config['deviceroot'] = self.deviceroot
-
-    def buildRemoteTwinopen(self):
-        """
-        twinopen needs to run locally as it is a .xul file.
-        copy bits to <deviceroot>/talos and fix line to reference that
-        """
-        # XXX this should live in run_test.py or similar
-
-        if self.remote == False:
-            return
-
-        files = ('page_load_test/quit.js',
-                 'scripts/MozillaFileLogger.js',
-                 'startup_test/twinopen/winopen.xul',
-                 'startup_test/twinopen/winopen.js',
-                 'startup_test/twinopen/child-window.html')
-
-        talosRoot = self.deviceroot + '/talos/'
-        for f in files:
-            try:
-                self.testAgent.pushFile(f, talosRoot + f) == False
-            except mozdevice.DMError:
-                print ("Remote Device Error: Unable to copy twinopen file "
-                       + f + " to " + talosRoot + f)
 
     def is_remote(self, args):
         """
