@@ -61,6 +61,10 @@ class TestFilter(unittest.TestCase):
         self.assertNotEqual(type(parsed[1][0]), float)
 
         # an example with several arguments
+
+        # temporarily add foo
+        # value is lambda function to mimic filter_dict key:value pair
+        talos.filter.scalar_filters['foo'] = lambda *args: args
         parsed = talos.filter.parse('foo:10.1,2,5.0,6.')
         self.assertEquals(parsed, ['foo', [10.1, 2, 5.0, 6.0]])
         for index in (2,3):
@@ -71,6 +75,8 @@ class TestFilter(unittest.TestCase):
         self.assertRaises(ValueError, talos.filter.parse, 'foo:bar')
         self.assertRaises(ValueError, talos.filter.parse, 'foo:1,')
 
+        # delete foo again
+        del talos.filter.scalar_filters['foo']
 
 if __name__ == '__main__':
     unittest.main()

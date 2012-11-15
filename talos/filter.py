@@ -121,7 +121,7 @@ def parse(filter_name):
     or "foo:10.1,2,5.0" to return
     ['foo', [10.1, 2, 5.0]] .
     The filter name strings are returned versus the functions'
-    as the data may need to be reserialized (e.g. PerfConfigurator.py)
+    as the data may need to be reserialized (e.g. PerfConfigurator.py).
     """
 
     sep = ':'
@@ -139,6 +139,9 @@ def parse(filter_name):
         filter_name, args = filter_name.split(sep, 1)
         args = [convert_to_number(arg)
                 for arg in args.split(',')]
+    # check validity of filter
+    assert (filter_name in scalar_filters) or (filter_name in series_filters),\
+           "--filter value not found in filters."
     return [filter_name, args]
 
 def filters(*filter_names):
