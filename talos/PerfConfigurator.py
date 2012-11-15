@@ -166,8 +166,6 @@ the highest value.
         ('remote', {'flags': []}),
 
         ### remote-specific options
-        ('nativeUI', {'help': 'Run tests on Fennec with a Native Java UI instead of the XUL UI',
-                      'default': False}),
         ('deviceip', {'help': 'Device IP (when using SUTAgent)',
                       'flags': ['-r', '--remoteDevice']}),
         ('deviceport', {'help': "SUTAgent port (defaults to 20701, specify -1 to use ADB)",
@@ -343,12 +341,6 @@ the highest value.
             deviceport = self.config['deviceport']
             if deviceip or deviceport == -1:
                 self._setupRemote(deviceip, deviceport)
-
-            # For NativeUI Fennec, we are working around bug 708793 and uploading a
-            # unique machine name (defined via title) with a .n.  Currently a machine name
-            # is a 1:1 mapping with the OS+hardware
-            if self.config.pop('nativeUI') and not self.config['title'].endswith(".n"):
-                self.config['title'] = "%s.n" % self.config['title']
 
             # fix webserver for --develop mode
             if self.config.get('develop'):
