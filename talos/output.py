@@ -205,7 +205,8 @@ class GraphserverOutput(Output):
                     if not values:
                         # failed to collect any data for this counter
                         utils.stamped_msg("No results collected for: " + counterName, "Error")
-                        raise utils.talosError("Unable to proceed with missing counter '%s'" % counterName)
+# NOTE: we are not going to enforce this warning for now as this happens too frequently: bugs 803413, 802475, 805925
+#                        raise utils.talosError("Unable to proceed with missing counter '%s'" % counterName)
 
                     # counter values
                     vals = [[x, 'NULL'] for x in values]
