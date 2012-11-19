@@ -379,9 +379,6 @@ class DatazillaOutput(Output):
         - results_url : http:// or file:// URL
         """
 
-        # NOTE: temporarily turn off datazilla output until we resolve database specific issues.
-        return
-
         # print out where we're sending
         utils.noisy("Outputting datazilla results to %s" % results_url)
 
