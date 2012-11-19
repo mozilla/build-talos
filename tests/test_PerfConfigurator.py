@@ -11,14 +11,18 @@ Classes:
         Methods:
         - test_cli
         Tests PerfConfigurator command line interface.
-
+        - test_errors
+        Tests if errors and exceptions are correctly raised.
+        - assertError
+        Asserts if a specific error is raised on specific incorrect input into Perfconfigurator.
+        
 """
 
 import os
 import tempfile
 import unittest
 
-from talos.PerfConfigurator import PerfConfigurator
+from talos.PerfConfigurator import PerfConfigurator, ConfigurationError
 from talos.configuration import YAML
 
 # globals
@@ -71,6 +75,92 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # cleanup
         os.remove(outfile)
+    
+    def test_errors(self):
+        """
+        Tests if errors and exceptions are correctly raised.
+        Excludes tests for remote machines.
+        
+        """
+        self.example = PerfConfigurator()
+
+        faults = []
+        outfile = tempfile.mktemp(suffix='.yaml')
+        error_tests = {'--activeTests':{'error':ConfigurationError,
+                                        'args':['--activeTests', 'badtest', '--develop', '-e', ffox_path, "-o", outfile],
+                                        'except_fault' : 'invalid --activeTest raised an error that is not ConfigurationError',
+                                        'non_raises_fault' : 'invalid --activeTest passed test'},
+                       '--filter':{'error':ConfigurationError,
+                                   'args' : ['--activeTests', 'ts', '--develop',  '-e', ffox_path, '--filter', 'badfilter', '-o', outfile],
+                                   'except_fault' : 'invalid --filter raised an error that is not ConfigurationError',
+                                   'non_raises_fault' : 'invalid --filter passed test'},
+                       '--ignoreFirst':{'error':ConfigurationError,
+                                        'args' : ['--activeTests', 'ts', '--develop',  '-e', ffox_path, '--ignoreFirst', '--filter',
+                                                  'median', "-o", outfile],
+                                        'except_fault' : '--ignoreFirst and --filter raised an error that is not ConfigurationError',
+                                        'non_raises_fault' : '--ignoreFirst and --filter together passed test '\
+                                                             '(Should raise ConfigurationError when called together)'},
+                       '--remoteDevice':{'error':BaseException,
+                                         'args':['--activeTests', 'ts', '--develop',  '-e', ffox_path,'--remoteDevice', '0.0.0.0',
+                                                 '-o', outfile],
+                                         'except_fault':'invalid --remoteDevice raised an error that is not BaseException',
+                                         'non_raise_fault':'invalid --remoteDevice passed test'},
+                       }
+
+        # Taken from http://k0s.org/mozilla/hg/configuration/file/56db0b2b90af/tests/unit.py
+        error_msg = []
+        def error(msg):
+            error_msg.append(msg)
+        self.example.error = error
+
+        # no firefox path and no tests given
+        self.example.parse_args(args=["-o", outfile])
+        self.assertEqual(error_msg, ["Please specify --executablePath",
+                                     "No tests found; please specify --activeTests"])
+
+        for test, parameters in error_tests.items():
+            result = self.assertError(self.example, parameters)
+            if result == None:
+                pass
+            else:
+                faults.append(result)
+        
+        # in PerfConfigurator method 'tests(self, activeTests, overrides=None, global_overrides=None, counters=None)'
+        # invalid test given
+        try:
+            self.example.tests(['badtest'])
+            faults.append("example.tests(['badtest']) passed test")
+        except ConfigurationError:
+            pass
+        except:
+            faults.append("example.tests(['badtest']) raised an error that is not ConfigurationError")
+
+        # invalid overrides
+        try:
+            self.example.tests(['ts'], overrides={'ts':'not a dict'})
+            faults.append("example.tests(['ts'], overrides={'ts':'not a dict') passed test")
+        except ConfigurationError:
+            pass
+        except:
+            faults.append("example.tests(['ts'], overrides={'ts':'not a dict') raised an error that is not ConfigurationError")
+            
+        # Test to see if all errors were raised correctly
+        self.assertEqual(faults, [])
+
+        # clean-up
+        os.remove(outfile)
+
+    def assertError(self, p_configurator, error_test_dict):
+        """
+        Asserts if a specific error is raised on specific incorrect input into Perfconfigurator.
+        """
+        try:
+            options, args = p_configurator.parse_args(error_test_dict['args'])
+        except error_test_dict['error']:
+            return None
+        except:
+            return error_test_dict['except_fault']
+        return error_test_dict['non_raises_fault']   
 
 if __name__ == '__main__':
     unittest.main()
