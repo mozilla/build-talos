@@ -171,13 +171,6 @@ class v8_7(PageloaderTest):
     tpcycles = 1
     resolution = 20
 
-class sunspider(PageloaderTest):
-    """sunspider 0.9.1 test"""
-    tpmanifest = '${talos}/page_load_test/sunspider091/sunspider.manifest'
-    tpcycles = 1
-    tppagecycles = 1
-    filters = [['mean', []]]
-
 class kraken(PageloaderTest):
     """Kraken test"""
     tpmanifest = '${talos}/page_load_test/kraken/kraken.manifest'
@@ -233,7 +226,7 @@ tests = [ts_paint, ts, tsvg, tdhtml,
          tspaint_places_generated_max, tspaint_places_generated_med,
          tp4m, tp5n, tpaint, tresize,
          trobopan, tcheckerboard, tprovider, tcheck2, tcheck3,
-         dromaeo_css, dromaeo_dom, v8_7, sunspider, kraken,
+         dromaeo_css, dromaeo_dom, v8_7, kraken,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr
          ]
 test_dict = dict([(i.name(), i) for i in tests])

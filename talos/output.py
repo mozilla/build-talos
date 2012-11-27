@@ -251,7 +251,7 @@ class GraphserverOutput(Output):
         elif testname.startswith('v8_7'):
             _type = 'AVERAGE'
             average = self.v8_Metric(vals)
-        elif testname.startswith('sunspider') or testname.startswith('kraken'):
+        elif testname.startswith('kraken'):
             _type = 'AVERAGE'
             average = self.JS_Metric(vals)
 

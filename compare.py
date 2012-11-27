@@ -29,7 +29,6 @@ test_map['tspaint_places_max'] = {'id': 227, 'tbplname': 'tspaint_places_generat
 test_map['dromaeo_css'] = {'id': 72, 'tbplname': 'dromaeo_css'}
 test_map['dromaeo_dom'] = {'id': 73, 'tbplname': 'dromaeo_dom'}
 test_map['kraken'] = {'id': 232, 'tbplname': 'kraken'}
-test_map['sunspider'] = {'id': 228, 'tbplname': 'sunspider'}
 test_map['v8'] = {'id': 230, 'tbplname': 'v8_7'}
 test_map['tscrollr'] = {'id': 222, 'tbplname': 'tscrollr_paint'}
 test_map['a11yr'] = {'id': 223, 'tbplname': 'a11yr_paint'}
@@ -40,7 +39,7 @@ test_map['tsvgr_opacity'] = {'id': 225, 'tbplname': 'tsvgr_opacity'}
 test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
 #tests['tp5r_paint'] = 139
 test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
-tests = ['tdhtmlr', 'tresize', 'tdhtmlr_nochrome', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'sunspider', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n']
+tests = ['tdhtmlr', 'tresize', 'tdhtmlr_nochrome', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n']
 
 reverse_tests = ['dromaeo_css', 'dromaeo_dom']
 
