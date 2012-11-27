@@ -1,40 +1,6 @@
-# ***** BEGIN LICENSE BLOCK *****
-# Version: MPL 1.1/GPL 2.0/LGPL 2.1
-#
-# The contents of this file are subject to the Mozilla Public License Version
-# 1.1 (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
-# http://www.mozilla.org/MPL/
-#
-# Software distributed under the License is distributed on an "AS IS" basis,
-# WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-# for the specific language governing rights and limitations under the
-# License.
-#
-# The Original Code is standalone Firefox Windows performance test.
-#
-# The Initial Developer of the Original Code is Google Inc.
-# Portions created by the Initial Developer are Copyright (C) 2006
-# the Initial Developer. All Rights Reserved.
-#
-# Contributor(s):
-#   Annie Sullivan <annie.sullivan@gmail.com> (original author)
-#   Ben Hearsum    <bhearsum@wittydomain.com> (OS independence)
-#   Alice Nodelman <anodelman@mozilla.com>
-#
-# Alternatively, the contents of this file may be used under the terms of
-# either the GNU General Public License Version 2 or later (the "GPL"), or
-# the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
-# in which case the provisions of the GPL or the LGPL are applicable instead
-# of those above. If you wish to allow use of your version of this file only
-# under the terms of either the GPL or the LGPL, and not to allow others to
-# use your version of this file under the terms of the MPL, indicate your
-# decision by deleting the provisions above and replace them with the notice
-# and other provisions required by the GPL or the LGPL. If you do not delete
-# the provisions above, a recipient may use your version of this file under
-# the terms of any one of the MPL, the GPL or the LGPL.
-#
-# ***** END LICENSE BLOCK *****
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 """A generic means of running an URL based browser test
    follows the following steps
@@ -45,8 +11,6 @@
      - collects info on any counters while test runs
      - waits for a 'dump' from the browser
 """
-
-__author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
 import glob
 import mozinfo
@@ -156,24 +120,30 @@ class TTest(object):
         self._hostproc.removeDirectory(dir)
 
     def cleanupAndCheckForCrashes(self, browser_config, profile_dir):
-        cleanup_result = self._ffprocess.cleanupProcesses(browser_config['process'], 
-                                                          browser_config['child_process'], 
-                                                          browser_config['browser_wait']) 
+        """cleanup browser processes and process crashes if found"""
+
+        # cleanup processes
+        cleanup_result = self._ffprocess.cleanupProcesses(browser_config['process'],
+                                                          browser_config['child_process'],
+                                                          browser_config['browser_wait'])
+
+        # find stackwalk binary
         if platform.system() in ('Windows', 'Microsoft'):
             stackwalkpaths = ['win32', 'minidump_stackwalk.exe']
         elif platform.system() == 'Linux':
-            if platform.machine() == 'armv6l':
-                stackwalkpaths = ['maemo', 'minidump_stackwalk']
-            elif '64' in platform.architecture()[0]: #are we 64 bit?
+            if '64' in platform.architecture()[0]: #are we 64 bit?
                 stackwalkpaths = ['linux64', 'minidump_stackwalk']
             else:
                 stackwalkpaths = ['linux', 'minidump_stackwalk']
         elif platform.system() == 'Darwin':
             stackwalkpaths = ['osx', 'minidump_stackwalk']
         else:
+            # no minidump_stackwalk available for your platform
             return
         stackwalkbin = os.path.join(os.path.dirname(__file__), 'breakpad', *stackwalkpaths)
+        assert os.path.exists(stackwalkbin), "minidump_stackwalk binary not found: %s" % stackwalkbin
 
+        # look for minidumps
         found = False
         minidumpdir = os.path.join(profile_dir, 'minidumps')
         if browser_config['remote'] == True:
@@ -185,18 +155,19 @@ class TTest(object):
             except mozdevice.DMError:
                 print "Remote Device Error: Error getting crash minidumps from device"
                 raise
-        
         for dump in glob.glob(os.path.join(minidumpdir, '*.dmp')):
-            utils.noisy("Found crashdump: " + dump)
+            utils.noisy("Found crashdump: %s" % dump)
             if browser_config['symbols_path']:
+                utils.noisy("Using symbols_path: %s" % browser_config['symbols_path'])
+                assert os.path.exists(browser_config['symbols_path']), "symbols_path not found: %s" % browser_config['symbols_path']
                 nullfd = open(os.devnull, 'w')
                 cmd = [stackwalkbin, dump, browser_config['symbols_path']]
                 try:
                     subprocess.call(cmd, stderr=nullfd)
-                except:
-                    raise talosError("error executing: '%s'" % subprocess.list2cmdline(cmd))
+                except Exception, e:
+                    raise talosError("error executing: '%s': %s" % (subprocess.list2cmdline(cmd), e))
                 nullfd.close()
-            dumpSavePath = os.environ.get('MINIDUMP_SAVE_PATH', None)
+            dumpSavePath = os.environ.get('MINIDUMP_SAVE_PATH')
             if dumpSavePath:
                 shutil.move(dump, dumpSavePath)
                 utils.noisy("Saved dump as %s" % os.path.join(dumpSavePath,
@@ -206,11 +177,13 @@ class TTest(object):
             found = True
 
         if browser_config['remote'] == True:
+            # cleanup dumps on remote
             self._hostproc.removeDirectory(minidumpdir)
-   
+
         if found:
+            # raise an error if a crash has happened
             if cleanup_result:
-                raise talosError("stack found after process termination (" + cleanup_result+ ")")
+                raise talosError("stack found after process termination (%s)" % cleanup_result)
             else:
                 raise talosError("crash during run (stack found)")
 
