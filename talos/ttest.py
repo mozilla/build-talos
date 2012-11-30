@@ -321,6 +321,8 @@ class TTest(object):
                 if self.remote == True:
                     b_log = browser_config['deviceroot'] + '/' + browser_config['browser_log']
                     self._ffprocess.removeFile(b_log)
+                    # bug 816719, remove sessionstore.js so we don't interfere with talos
+                    self._ffprocess.testAgent.removeFile(os.path.join(self._ffprocess.testAgent.getDeviceRoot(), "tests/profile/sessionstore.js"))
 
                 b_cmd = self._ffprocess.GenerateBControllerCommandLine(command_line, browser_config, test_config)
                 try:
