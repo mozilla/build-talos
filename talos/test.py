@@ -103,12 +103,6 @@ class tcheck2(TsBase):
     timeout = 300
     desktop = False
 
-class tcheck3(TsBase):
-    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.fennec.tests.testCheck3 org.mozilla.roboexample.test/org.mozilla.fennec.FennecInstrumentationTestRunner'
-    cycles = 5
-    timeout = 300
-    desktop = False
-
 ### pageloader tests
 
 class PageloaderTest(Test):
@@ -225,7 +219,7 @@ class a11yr(PageloaderTest):
 tests = [ts_paint, ts, tsvg, tdhtml,
          tspaint_places_generated_max, tspaint_places_generated_med,
          tp4m, tp5n, tpaint, tresize,
-         trobopan, tcheckerboard, tprovider, tcheck2, tcheck3,
+         trobopan, tcheckerboard, tprovider, tcheck2,
          dromaeo_css, dromaeo_dom, v8_7, kraken,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr
          ]
