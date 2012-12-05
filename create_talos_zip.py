@@ -17,18 +17,15 @@ import zipfile
 here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, 'talos')
 
-# use mozhttpd 0.5 excplitly
 mozhttpd_src = 'https://raw.github.com/mozilla/mozbase/mozhttpd-0.5/'
 mozhttpd_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
                   ('mozhttpd/mozhttpd/iface.py', 'iface.py')]
 mozhttpd = [(mozhttpd_src + src, destination) for src, destination in mozhttpd_files]
 
-# use mozinfo 0.4 explicitly
 mozinfo_src = 'https://raw.github.com/mozilla/mozbase/mozinfo-0.4/mozinfo/mozinfo/mozinfo.py'
 mozinfo = [(mozinfo_src, 'mozinfo.py')]
 
-# use mozdevice 0.15 explicitly
-mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.15/'
+mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.16/'
 mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                    ('mozdevice/mozdevice/emulator.py', 'mozdevice/emulator.py'),
                    ('mozdevice/mozdevice/Zeroconf.py', 'mozdevice/Zeroconf.py'),
