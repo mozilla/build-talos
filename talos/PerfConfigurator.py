@@ -11,6 +11,7 @@ performance configuration for Talos
 import filter
 import os
 import sys
+import copy
 import test
 import utils
 from configuration import Configuration
@@ -517,14 +518,28 @@ the highest value.
         # print tests, if specified
         if options.print_tests:
             if self.config['tests']:
-                serializer = YAML()
-                serializer._write(sys.stdout, self.config['tests'])
+                # in order to not change self.config['tests']
+                config_test_copy = copy.deepcopy(self.config['tests'])
+                print '\n', '-'*80 # As a visual separator
+                for config_test in config_test_copy:
+                    # This is a hack to get rid of all the raw formatting in the YAML output
+                    # Without this, output is all over the place and many \'s present
+                    description = ' '.join(test.test_dict[config_test['name']].description().strip().split())
+                    config_test['description'] = description
+                    serializer = YAML()
+                    serializer._write(sys.stdout, config_test)
+                    print '-'*80, '\n' # As a visual separator
             else:
                 print 'Available tests:'
-                test_class_names = [test_class.name() for test_class in test.tests]
+                print '================\n'
+                test_class_names = [(test_class.name(), test_class.description()) 
+                                    for test_class in test.tests]
                 test_class_names.sort()
-                for name in test_class_names:
+                for name, description in test_class_names:                    
                     print name
+                    print '-'*len(name)
+                    print description
+                    print # Appends a single blank line to the end
             self.exit()
 
         # if no tests err out
