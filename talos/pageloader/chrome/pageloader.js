@@ -413,6 +413,7 @@ function _loadHandlerCapturing() {
   if (gTime != -1) {
     plRecordTime(gTime);
     gTime = -1;
+    recordedName = null;
     setTimeout(plNextPage, delay);
   };
 }
@@ -578,6 +579,7 @@ function plStopAll(force) {
       pageCycle = 1;
       if (cycle < NUM_CYCLES-1) {
         cycle++;
+        recordedName = null;
         setTimeout(plLoadPage, delay);
         return;
       }
