@@ -387,14 +387,6 @@ the highest value.
                 raise Configuration("Can't user resultsServer/resultsLink and results_url: use results_url instead")
             self.config['results_urls'] = ['http://%s%s' % (resultsServer, resultsLink)]
 
-        # default raw_results_url
-        # TODO: deprecate and set via invoker (buildbot, etc)
-        if not self.config.get('datazilla_urls'):
-            self.config['datazilla_urls'] = ["https://datazilla.mozilla.org/talos"]
-        # include a way to disable
-        if self.config['datazilla_urls'] == ['']:
-            self.config['datazilla_urls'] = []
-
         # BBB: remove doubly-quoted xperf values from command line
         # (needed for buildbot)
         # https://bugzilla.mozilla.org/show_bug.cgi?id=704654#c43
