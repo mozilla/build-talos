@@ -143,7 +143,6 @@ the highest value.
                                   'timeout': 3600,
                                   'tpchrome': True,
                                   'tpcycles': 10,
-                                  'tpformat': 'tinderbox',
                                   'tpmozafterpaint': False,
                                   'tpnoisy': True,
                                   'tppagecycles': 1,

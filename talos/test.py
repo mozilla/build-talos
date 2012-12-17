@@ -12,13 +12,13 @@ class Test(object):
     @classmethod
     def name(cls):
         return cls.__name__
-        
+
     @classmethod
     def description(cls):
         if cls.__doc__ == None:
             return "No documentation available yet."
         else:
-            doc = cls.__doc__      
+            doc = cls.__doc__
             description_lines = [i.strip() for i in doc.strip().splitlines()]
             return "\n".join(description_lines)
 

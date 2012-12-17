@@ -84,7 +84,6 @@ PageLoaderCmdLineHandler.prototype =
       args.startIndex = cmdLine.handleFlagWithParam("tpstart", false);
       args.endIndex = cmdLine.handleFlagWithParam("tpend", false);
       args.filter = cmdLine.handleFlagWithParam("tpfilter", false);
-      args.format = cmdLine.handleFlagWithParam("tpformat", false);
       args.useBrowserChrome = cmdLine.handleFlag("tpchrome", false);
       args.doRender = cmdLine.handleFlag("tprender", false);
       args.width = cmdLine.handleFlagWithParam("tpwidth", false);
@@ -118,7 +117,6 @@ PageLoaderCmdLineHandler.prototype =
   "  -tppagecycles n    Loop through each page n times before going onto the next page\n" +
   "  -tpstart n         Start at index n in the manifest\n" +
   "  -tpend n           End with index n in the manifest\n" +
-  "  -tpformat f1,f2,.. Report format(s) to use\n" +
   "  -tpchrome          Test with normal browser chrome\n" +
   "  -tprender          Run render-only benchmark for each page\n" +
   "  -tpwidth width     Width of window\n" +

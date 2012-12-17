@@ -70,12 +70,9 @@ def buildCommandLine(test):
   """build firefox command line options for tp tests"""
 
   # sanity check pageloader values
-  # mandatory options: tpmanifest, tpcycles, tpformat
+  # mandatory options: tpmanifest, tpcycles
   if test['tpcycles'] not in range(1, 1000):
     raise talosError('pageloader cycles must be int 1 to 1,000')
-  available_formats = ('js', 'jsfull', 'text', 'tinderbox')
-  if test['tpformat'] not in available_formats:
-    raise talosError('pageloader format not recognized. valid formats are %s' % ', '.join(available_formats))
   if test.get('tpdelay') and test['tpdelay'] not in range(1, 10000):
     raise talosError('pageloader delay must be int 1 to 10,000')
   if 'tpmanifest' not in test:
@@ -85,7 +82,7 @@ def buildCommandLine(test):
   # build pageloader command from options
   url = ['-tp', test['tpmanifest']]
   CLI_bool_options = ['tpchrome', 'tpmozafterpaint', 'tpnoisy', 'rss', 'tprender']
-  CLI_options = ['tpformat', 'tpcycles', 'tppagecycles', 'tpdelay']
+  CLI_options = ['tpcycles', 'tppagecycles', 'tpdelay']
   for key in CLI_bool_options:
       if test.get(key):
           url.append('-%s' % key)

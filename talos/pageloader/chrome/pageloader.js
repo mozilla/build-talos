@@ -14,7 +14,6 @@ var NUM_CYCLES = 5;
 var numPageCycles = 1;
 
 var pageFilterRegexp = null;
-var reportFormat = "js";
 var useBrowser = true;
 var winWidth = 1024;
 var winHeight = 768;
@@ -27,7 +26,6 @@ var start_time;
 var cycle;
 var pageCycle;
 var report;
-var renderReport;
 var noisy = false;
 var timeout = -1;
 var delay = 250;
@@ -76,7 +74,6 @@ function plInit() {
     if (args.endIndex) endIndex = parseInt(args.endIndex);
     if (args.numCycles) NUM_CYCLES = parseInt(args.numCycles);
     if (args.numPageCycles) numPageCycles = parseInt(args.numPageCycles);
-    if (args.format) reportFormat = args.format;
     if (args.width) winWidth = parseInt(args.width);
     if (args.height) winHeight = parseInt(args.height);
     if (args.filter) pageFilterRegexp = new RegExp(args.filter);
@@ -584,17 +581,8 @@ function plStopAll(force) {
         return;
       }
 
-      var formats = reportFormat.split(",");
-
-      if (!renderReport) {
-        for each (var fmt in formats)
-          dumpLine(report.getReport(fmt));
-      }
-      else {
-        dumpLine ("*************** Render report *******************");
-        for each (var fmt in formats)
-          dumpLine(renderReport.getReport(fmt));
-      }
+      /* output report */
+      dumpLine(report.getReport());
     }
   } catch (e) {
     dumpLine(e);
