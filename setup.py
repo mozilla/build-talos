@@ -14,9 +14,10 @@ dependencies = ['PyYAML',
                 'mozdevice == 0.15',
                 'mozhttpd == 0.5',
                 'mozinfo == 0.4',
+                'datazilla == 1.2',
                 'httplib2',
                 'oauth2',
-                'datazilla']
+                ]
 dependency_links = []
 
 try:
