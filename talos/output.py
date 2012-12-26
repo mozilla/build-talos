@@ -9,6 +9,7 @@ import imp
 import mozinfo
 import os
 import post_file
+import tempfile
 import time
 import urllib
 import utils
@@ -366,6 +367,15 @@ class DatazillaOutput(Output):
         self.oauth = None
         if authfile is not None:
             # get datazilla oauth credentials
+            if '://' in authfile: # authfile is a URL
+                try:
+                    contents = urllib.urlopen(authfile).read()
+                    fd, authfile = tempfile.mkstemp(suffix='.py')
+                    os.write(fd, contents)
+                    os.close(fd)
+                except Exception, e:
+                    raise utils.talosError(str(e))
+
             assert os.path.exists(authfile), "Auth file not found: %s" % authfile
             module_name = 'passwords'
             module = imp.load_source(module_name, authfile)
