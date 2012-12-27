@@ -247,6 +247,7 @@ the highest value.
         'security.enable_java': False,
         'security.fileuri.strict_origin_policy': False,
         'toolkit.telemetry.prompted': 2,
+        'toolkit.telemetry.notifiedOptOut': 2,
         'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer': True
     }
 
