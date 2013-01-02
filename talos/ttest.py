@@ -24,6 +24,7 @@ import subprocess
 import tempfile
 import time
 import utils
+import mozcrash
 
 try:
     import mozdevice
@@ -144,7 +145,6 @@ class TTest(object):
         assert os.path.exists(stackwalkbin), "minidump_stackwalk binary not found: %s" % stackwalkbin
 
         # look for minidumps
-        found = False
         minidumpdir = os.path.join(profile_dir, 'minidumps')
         if browser_config['remote'] == True:
             minidumpdir = tempfile.mkdtemp()
@@ -155,26 +155,10 @@ class TTest(object):
             except mozdevice.DMError:
                 print "Remote Device Error: Error getting crash minidumps from device"
                 raise
-        for dump in glob.glob(os.path.join(minidumpdir, '*.dmp')):
-            utils.noisy("Found crashdump: %s" % dump)
-            if browser_config['symbols_path']:
-                utils.noisy("Using symbols_path: %s" % browser_config['symbols_path'])
-                assert os.path.exists(browser_config['symbols_path']), "symbols_path not found: %s" % browser_config['symbols_path']
-                nullfd = open(os.devnull, 'w')
-                cmd = [stackwalkbin, dump, browser_config['symbols_path']]
-                try:
-                    subprocess.call(cmd, stderr=nullfd)
-                except Exception, e:
-                    raise talosError("error executing: '%s': %s" % (subprocess.list2cmdline(cmd), e))
-                nullfd.close()
-            dumpSavePath = os.environ.get('MINIDUMP_SAVE_PATH')
-            if dumpSavePath:
-                shutil.move(dump, dumpSavePath)
-                utils.noisy("Saved dump as %s" % os.path.join(dumpSavePath,
-                                                              os.path.basename(dump)))
-            else:
-                os.remove(dump)
-            found = True
+
+        found = mozcrash.check_for_crashes(minidumpdir, 
+                                           browser_config['symbols_path'], 
+                                           stackwalk_binary=stackwalkbin)
 
         if browser_config['remote'] == True:
             # cleanup dumps on remote
