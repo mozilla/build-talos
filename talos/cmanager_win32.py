@@ -23,6 +23,7 @@ class WinCounterManager(CounterManager):
       hq = win32pdh.OpenQuery()
       hc = None
       try:
+        print "TalosDebug: trying to add counter as a process type: %s" % counter
         hc = win32pdh.AddCounter(hq, path)
       except:
         win32pdh.CloseQuery(hq)
@@ -30,13 +31,18 @@ class WinCounterManager(CounterManager):
         path = win32pdh.MakeCounterPath((None, 'Memory', None, None, -1 , counter))
         hq = win32pdh.OpenQuery()
         try:
+          print "TalosDebug: not a process type, trying to add counter as a memory type: %s" % counter
           hc = win32pdh.AddCounter(hq, path)
         except:
+          print "TalosDebug: not a process type, nor a memory type: %s" % counter
           win32pdh.CloseQuery(hq)
 
       if hc:
+        print "TalosDebug: Registering and updating counter: %s(%s)" % (counter, path)
         self.registeredCounters[counter] = [hq, [(hc, path)]]
         self.updateCounterPathsForChildProcesses(counter)
+      else:
+        print "TalosDebug: No Counters to take action on: %s" % counter
 
 
   def registerCounters(self, counters):
