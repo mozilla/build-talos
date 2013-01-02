@@ -25,7 +25,7 @@ mozhttpd = [(mozhttpd_src + src, destination) for src, destination in mozhttpd_f
 mozinfo_src = 'https://raw.github.com/mozilla/mozbase/mozinfo-0.4/mozinfo/mozinfo/mozinfo.py'
 mozinfo = [(mozinfo_src, 'mozinfo.py')]
 
-mozcrash_src = 'https://raw.github.com/mozilla/mozbase/mozcrash-0.2/mozcrash/mozcrash/mozcrash.py'
+mozcrash_src = 'https://raw.github.com/mozilla/mozbase/mozcrash-0.2.1/mozcrash/mozcrash/mozcrash.py'
 mozcrash = [(mozcrash_src, 'mozcrash.py')]
 
 mozlog_src = 'https://raw.github.com/mozilla/mozbase/master/mozlog/mozlog/logger.py'
