@@ -23,7 +23,7 @@ class WinCounterManager(CounterManager):
       hq = win32pdh.OpenQuery()
       hc = None
       try:
-        print "TalosDebug: trying to add counter as a process type: %s" % counter
+        print "trying to add counter as a process type: %s" % counter
         hc = win32pdh.AddCounter(hq, path)
       except:
         win32pdh.CloseQuery(hq)
@@ -31,18 +31,18 @@ class WinCounterManager(CounterManager):
         path = win32pdh.MakeCounterPath((None, 'Memory', None, None, -1 , counter))
         hq = win32pdh.OpenQuery()
         try:
-          print "TalosDebug: not a process type, trying to add counter as a memory type: %s" % counter
+          print "not a process type, trying to add counter as a memory type: %s" % counter
           hc = win32pdh.AddCounter(hq, path)
         except:
-          print "TalosDebug: not a process type, nor a memory type: %s" % counter
+          print "not a process type, nor a memory type: %s" % counter
           win32pdh.CloseQuery(hq)
 
       if hc:
-        print "TalosDebug: Registering and updating counter: %s(%s)" % (counter, path)
+        print "Registering and updating counter: %s(%s)" % (counter, path)
         self.registeredCounters[counter] = [hq, [(hc, path)]]
         self.updateCounterPathsForChildProcesses(counter)
       else:
-        print "TalosDebug: No Counters to take action on: %s" % counter
+        print "No Counters to take action on: %s" % counter
 
 
   def registerCounters(self, counters):
@@ -121,9 +121,15 @@ class WinCounterManager(CounterManager):
   def stopMonitor(self):
     try:
       for counter in self.registeredCounters:
+        print "in stopMonitor for counter: %s:" % counter
+        print self.registeredCounters[counter]
         for singleCounter in self.registeredCounters[counter][1]:
+          print "in stopMonitor for singleCounter: %s" % singleCounter
           win32pdh.RemoveCounter(singleCounter[0])
+          print "removeCounter successful: %s" % singleCounter[0]
         win32pdh.CloseQuery(self.registeredCounters[counter][0])
+        print "closeQuery successful: %s: %s" % (counter, self.registeredCounters[counter][0])
       self.registeredCounters.clear()
-    except:
-      print 'failed to stopMonitor'
+      print "cleared registered counters"
+    except Exception, e:
+      print 'failed to stopMonitor: %s' % e
