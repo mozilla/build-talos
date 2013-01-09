@@ -33,7 +33,6 @@ from ffprocess import FFProcess
 import os
 import time
 import tempfile
-import re
 import shutil
 from utils import talosError, testAgent
 try:
@@ -120,9 +119,8 @@ class RemoteProcess(FFProcess):
         processes_with_names = []
         for process_name in process_names:
             try:
-                procre = re.compile(process_name)
                 for pid, appname, userid in data:
-                    if procre.match(appname):
+                    if process_name == appname:
                         processes_with_names.append((pid, process_name))
             except:
                 # Might get an exception if there are no instances of the process running.
