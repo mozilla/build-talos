@@ -120,7 +120,7 @@ class TTest(object):
         # file into it.
         self._hostproc.removeDirectory(dir)
 
-    def cleanupAndCheckForCrashes(self, browser_config, profile_dir):
+    def cleanupAndCheckForCrashes(self, browser_config, profile_dir, test_name):
         """cleanup browser processes and process crashes if found"""
 
         # cleanup processes
@@ -158,7 +158,8 @@ class TTest(object):
 
         found = mozcrash.check_for_crashes(minidumpdir, 
                                            browser_config['symbols_path'], 
-                                           stackwalk_binary=stackwalkbin)
+                                           stackwalk_binary=stackwalkbin,
+                                           test_name=test_name)
 
         if browser_config['remote'] == True:
             # cleanup dumps on remote
@@ -218,7 +219,6 @@ class TTest(object):
         utils.debug("operating with platform_type : " + self.platform_type)
         counters = test_config.get(self.platform_type + 'counters', [])
         resolution = test_config['resolution']
-        all_results = []
         utils.setEnvironmentVars(browser_config['env'])
         utils.setEnvironmentVars({'MOZ_CRASHREPORTER_NO_REPORT': '1'})
 
@@ -377,7 +377,7 @@ class TTest(object):
                     time.sleep(browser_config['browser_wait'])
 
                 #clean up any stray browser processes
-                self.cleanupAndCheckForCrashes(browser_config, profile_dir)
+                self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
                 #clean up the bcontroller process
                 timer = 0
                 while ((process.poll() is None) and timer < browser_config['browser_wait']):
@@ -407,7 +407,7 @@ class TTest(object):
 
                 if profile_dir:
                     try:
-                        self.cleanupAndCheckForCrashes(browser_config, profile_dir)
+                        self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
                     except talosError:
                         pass
 
