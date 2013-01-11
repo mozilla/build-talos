@@ -195,7 +195,11 @@ class RemoteProcess(FFProcess):
             outputFile = self.rootdir + self.dirSlash + "process.txt"
             cmd += " > " + outputFile
         try:
-            if (self.testAgent.fireProcess(cmd) is None):
+            cmds = cmd.split()
+            waitTime = 30
+            if cmds[0] == 'am' and cmds[1] == "instrument":
+                waitTime = 0
+            if (self.testAgent.fireProcess(cmd, maxWaitTime=waitTime) is None):
                 return None
             handle = outputFile
 

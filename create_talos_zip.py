@@ -31,7 +31,7 @@ mozcrash = [(mozcrash_src, 'mozcrash.py')]
 mozlog_src = 'https://raw.github.com/mozilla/mozbase/master/mozlog/mozlog/logger.py'
 mozlog = [(mozlog_src, 'mozlog.py')]
 
-mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.16/'
+mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.19/'
 mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                    ('mozdevice/mozdevice/emulator.py', 'mozdevice/emulator.py'),
                    ('mozdevice/mozdevice/Zeroconf.py', 'mozdevice/Zeroconf.py'),
