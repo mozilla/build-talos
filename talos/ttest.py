@@ -312,7 +312,7 @@ class TTest(object):
                 try:
                     process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
                 except:
-                    raise talosError("error executing browser command line '%s': %s" % (subprocess.list2cmdline(cmd), sys.exc_info()[0]))
+                    raise talosError("error executing browser command line '%s': %s" % (subprocess.list2cmdline(b_cmd), sys.exc_info()[0]))
 
                 #give browser a chance to open
                 # this could mean that we are losing the first couple of data points
