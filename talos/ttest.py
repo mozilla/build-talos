@@ -163,6 +163,7 @@ class TTest(object):
 
         if browser_config['remote'] == True:
             # cleanup dumps on remote
+            self._ffprocess.testAgent.removeDir(remoteminidumpdir)
             self._hostproc.removeDirectory(minidumpdir)
 
         if found:
