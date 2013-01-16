@@ -19,6 +19,11 @@ import time
 import utils
 import csv
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 __all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'BrowserLogResults', 'main']
 
 class TalosResults(object):
@@ -68,6 +73,7 @@ class TalosResults(object):
         """
 
         utils.noisy("Outputting talos results => %s" % output_formats)
+        tbpl_output = {}
         try:
 
             for key, urls in output_formats.items():
@@ -75,7 +81,7 @@ class TalosResults(object):
                 _output = output.formats[key](self, **options)
                 results = _output()
                 for url in urls:
-                    _output.output(results, url)
+                    _output.output(results, url, tbpl_output)
 
         except utils.talosError, e:
             # print to results.out
@@ -87,6 +93,8 @@ class TalosResults(object):
                 pass
             print '\nFAIL: %s' % e.msg.replace('\n', '\nRETURN:')
             raise e
+
+        print "TinderboxPrint: TalosResult: %s" % json.dumps(tbpl_output)
 
 
 class TestResults(object):
@@ -129,7 +137,7 @@ class TestResults(object):
             self.format = results.format
 
         self.results.append(results)
-            
+
         if counter_results:
             self.all_counter_results.append(counter_results)
 

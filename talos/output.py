@@ -51,7 +51,7 @@ class Output(object):
         """return list of results strings"""
         raise NotImplementedError("Abstract base class")
 
-    def output(self, results, results_url):
+    def output(self, results, results_url, tbpl_output):
         """output to the results_url
         - results_url : http:// or file:// URL
         - results : list of results
@@ -62,7 +62,7 @@ class Output(object):
         results_scheme, results_server, results_path, _, _ = results_url_split
 
         if results_scheme in ('http', 'https'):
-            self.post(results, results_server, results_path, results_scheme)
+            self.post(results, results_server, results_path, results_scheme, tbpl_output)
         elif results_scheme == 'file':
             try:
                 f = file(results_path, 'w')
@@ -75,7 +75,7 @@ class Output(object):
         else:
             raise NotImplementedError("%s: %s - only http://, https://, and file:// supported" % (self.__class__.__name__, results_url))
 
-    def post(self, results, server, path, scheme):
+    def post(self, results, server, path, scheme, tbpl_output):
         raise NotImplementedError("Abstract base class")
 
     @classmethod
@@ -139,6 +139,7 @@ class Output(object):
         results = [i for i, j in val_list]
         utils.noisy("javascript benchmark")
         return sum(results)
+
 
 class GraphserverOutput(Output):
 
@@ -208,6 +209,7 @@ class GraphserverOutput(Output):
                         utils.stamped_msg("No results collected for: " + counterName, "Error")
 # NOTE: we are not going to enforce this warning for now as this happens too frequently: bugs 803413, 802475, 805925
 #                        raise utils.talosError("Unable to proceed with missing counter '%s'" % counterName)
+# (jhammel: we probably should do this in e.g. results.py vs in graphserver-specific code anyway)
 
                     # counter values
                     vals = [[x, 'NULL'] for x in values]
@@ -279,20 +281,19 @@ class GraphserverOutput(Output):
     def process_Request(self, post):
         """get links from the graphserver response"""
         links = ""
-        lines = post.split('\n')
-        for line in lines:
+        for line in post.splitlines():
             if line.find("RETURN\t") > -1:
                 line = line.replace("RETURN\t", "")
-                links +=  line+ '\n'
+                links += line + '\n'
             utils.debug("process_Request line: %s" % line)
         if not links:
             raise utils.talosError("send failed, graph server says:\n%s" % post)
         return links
 
-    def post(self, results, server, path, scheme):
+    def post(self, results, server, path, scheme, tbpl_output):
         """post results to the graphserver"""
 
-        links = ''
+        links = []
         wait_time = 5 # number of seconds between each attempt
 
         for index, data_string in enumerate(results):
@@ -302,7 +303,7 @@ class GraphserverOutput(Output):
             while times < self.retries:
                 utils.noisy("Posting result %d of %d to %s://%s%s, attempt %d" % (index, len(results), scheme, server, path, times))
                 try:
-                    links += self.process_Request(post_file.post_multipart(server, path, files=[("filename", "data_string", data_string)]))
+                    links.append(self.process_Request(post_file.post_multipart(server, path, files=[("filename", "data_string", data_string)])))
                     break
                 except utils.talosError, e:
                     msg = e.msg
@@ -314,48 +315,57 @@ class GraphserverOutput(Output):
             else:
                 raise utils.talosError("Graph server unreachable (%d attempts)\n%s" % (self.retries, msg))
 
-        if not links:
-            # you're done
-            return links
-        lines = links.split('\n')
+        # add TBPL output
+        self.add_tbpl_output(links, tbpl_output, server, scheme)
 
-        # print graph results
-        self.results_from_graph(lines, server)
 
-        # return links from graphserver
-        return links
+    def add_tbpl_output(self, links, tbpl_output, server, scheme):
+        """
+        add graphserver links such that TBPL can parse them.
+        graphserver returns a response like:
 
-    def results_from_graph(self, lines, results_server):
-        """print results from graphserver POST submission"""
-        # For each result, outputs something like:
-        # RETURN: <a href='http://graphs.mozilla.org/graph.html#tests=[[220,131,1]]'>tdhtmlr_paint: 619.03</a>
+          'tsvgr\tgraph.html#tests=[[224,113,14]]\ntsvgr\t2965.75\tgraph.html#tests=[[224,113,14]]\n'
 
-        url_format = "http://%s/%s"
-        link_format= "<a href=\'%s\'>%s</a>"
-        results = ''
+        for each ts posted (tsvgr, in this case)
+        """
 
-        for line in lines:
-            if not line:
-                continue
-            linkvalue = -1
-            linkdetail = ""
-            values = line.split("\t")
-            linkName = values[0]
-            if len(values) == 2:
-                linkdetail = values[1]
-            else:
-                linkvalue = float(values[1])
-                linkdetail = values[2]
-            if linkvalue < 0:
-                continue
-            if self.isMemoryMetric(linkName):
-                linkName += ": " + filesizeformat(linkvalue)
-            else:
-                linkName += ": %s" % linkvalue
-            url = url_format % (results_server, linkdetail)
-            link = link_format % (url, linkName)
-            results += "\nRETURN: " + link
-        print results
+        url_format = "%s://%s/%s"
+
+        # XXX this will not work for multiple URLs :(
+        tbpl_output.setdefault('graphserver', {})
+
+        # XXX link_format to be deprecated; see
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=816634
+        link_format= '<a href=\'%s\'>%s</a>'
+
+        for response in links:
+
+            # parse the response:
+            # graphserver returns one of two responses.  For 'AVERAGE' payloads,
+            # graphserver returns a line 'RETURN\t<test name>\t<value>\t<path segment>' :
+            # http://hg.mozilla.org/graphs/file/8884ef9418bf/server/pyfomatic/collect.py#l277
+            # For 'VALUES' payloads, graphserver prepends an additional line
+            # 'RETURN\t<test name>\t<path segment>' :
+            # http://hg.mozilla.org/graphs/file/8884ef9418bf/server/pyfomatic/collect.py#l274
+            # see https://bugzilla.mozilla.org/show_bug.cgi?id=816634#c56 for a more
+            # verbose explanation
+            lines = [line.strip() for line in response.strip().splitlines()]
+            assert len(lines) in (1,2), """Should have one line for 'AVERAGE' payloads,
+two lines for 'VALUES' payloads. You received:
+%s""" % lines
+            testname, result, path = lines[-1].split()
+            if self.isMemoryMetric(testname):
+                result = filesizeformat(result)
+
+            # add it to the output
+            url = url_format % (scheme, server, path)
+            tbpl_output['graphserver'][testname] = {'url': url,
+                                                    'result': result}
+
+            # output to legacy TBPL; to be deprecated, see
+            # https://bugzilla.mozilla.org/show_bug.cgi?id=816634
+            linkName = '%s: %s' % (testname, result)
+            print 'RETURN: %s' % link_format % (url, linkName)
 
 
 class DatazillaOutput(Output):
@@ -383,7 +393,7 @@ class DatazillaOutput(Output):
             if self.oauth is None:
                 utils.noisy("File '%s' does not contain datazilla oauth information" % authfile)
 
-    def output(self, results, results_url):
+    def output(self, results, results_url, tbpl_output):
         """output to the results_url
         - results : DatazillaResults instance
         - results_url : http:// or file:// URL
@@ -397,7 +407,7 @@ class DatazillaOutput(Output):
         results_scheme, results_server, results_path, _, _ = results_url_split
 
         if results_scheme in ('http', 'https'):
-            self.post(results, results_server, results_path, results_scheme)
+            self.post(results, results_server, results_path, results_scheme, tbpl_output)
         elif results_scheme == 'file':
             f = file(results_path, 'w')
             f.write(json.dumps(results.datasets(), indent=2, sort_keys=True))
@@ -453,11 +463,12 @@ class DatazillaOutput(Output):
         collection.add_datazilla_result(res)
         return collection
 
-    def post(self, results, server, path, scheme):
+    def post(self, results, server, path, scheme, tbpl_output):
         """post the data to datazilla"""
 
         # datazilla project
         project = path.strip('/')
+        url = '%s://%s/%s' % (scheme, server, project)
 
         # oauth credentials
         oauth_key = None
@@ -486,7 +497,35 @@ class DatazillaOutput(Output):
                 # as in 'INTERNAL SERVER ERROR'
                 # https://bugzilla.mozilla.org/show_bug.cgi?id=799576
                 reason = response.reason.lower()
-                print "Error posting to %s://%s/%s: %s %s" % (scheme, server, project, response.status, reason)
+                print "Error posting to %s: %s %s" % (url, response.status, reason)
+
+        # TBPL output
+        # URLs are in the form of
+        # https://datazilla.mozilla.org/<path>/summary/<branch>/<revision>?product=Firefox&branch_version=16.0a1
+        # see https://bugzilla.mozilla.org/show_bug.cgi?id=816634#c8
+        if results.branch and results.revision:
+
+            # compute url
+            path = '/%s/summary/%s/%s' % (project, results.branch, results.revision)
+            query = '&'.join(['%s=%s' % (j, urllib.quote(getattr(results, i)))
+                              for i, j in
+                              (('build_name', 'product'),
+                               ('version', 'branch_version'))
+                              if getattr(results, i)])
+            if query:
+                query = '?' + query
+            url = '%(scheme)s://%(server)s%(path)s%(query)s' % dict(scheme=scheme,
+                                                                    server=server,
+                                                                    path=path,
+                                                                    query=query)
+
+            # build TBPL output
+            # XXX this will not work for multiple URLs :(
+            tbpl_output.setdefault('datazilla', {})
+            for dataset in results.datasets():
+                for testname in dataset['results']:
+                    tbpl_output['datazilla'][testname] = {'url': url}
+            utils.noisy("Datazilla results at %s" % url)
 
     def run_options(self, test):
         """test options for datazilla"""

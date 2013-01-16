@@ -25,36 +25,54 @@ from utils import talosError
 here = os.path.dirname(os.path.realpath(__file__))
 
 def browserInfo(browser_config, devicemanager=None):
-  """Get the buildid and sourcestamp from the application.ini (if it exists)
-  """
+  """Get the buildid and sourcestamp from the application.ini (if it exists)"""
+  # XXX this should probably be moved to PerfConfigurator.py
+
   config = ConfigParser.RawConfigParser()
   appIniFileName = "application.ini"
   appIniPath = os.path.join(os.path.dirname(browser_config['browser_path']), appIniFileName)
-  if os.path.isfile(appIniPath) or devicemanager != None:
-    if (devicemanager != None):
-      if (browser_config['browser_path'].startswith('org.mozilla.f')):
-        remoteAppIni = '/data/data/' + browser_config['browser_path'] + '/' + appIniFileName
-      else:
-        remoteAppIni = browser_config['deviceroot'] + '/' + appIniFileName
-      if not os.path.isfile('remoteapp.ini'):
-        devicemanager.getFile(remoteAppIni, 'remoteapp.ini')
-      config.read('remoteapp.ini')
-    else:
-      config.read(appIniPath)
 
-    if not browser_config.get('buildid'):
-      browser_config['buildid'] = config.get('App', 'BuildID')
-    if browser_config.get('repository', 'NULL') == 'NULL':
-      browser_config['repository'] = config.get('App', 'SourceRepository')
-    if browser_config.get('sourcestamp', 'NULL') == 'NULL':
-      browser_config['sourcestamp'] = config.get('App', 'SourceStamp')
-    if not browser_config.get('browser_name'):
-      browser_config['browser_name'] = config.get('App', 'Name')
-    if not browser_config.get('browser_version'):
-      browser_config['browser_version'] = config.get('App', 'Version')
-  if not (('repository' in browser_config) and ('sourcestamp' in browser_config)):
-    browser_config['repository'] = 'NULL'
-    browser_config['sourcestamp'] = 'NULL'
+  # keys for various browser info
+  keys = {'buildid': ('App', 'BuildID'),
+          'repository': ('App', 'SourceRepository'),
+          'sourcestamp': ('App', 'SourceStamp'),
+          'browser_name': ('App', 'Name'),
+          'browser_version': ('App', 'Version')}
+
+  # defaults (of 'NULL') for browser_info keys
+  # XXX https://bugzilla.mozilla.org/show_bug.cgi?id=769082
+  defaults = {'repository': 'NULL', 'sourcestamp': 'NULL'}
+
+  # fetch application.ini from remote
+  if devicemanager:
+    if not os.path.isfile('remoteapp.ini'):
+      if browser_config['browser_path'].startswith('org.mozilla.f'): # mobile Firefox/fennec
+        remoteAppIni = '/data/data/%s/%s' % (browser_config['browser_path'], appIniFileName)
+      else:
+        remoteAppIni = '/%s/%s' % (browser_config['deviceroot'], appIniFileName)
+      devicemanager.getFile(remoteAppIni, 'remoteapp.ini')
+    appIniPath = 'remoteapp.ini'
+
+  if os.path.isfile(appIniPath):
+
+    # read from application.ini
+    config.read(appIniPath)
+
+    # fill out browser_config data
+    for key in keys:
+      value = browser_config.get(key)
+      if ((key in defaults and value == defaults[key])
+          or (key not in defaults and not value)):
+        browser_config[key] = config.get(*keys[key])
+        utils.noisy("Reading '%s' from %s => %s" % (key, appIniPath, browser_config[key]))
+  else:
+    utils.noisy("browserInfo: '%s' does not exist" % appIniPath)
+
+  # ensure these values are set
+  # XXX https://bugzilla.mozilla.org/show_bug.cgi?id=769082
+  for key, default in defaults.items():
+    browser_config.setdefault(key, default)
+
   return browser_config
 
 def useBaseTestDefaults(base, tests):
