@@ -427,7 +427,7 @@ class DatazillaOutput(Output):
         res = DatazillaResult()
 
         for test in self.results.results:
-            suite = "Talos %s" % test.name()
+            suite = "%s" % test.name()
             res.add_testsuite(suite, options=self.run_options(test))
 
             # serialize test results
@@ -523,8 +523,7 @@ class DatazillaOutput(Output):
             # XXX this will not work for multiple URLs :(
             tbpl_output.setdefault('datazilla', {})
             for dataset in results.datasets():
-                for testname in dataset['results']:
-                    tbpl_output['datazilla'][testname] = {'url': url}
+                tbpl_output['datazilla'][dataset['testrun']['suite']] = {'url': url}
             utils.noisy("Datazilla results at %s" % url)
 
     def run_options(self, test):
