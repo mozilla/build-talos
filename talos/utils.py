@@ -102,6 +102,17 @@ class talosError(Exception):
   def __str__(self):
     return repr(self.msg)
 
+class talosCrash(Exception):
+    """Exception type where we want to report a crash and stay 
+       compatible with tbpl while allowing us to continue on.
+
+       https://bugzilla.mozilla.org/show_bug.cgi?id=829734
+    """
+  def __init__(self, msg):
+    self.msg = msg
+  def __str__(self):
+    return repr(self.msg)
+
 def writeConfigFile(obj, vals):
   retVal = ""
   if (vals == []):

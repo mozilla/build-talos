@@ -33,7 +33,7 @@ except:
     # still support
     pass
 
-from utils import talosError
+from utils import talosError, talosCrash
 from ffprocess_linux import LinuxProcess
 from ffprocess_win32 import Win32Process
 from ffprocess_mac import MacProcess
@@ -167,11 +167,7 @@ class TTest(object):
             self._hostproc.removeDirectory(minidumpdir)
 
         if found:
-            # raise an error if a crash has happened
-            if cleanup_result:
-                raise talosError("stack found after process termination (%s)" % cleanup_result)
-            else:
-                raise talosError("crash during run (stack found)")
+            raise talosCrash()
 
     def setupRobocopTests(self, browser_config, profile_dir):
         try:
@@ -205,6 +201,32 @@ class TTest(object):
         except mozdevice.DMError:
             print "Remote Device Error: Error copying files for robocop setup"
             raise
+
+
+    def testCleanup(self, browser_config, profile_dir, test_config, cm, temp_dir):
+        try:
+            if cm:
+                cm.stopMonitor()
+
+            if os.path.isfile(browser_config['browser_log']):
+                results_file = open(browser_config['browser_log'], "r")
+                results_raw = results_file.read()
+                results_file.close()
+                utils.noisy(results_raw)
+
+            if profile_dir:
+                try:
+                    self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
+                except talosError:
+                    # ignore this error since we have already checked for crashes earlier
+                    pass
+
+            if temp_dir:
+                self.cleanupProfile(temp_dir)
+        except talosError, te:
+            utils.debug("cleanup error: " + te.msg)
+        except:
+            utils.debug("unknown error during cleanup")
 
     def runTest(self, browser_config, test_config):
         """
@@ -395,27 +417,11 @@ class TTest(object):
             # return results
             return test_results
 
-        except:
-            try:
-                if 'cm' in vars():
-                    cm.stopMonitor()
-
-                if os.path.isfile(browser_config['browser_log']):
-                    results_file = open(browser_config['browser_log'], "r")
-                    results_raw = results_file.read()
-                    results_file.close()
-                    utils.noisy(results_raw)
-
-                if profile_dir:
-                    try:
-                        self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
-                    except talosError:
-                        pass
-
-                if vars().has_key('temp_dir'):
-                    self.cleanupProfile(temp_dir)
-            except talosError, te:
-                utils.debug("cleanup error: " + te.msg)
-            except:
-                utils.debug("unknown error during cleanup")
+        except talosCrash, tc:
+            counters = None
+            if 'cm' in vars():
+                counters = cm
+            self.testCleanup(browser_config, profile_dir, test_config, counters, temp_dir)
+        except talosError, te:
+            self.testCleanup(browser_config, profile_dir, test_config, counters, temp_dir)
             raise

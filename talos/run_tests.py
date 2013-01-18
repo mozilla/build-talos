@@ -273,8 +273,13 @@ def run_tests(configurator):
 
     try:
       mytest = TTest(browser_config['remote'])
-      talos_results.add(mytest.runTest(browser_config, test))
+      if mytest:
+        talos_results.add(mytest.runTest(browser_config, test))
+      else:
+        utils.stamped_msg("Error found while running %s" % testname, "Error")
     except talosError, e:
+      # NOTE: if we get into this condition, talos has an internal problem and cannot continue
+      #       this will prevent future tests from running
       utils.stamped_msg("Failed " + testname, "Stopped")
       talosError_tb = sys.exc_info()
       traceback.print_exception(*talosError_tb)
