@@ -416,10 +416,9 @@ class BrowserLogResults(object):
                     'main_startup_netio',
                     'main_normal_fileio',
                     'main_normal_netio',
-                    'main_shutdown_fileio',
-                    'main_shutdown_netio',
                     'nonmain_startup_fileio', 
-                    'nonmain_normal_fileio']
+                    'nonmain_normal_fileio',
+                    'nonmain_normal_netio']
 
         if not set(counters).intersection(counter_results.keys()):
             # no xperf counters to accumulate
