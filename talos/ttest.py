@@ -253,6 +253,7 @@ class TTest(object):
         utils.setEnvironmentVars({"LD_LIBRARY_PATH" : os.path.dirname(browser_config['browser_path'])})
 
         profile_dir = None
+        temp_dir = None
 
         try:
             running_processes = self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process'])
