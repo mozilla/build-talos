@@ -233,6 +233,12 @@ class tp5n(tp):
     xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio', 'nonmain_normal_netio']
     mobile = False # too many files to run, we will hit OOM
 
+class tp5o(tp5n):
+    """
+    Derived from the tp5n pageset, this is the 49 most reliable webpages.
+    """
+    tpmanifest = '${talos}/page_load_test/tp5n/tp5o.manifest'
+
 class tdhtml(PageloaderTest):
     """
     Tests which measure the time to cycle through a set of DHTML test pages.
@@ -370,7 +376,7 @@ class a11yr(PageloaderTest):
 # global test data
 tests = [ts_paint, ts, tsvg, tdhtml,
          tspaint_places_generated_max, tspaint_places_generated_med,
-         tp4m, tp5n, tpaint, tresize,
+         tp4m, tp5n, tp5o, tpaint, tresize,
          trobopan, tcheckerboard, tprovider, tcheck2,
          dromaeo_css, dromaeo_dom, v8_7, kraken,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr
