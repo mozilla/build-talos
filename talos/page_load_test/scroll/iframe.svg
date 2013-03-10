@@ -15,7 +15,7 @@
 
 	  function iframeLoad() {
 	    if (parentLoadedFirst) {
-	      doScroll();
+				testScroll(document.getElementById("ifrm").contentWindow, 10);
 	    } else {
 	      iframeLoadedFirst = true;
 	    }
@@ -23,7 +23,7 @@
 	  
 	  window.onload = function() {
 	    if (iframeLoadedFirst) {
-	      doScroll();
+				testScroll(document.getElementById("ifrm").contentWindow, 10);
 	    } else {
 	      parentLoadedFirst = true;
 	    }
@@ -33,5 +33,6 @@
     <iframe onload="iframeLoad();" id="ifrm" width="99%" height="99%" xmlns="http://www.w3.org/1999/xhtml" src="drac.htm"/>
   </foreignObject>
   <!-- this has to come after the iframe for some reason -->
-  <script type="text/javascript" xlink:href="scroll-frame.js"/>	
+	<script type="text/javascript" xlink:href="../../scripts/talos-debug.js"/>
+	<script type="text/javascript" xlink:href="scroll-test.js"/>
 </svg>
