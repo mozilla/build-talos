@@ -1,6 +1,3 @@
-const nsIAccessible = Components.interfaces.nsIAccessible;
-const nsIDOMNode = Components.interfaces.nsIDOMNode;
-
 gAccRetrieval = 0;
 
 // Detect if we are on older branches that don't have specialpowers enabled talos available
@@ -10,6 +7,17 @@ try {
     useSpecialPowers = false;
 } catch (ex) {
   useSpecialPowers = false;
+}
+
+// Make sure not to touch Components before potentially invoking enablePrivilege,
+// because otherwise it won't be there.
+if (useSpecialPowers) {
+  nsIAccessible = SpecialPowers.Ci.nsIAccessible;
+  nsIDOMNode = SpecialPowers.Ci.nsIDOMNode;
+} else {
+  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+  nsIAccessible = Components.interfaces.nsIAccessible;
+  nsIDOMNode = Components.interfaces.nsIDOMNode;
 }
 
 function initAccessibility()
