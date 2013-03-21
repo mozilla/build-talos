@@ -75,6 +75,18 @@ class XtalosOptions(optparse.OptionParser):
                         help="Name of the yaml config file with test run and browser information")
         defaults["configFile"] = None
 
+        self.add_option("-w", "--whitelist-file", dest="whitelist_file",
+                        help="Name of whitelist file")
+        defaults["whitelist_file"] = None
+
+        self.add_option("-i", "--all-stages", dest="all_stages", action="store_true",
+                        help="Include all stages in file I/O output, not just startup")
+        defaults["all_stages"] = False
+
+        self.add_option("-t", "--all-threads", dest="all_threads", action="store_true",
+                        help="Include all threads in file I/O output, not just main")
+        defaults["all_threads"] = False
+
         self.set_defaults(**defaults)
 
         self.set_usage('')

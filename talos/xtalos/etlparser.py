@@ -42,21 +42,24 @@ def filterOutHeader(data):
         if not len(row):
             continue
 
-        # Keep looking for the header (denoted by "StartHeader").
-        if row[0] == "StartHeader":
-            state = 0
+        if state < 0:
+            # Keep looking for the header (denoted by "BeginHeader").
+            if row[0] == "BeginHeader":
+                state = 0
             continue
 
-        # Eventually, we'll find the end (denoted by "EndHeader").
-        if row[0] == "EndHeader":
-            state = 1
-            continue
 
         if state == 0:
+            # Eventually, we'll find the end (denoted by "EndHeader").
+            if row[0] == "EndHeader":
+                state = 1
+                continue
+
             gHeaders[row[EVENTNAME_INDEX]] = row
             continue
 
-        state = state + 1
+        if state >= 1:
+            state = state + 1
 
         # The line after "EndHeader" is also not useful, so we want to strip that
         # in addition to the header.
@@ -74,7 +77,7 @@ def readFile(filename):
     data = filterOutHeader(data)
     return data
 
-def fileSummary(row, retVal):
+def fileSummary(row, stage, retVal):
     event = row[EVENTNAME_INDEX]
 
     # TODO: do we care about the other events?
@@ -90,17 +93,28 @@ def fileSummary(row, retVal):
     if len(row) <= fname_index:
         return
 
-    if row[fname_index] not in retVal:
-        retVal[row[fname_index]] = {"DiskReadBytes": 0, "DiskReadCount": 0, "DiskWriteBytes": 0, "DiskWriteCount": 0}
+    thread_extra = ""
+    if gThreads[row[THREAD_ID_INDEX]] == "main":
+        thread_extra = " (main)"
+    key_tuple = (row[fname_index], "%s%s" % (row[THREAD_ID_INDEX], thread_extra), stages[stage])
+    total_tuple = (row[fname_index], "%s%s" % (row[THREAD_ID_INDEX], thread_extra), "all")
+
+    if key_tuple not in retVal:
+        retVal[key_tuple] = {"DiskReadBytes": 0, "DiskReadCount": 0, "DiskWriteBytes": 0, "DiskWriteCount": 0}
+        retVal[total_tuple] = retVal[key_tuple]
 
     if event == "FileIoRead":
-        retVal[row[fname_index]]['DiskReadCount'] += 1
+        retVal[key_tuple]['DiskReadCount'] += 1
+        retVal[total_tuple]['DiskReadCount'] += 1
         idx = getIndex(event, DISKBYTES_COL)
-        retVal[row[fname_index]]['DiskReadBytes'] += int(row[idx], 16)
+        retVal[key_tuple]['DiskReadBytes'] += int(row[idx], 16)
+        retVal[total_tuple]['DiskReadBytes'] += int(row[idx], 16)
     elif event == "FileIoWrite":
-        retVal[row[fname_index]]['DiskWriteCount'] += 1
+        retVal[key_tuple]['DiskWriteCount'] += 1
+        retVal[total_tuple]['DiskWriteCount'] += 1
         idx = getIndex(event, DISKBYTES_COL)
-        retVal[row[fname_index]]['DiskWriteBytes'] += int(row[idx], 16)
+        retVal[key_tuple]['DiskWriteBytes'] += int(row[idx], 16)
+        retVal[total_tuple]['DiskWriteBytes'] += int(row[idx], 16)
 
 def etl2csv(xperf_path, etl_filename, debug=False):
     """
@@ -176,7 +190,45 @@ def updateStage(row, stage):
         stage = 2
     return stage
 
-def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=None, debug=False):
+def loadWhitelist(filename):
+    if not filename:
+        return
+    if not os.path.exists(filename):
+        print "Warning: xperf whitelist %s was not found" % filename
+        return
+    lines = file(filename).readlines()
+    # Expand paths
+    lines = [os.path.expandvars(elem.strip()) for elem in lines]
+    files = set()
+    dirs = set()
+    recur = set()
+    for line in lines:
+        if line.startswith("#"):
+            continue
+        elif line.endswith("\\*\\*"):
+            recur.add(line[:-4])
+        elif line.endswith("\\*"):
+            dirs.add(line[:-2])
+        else:
+            files.add(line)
+    return (files, dirs, recur)
+
+def checkWhitelist(filename, whitelist):
+    if not whitelist:
+        return False
+    if filename in whitelist[0]:
+        return True
+    if os.path.dirname(filename) in whitelist[1]:
+        return True
+    head = filename
+    while len(head) > 3: # Length 3 implies root directory, e.g. C:\
+        head, tail = os.path.split(head)
+        if head in whitelist[2]:
+            return True
+    return False
+
+def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=None,
+              whitelist_file=None, all_stages=False, all_threads=False, debug=False):
 
     # setup output file
     if outputFile:
@@ -194,7 +246,7 @@ def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=N
         if event in ["T-DCStart", "T-Start", "T-DCEnd", "T-End"]:
             trackThread(row, processID)
         elif event in ["FileIoRead", "FileIoWrite"] and row[THREAD_ID_INDEX] in gThreads:
-            fileSummary(row, files)
+            fileSummary(row, stage, files)
             trackThreadFileIO(row, io, stage)
         elif event.endswith("Event/Classic") and row[THREAD_ID_INDEX] in gThreads:
             stage = updateStage(row, stage)
@@ -202,10 +254,11 @@ def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=N
             trackThreadNetIO(row, io, stage)
 
     # remove the csv file
-    try:
-        os.remove(csvname)
-    except:
-        pass
+    if not debug:
+        try:
+            os.remove(csvname)
+        except:
+            pass
 
     output = "thread, stage, counter, value\n"
     for cntr in sorted(io.iterkeys()):
@@ -218,17 +271,28 @@ def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=N
     else:
         print output
 
-    header = "filename, readcount, readbytes, writecount, writebytes"
+    whitelist = loadWhitelist(whitelist_file)
+
+    header = "filename, tid, stage, readcount, readbytes, writecount, writebytes"
     outFile.write(header + "\n")
 
+    # Filter out stages, threads, and whitelisted files that we're not interested in
+    filekeys = filter(lambda x: (all_stages or x[2] == stages[0]) and 
+                                (all_threads or x[1].endswith("(main)")) and
+                                (all_stages and x[2] != stages[0] or 
+                                 not checkWhitelist(x[0], whitelist)),
+                      files.iterkeys())
+
     # output data
-    for row in files:
-        output = "%s, %s, %s, %s, %s" % (row,
-                                         files[row]['DiskReadCount'],
-                                         files[row]['DiskReadBytes'],
-                                         files[row]['DiskWriteCount'],
-                                         files[row]['DiskWriteBytes'])
-        outFile.write(output + "\n")
+    for row in filekeys:
+        output = "%s, %s, %s, %s, %s, %s, %s\n" % (row[0],
+                                                   row[1],
+                                                   row[2],
+                                                   files[row]['DiskReadCount'],
+                                                   files[row]['DiskReadBytes'],
+                                                   files[row]['DiskWriteCount'],
+                                                   files[row]['DiskWriteBytes'])
+        outFile.write(output)
 
     if outputFile:
         # close the file handle
@@ -241,7 +305,10 @@ def etlparser_from_config(config_file, **kwargs):
     args = {'xperf_path': 'xperf.exe',
             'etl_filename': 'output.etl',
             'outputFile': None,
-            'processID': None
+            'processID': None,
+            'whitelist_file': None,
+            'all_stages': False,
+            'all_threads': False
             }
     args.update(kwargs)
 
@@ -275,7 +342,8 @@ def main(args=sys.argv[1:]):
 
     # call API
     etlparser(options.xperf_path, options.etl_filename, options.processID,
-              options.configFile, options.outputFile,
+              options.configFile, options.outputFile, options.whitelist_file,
+              options.all_stages, options.all_threads,
               debug=options.debug_level >= xtalos.DEBUG_INFO)
 
 if __name__ == "__main__":
