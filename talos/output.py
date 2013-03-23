@@ -62,10 +62,6 @@ class Output(object):
         results_scheme, results_server, results_path, _, _ = results_url_split
 
         if results_scheme in ('http', 'https'):
-            for result in results:
-                # Bug 843533 - we are not posting tp5o results to graph server
-                if 'tp5o' in result:
-                    return
             self.post(results, results_server, results_path, results_scheme, tbpl_output)
         elif results_scheme == 'file':
             try:
