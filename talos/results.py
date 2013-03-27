@@ -420,7 +420,12 @@ class BrowserLogResults(object):
                     'nonmain_normal_fileio',
                     'nonmain_normal_netio']
 
-        if not set(counters).intersection(counter_results.keys()):
+        mainthread_counter_keys = ['readcount', 'readbytes', 'writecount',
+                                   'writebytes']
+        mainthread_counters = ['_'.join(['mainthread', counter_key])
+                               for counter_key in mainthread_counter_keys]
+
+        if not set(counters).union(set(mainthread_counters)).intersection(counter_results.keys()):
             # no xperf counters to accumulate
             return
 
@@ -452,6 +457,29 @@ class BrowserLogResults(object):
             if counter_name in counter_results:
                 counter_results.setdefault(counter_name, []).append(value)
                 self.using_xperf = True
+
+        if (set(mainthread_counters).intersection(counter_results.keys())):
+            filename = 'etl_output.csv'
+            if not os.path.exists(filename):
+                print "Warning: we are looking for xperf results file %s, and didn't find it" % filename
+                return
+
+            contents = file(filename).read()
+            lines = contents.splitlines()
+            reader = csv.reader(lines)
+            header = None
+            for row in reader:
+                row = [i.strip() for i in row]
+                if not header:
+                    # We are assuming the first row is the header and all other data is counters
+                    header = row
+                    continue
+                values = dict(zip(header, row))
+                for i, mainthread_counter in enumerate(mainthread_counters):
+                    if int(values[mainthread_counter_keys[i]]) > 0:
+                        counter_results.setdefault(mainthread_counter, []).append(
+                            [int(values[mainthread_counter_keys[i]]),
+                            values['filename']])
 
     def rss(self, counter_results):
         """record rss counters in counter_results dictionary"""

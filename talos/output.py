@@ -211,6 +211,10 @@ class GraphserverOutput(Output):
 #                        raise utils.talosError("Unable to proceed with missing counter '%s'" % counterName)
 # (jhammel: we probably should do this in e.g. results.py vs in graphserver-specific code anyway)
 
+                    # exclude counters whose values are tuples (bad for graphserver)
+                    if len(values) > 0 and isinstance(values[0], list):
+                        continue
+
                     # counter values
                     vals = [[x, 'NULL'] for x in values]
 
