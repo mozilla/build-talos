@@ -151,6 +151,11 @@ def ignore(filename, patterns):
     return False
 
 def main(args=sys.argv[1:]):
+    # Error out on Windows until bug 829690 is fixed.
+    if os.name == 'nt':
+        sys.exit("This script fails to set permissions properly for the packaged breakpad "
+                 "binaries when run on Windows (bug 829690), which causes failures when "
+                 "processing crashes. For now please run on another platform.")
 
     # list of patterns to ignore
     hgignore = os.path.join(here, '.hgignore')
