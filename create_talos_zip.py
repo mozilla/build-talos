@@ -28,6 +28,9 @@ mozinfo = [(mozinfo_src, 'mozinfo.py')]
 mozcrash_src = 'https://raw.github.com/mozilla/mozbase/mozcrash-0.5/mozcrash/mozcrash/mozcrash.py'
 mozcrash = [(mozcrash_src, 'mozcrash.py')]
 
+mozfile_src = 'https://raw.github.com/mozilla/mozbase/mozfile-0.3/mozfile/mozfile/mozfile.py'
+mozfile = [(mozfile_src, 'mozfile.py')]
+
 mozlog_src = 'https://raw.github.com/mozilla/mozbase/master/mozlog/mozlog/logger.py'
 mozlog = [(mozlog_src, 'mozlog.py')]
 
@@ -112,7 +115,7 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = mozhttpd + mozinfo + mozcrash + mozlog + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
+manifest = mozhttpd + mozinfo + mozcrash + mozfile + mozlog + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
 manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
 def download(*resources):
