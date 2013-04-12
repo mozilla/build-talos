@@ -25,7 +25,7 @@ var closeOnFinished = true;
 
 function painted() {
   window.removeEventListener("MozAfterPaint", painted, true);
-  var paintTime = (new Date()).getTime();
+  var paintTime = window.performance.now();
   dataSet[count].end = paintTime;
   setTimeout(resizeCompleted, 20);
 }
@@ -34,7 +34,7 @@ function resizeTest() {
   try {
     netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
     dims += increment;
-    var startTime = (new Date()).getTime();
+    var startTime = window.performance.now();
     dataSet[count] = {};
     dataSet[count].start = startTime;
     window.addEventListener("MozAfterPaint", painted, true);
