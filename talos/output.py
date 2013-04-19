@@ -448,10 +448,15 @@ class DatazillaOutput(Output):
                 for result, values in results.items():
                     res.add_test_results(suite, result, values)
 
-            # counters results_aux data
-            for cd in test.all_counter_results:
-                for name, vals in cd.items():
-                    res.add_auxiliary_results(suite, name, vals)
+                # counters results_aux data
+                for cd in test.all_counter_results:
+                    for name, vals in cd.items():
+                        res.add_auxiliary_results(suite, name, vals)
+            else:
+                # specific xperf_aux data
+                for cd in test.all_counter_results:
+                    for name, vals in cd.items():
+                        res.add_xperf_results(suite, name, vals)
 
         # make a datazilla test result collection
         collection = DatazillaResultsCollection(machine_name=machine['name'],
