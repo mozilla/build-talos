@@ -507,6 +507,9 @@ class DatazillaOutput(Output):
                 # https://bugzilla.mozilla.org/show_bug.cgi?id=799576
                 reason = response.reason.lower()
                 print "Error posting to %s: %s %s" % (url, response.status, reason)
+            else:
+                res = response.read()
+                print "Datazilla response is: %s" % res.lower()
 
         # TBPL output
         # URLs are in the form of
