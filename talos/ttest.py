@@ -212,7 +212,7 @@ class TTest(object):
                 results_file = open(browser_config['browser_log'], "r")
                 results_raw = results_file.read()
                 results_file.close()
-                utils.noisy(results_raw)
+                utils.info(results_raw)
 
             if profile_dir:
                 try:
@@ -224,7 +224,7 @@ class TTest(object):
             if temp_dir:
                 self.cleanupProfile(temp_dir)
         except talosError, te:
-            utils.debug("cleanup error: " + te.msg)
+            utils.debug("cleanup error: %s", te.msg)
         except:
             utils.debug("unknown error during cleanup")
 
@@ -239,7 +239,7 @@ class TTest(object):
         """
         self.initializeLibraries(browser_config)
 
-        utils.debug("operating with platform_type : " + self.platform_type)
+        utils.debug("operating with platform_type : %s", self.platform_type)
         counters = test_config.get(self.platform_type + 'counters', [])
         resolution = test_config['resolution']
         utils.setEnvironmentVars(browser_config['env'])
@@ -259,7 +259,7 @@ class TTest(object):
             running_processes = self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process'])
             if running_processes:
                 msg = " already running before testing started (unclean system)"
-                utils.debug(browser_config['process'] + msg)
+                utils.debug("%s%s", browser_config['process'], msg)
                 running_processes_str = ", ".join([('[%s] %s' % (pid, process_name)) for pid, process_name in running_processes])
                 raise talosError("Found processes still running: %s. Please close them before running talos." % running_processes_str)
 
@@ -277,7 +277,7 @@ class TTest(object):
                 # This pushes environment variables to the device, be careful of placement
                 self.setupRobocopTests(browser_config, profile_dir)
 
-            utils.debug("initialized " + browser_config['process'])
+            utils.debug("initialized %s", browser_config['process'])
 
             # setup global (cross-cycle) counters:
             # shutdown, responsiveness
@@ -323,7 +323,7 @@ class TTest(object):
                                                                         profile_dir,
                                                                         url)
 
-                utils.debug("command line: " + command_line)
+                utils.debug("command line: %s", command_line)
 
                 b_log = browser_config['browser_log']
                 if self.remote == True:
@@ -360,8 +360,10 @@ class TTest(object):
                     total_time += resolution
                     fileData = self._ffprocess.getFile(b_log)
                     if fileData and len(fileData) > 0:
-                        utils.noisy(fileData.replace(dumpResult, ''))
-                        dumpResult = fileData
+                        newResults = fileData.replace(dumpResult, '')
+                        if len(newResults.strip()) > 0:
+                            utils.info(newResults)
+                            dumpResult = fileData
 
                     # Get the output from all the possible counters
                     for count_type in counters:

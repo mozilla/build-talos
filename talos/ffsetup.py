@@ -303,9 +303,9 @@ class FFSetup(object):
             res = 1
             print match.group(1)
         else:
-            utils.noisy("Could not find %s in browser_log: %s" % (PROFILE_REGEX.pattern, log))
-            utils.noisy("Raw results:%s" % results_raw)
-            utils.noisy("Initialization of new profile failed")
+            utils.info("Could not find %s in browser_log: %s", PROFILE_REGEX.pattern, log)
+            utils.info("Raw results:%s", results_raw)
+            utils.info("Initialization of new profile failed")
         match = INFO_REGEX.search(results_raw)
         if match:
             binfo = match.group(1)

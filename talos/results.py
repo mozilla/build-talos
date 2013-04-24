@@ -72,7 +72,7 @@ class TalosResults(object):
         - output_options: a dict mapping formats to options for each format
         """
 
-        utils.noisy("Outputting talos results => %s" % output_formats)
+        utils.info("Outputting talos results => %s", output_formats)
         tbpl_output = {}
         try:
 

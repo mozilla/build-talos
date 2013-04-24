@@ -467,7 +467,7 @@ class Configuration(optparse.OptionParser):
                 if loaded_config:
                     config.append(loaded_config)
             except BaseException, e:
-                parser.error(str(e))
+                self.error(str(e))
         config.append(cli_config)
 
         missingvalues = None

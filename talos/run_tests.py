@@ -64,9 +64,9 @@ def browserInfo(browser_config, devicemanager=None):
       if ((key in defaults and value == defaults[key])
           or (key not in defaults and not value)):
         browser_config[key] = config.get(*keys[key])
-        utils.noisy("Reading '%s' from %s => %s" % (key, appIniPath, browser_config[key]))
+        utils.info("Reading '%s' from %s => %s", key, appIniPath, browser_config[key])
   else:
-    utils.noisy("browserInfo: '%s' does not exist" % appIniPath)
+    utils.info("browserInfo: '%s' does not exist", appIniPath)
 
   # ensure these values are set
   # XXX https://bugzilla.mozilla.org/show_bug.cgi?id=769082
@@ -227,8 +227,8 @@ def run_tests(configurator):
     date = int(time.mktime(time.strptime(testdate, '%a, %d %b %Y %H:%M:%S GMT')))
   else:
     date = int(time.time())
-  utils.debug("using testdate: %d" % date)
-  utils.debug("actual date: %d" % int(time.time()))
+  utils.debug("using testdate: %d", date)
+  utils.debug("actual date: %d", int(time.time()))
 
   # pull buildid & sourcestamp from browser
   try:
@@ -314,15 +314,14 @@ def main(args=sys.argv[1:]):
                     help="enable debug")
   parser.add_option('-n', '--noisy', dest='noisy',
                     action='store_true', default=False,
-                    help="enable noisy output")
+                    help="DEPRECATED: this is now the default")
   options, args = parser.parse_args(args)
 
   # set variables
+  level = 'info'
   if options.debug:
-    print 'setting debug'
-    utils.setdebug(1)
-  if options.noisy:
-    utils.setnoisy(1)
+    level = 'debug'
+  utils.startLogger(level)
 
   # run tests
   run_tests(parser)

@@ -122,22 +122,22 @@ class Output(object):
                  ('Splay', ['Splay'])]
         results = dict([(j, i) for i, j in val_list])
         scores = []
-        utils.noisy("v8 benchmark")
+        utils.info("v8 benchmark")
         for test, benchmarks in tests:
             vals = [results[benchmark] for benchmark in benchmarks]
             mean = filter.geometric_mean(vals)
             score = reference[test] / mean
             scores.append(score)
-            utils.noisy(" %s: %s" % (test, score * 100))
+            utils.info(" %s: %s", test, score * 100)
         score =  100 * filter.geometric_mean(scores)
-        utils.noisy("Score: %s" % score)
+        utils.info("Score: %s", score)
         return score
 
     @classmethod
     def JS_Metric(cls, val_list):
         """v8 benchmark score"""
         results = [i for i, j in val_list]
-        utils.noisy("javascript benchmark")
+        utils.info("javascript benchmark")
         return sum(results)
 
 
@@ -170,7 +170,7 @@ class GraphserverOutput(Output):
 
         for test in self.results.results:
 
-            utils.debug("Working with test: %s" % test.name())
+            utils.debug("Working with test: %s", test.name())
 
 
             # get full name of test
@@ -289,7 +289,7 @@ class GraphserverOutput(Output):
             if line.find("RETURN\t") > -1:
                 line = line.replace("RETURN\t", "")
                 links += line + '\n'
-            utils.debug("process_Request line: %s" % line)
+            utils.debug("process_Request line: %s", line)
         if not links:
             raise utils.talosError("send failed, graph server says:\n%s" % post)
         return links
@@ -305,7 +305,7 @@ class GraphserverOutput(Output):
             times = 0
             msg = ""
             while times < self.retries:
-                utils.noisy("Posting result %d of %d to %s://%s%s, attempt %d" % (index, len(results), scheme, server, path, times))
+                utils.info("Posting result %d of %d to %s://%s%s, attempt %d", index, len(results), scheme, server, path, times)
                 try:
                     links.append(self.process_Request(post_file.post_multipart(server, path, files=[("filename", "data_string", data_string)])))
                     break
@@ -395,7 +395,7 @@ class DatazillaOutput(Output):
             module = imp.load_source(module_name, authfile)
             self.oauth = getattr(module, 'datazillaAuth', None)
             if self.oauth is None:
-                utils.noisy("File '%s' does not contain datazilla oauth information" % authfile)
+                utils.info("File '%s' does not contain datazilla oauth information", authfile)
 
     def output(self, results, results_url, tbpl_output):
         """output to the results_url
@@ -404,7 +404,7 @@ class DatazillaOutput(Output):
         """
 
         # print out where we're sending
-        utils.noisy("Outputting datazilla results to %s" % results_url)
+        utils.info("Outputting datazilla results to %s", results_url)
 
         # parse the results url
         results_url_split = utils.urlsplit(results_url)
@@ -490,10 +490,10 @@ class DatazillaOutput(Output):
                     oauth_key = project_oauth['oauthKey']
                     oauth_secret = project_oauth['oauthSecret']
                 else:
-                    utils.noisy("%s not found for project '%s' in '%s' (found: %s)" % (required, project, self.authfile, project_oauth.keys()))
+                    utils.info("%s not found for project '%s' in '%s' (found: %s)", required, project, self.authfile, project_oauth.keys())
             else:
-                utils.noisy("No oauth credentials found for project '%s' in '%s'" % (project, self.authfile))
-        utils.noisy("datazilla: %s//%s/%s; oauth=%s" % (scheme, server, project, bool(oauth_key and oauth_secret)))
+                utils.info("No oauth credentials found for project '%s' in '%s'", project, self.authfile)
+        utils.info("datazilla: %s//%s/%s; oauth=%s", scheme, server, project, bool(oauth_key and oauth_secret))
 
         # submit the request
         req = DatazillaRequest.create(scheme, server, project, oauth_key, oauth_secret, results)
@@ -533,7 +533,7 @@ class DatazillaOutput(Output):
             tbpl_output.setdefault('datazilla', {})
             for dataset in results.datasets():
                 tbpl_output['datazilla'][dataset['testrun']['suite']] = {'url': url}
-            utils.noisy("Datazilla results at %s" % url)
+            utils.info("Datazilla results at %s", url)
 
     def run_options(self, test):
         """test options for datazilla"""

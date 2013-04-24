@@ -44,7 +44,7 @@ class FFProcess(object):
         #returns string of which process_names were terminated and with what signal
         processes_to_kill = filter(lambda n: n, ([process_name, child_process] +
                                                  self.extra_prog))
-        utils.debug("Terminating: %s" % ", ".join(str(p) for p in processes_to_kill))
+        utils.debug("Terminating: %s", ", ".join(str(p) for p in processes_to_kill))
         terminate_result = self.TerminateAllProcesses(browser_wait, *processes_to_kill)
         #check if anything is left behind
         if self.checkAllProcesses(process_name, child_process):
@@ -136,9 +136,9 @@ user_pref("capability.principal.codebase.p2.subjectName", "");
     def copyFile(self, fromfile, toDir):
         if not os.path.isfile(os.path.join(toDir, os.path.basename(fromfile))):
             shutil.copy(fromfile, toDir)
-            utils.debug("insetalled" + fromfile)
+            utils.debug("installed %s", fromfile)
         else:
-            utils.debug("WARNING: file already insetalled (" + fromfile + ")")
+            utils.debug("WARNING: file already installed (%s)", fromfile)
 
     def removeDirectory(self, dir):
         MakeDirectoryContentsWritable(dir)

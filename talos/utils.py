@@ -12,6 +12,8 @@ import time
 import urlparse
 import yaml
 import string
+import mozlog
+from mozlog import debug,info
 
 # directory of this file for use with interpolatePath()
 here = os.path.dirname(os.path.realpath(__file__))
@@ -20,7 +22,8 @@ DEBUG = 0
 NOISY = 0
 START_TIME = 0
 saved_environment = {}
-
+log_levels = {'debug': mozlog.DEBUG, 'info': mozlog.INFO}
+ 
 def startTimer():
   global START_TIME
   START_TIME = time.time()
@@ -29,45 +32,9 @@ def stopTimer():
   stop_time = time.time()
   return time.strftime("%H:%M:%S", time.gmtime(stop_time-START_TIME))
 
-def setdebug(val):
-  global DEBUG
-  DEBUG = val
-
-def setnoisy(val):
-  global NOISY
-  NOISY = val
-
-def noisy(message):
-  """Prints messages from the browser/application that are generated, otherwise
-     these are ignored.  Controlled through command line switch (-n or --noisy)
-  """
-  if NOISY == 1:
-    lines = message.splitlines()
-    counter = 1
-    for line in lines:
-      print "NOISE: " + line
-      #really silly throttling
-      if counter % 100 == 0:
-        time.sleep(1) #twisted.spread.banana.BananaError: string is too long to send (803255)
-      sys.stdout.flush()
-      counter += 1
-
-def debug(message):
-  """Prints a debug message to the console if the DEBUG switch is turned on 
-     debug switch is controlled through command line switch (-d or --debug)
-     Args:
-       message: string containing a debugging statement
-  """
-  if DEBUG == 1:
-    lines = message.splitlines()
-    counter = 1
-    for line in lines:
-      print "DEBUG: " + line
-      #really silly throttling
-      if counter % 100 == 0:
-        time.sleep(1) #twisted.spread.banana.BananaError: string is too long to send (803255)
-      sys.stdout.flush()
-      counter += 1
+def startLogger(levelChoice):
+  #declare and define global logger object to send logging messages to
+  mozlog.basicConfig(format = '%(levelname)s : %(message)s', level = log_levels[levelChoice])
 
 def stamped_msg(msg_title, msg_action):
   """Prints a message to the console with a time stamp
