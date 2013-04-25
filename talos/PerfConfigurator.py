@@ -225,6 +225,7 @@ the highest value.
         'browser.bookmarks.max_backups': 0,
         'browser.cache.disk.smart_size.enabled': False,
         'browser.cache.disk.smart_size.first_run': False,
+        'browser.chrome.dynamictoolbar': False,
         'browser.dom.window.dump.enabled': True,
         'browser.EULA.override': True,
         'browser.link.open_newwindow': 2,
