@@ -4,7 +4,7 @@ window.onload = function ()  {
 	var lastScrollTime = start;
 	var max = [0, 0];
 	var times = [];
-	var intervalId = setInterval(function () {
+    function run() {
 		lastScrollPos = window.scrollY;
 		var stepSize = 5;
 
@@ -20,7 +20,6 @@ window.onload = function ()  {
 		
 		/* stop scrolling if we're at the end */
 		if (window.scrollY == lastScrollPos) {
-			clearInterval(intervalId);
 			// For X11: screenX requests info from the server, so
 			// this waits for the server to complete the scrolling.
 			var sync = window.screenX;
@@ -29,6 +28,10 @@ window.onload = function ()  {
 			var avg = totalDuration/(window.scrollY/stepSize);
 			tpRecordTime(Math.ceil(avg*1000)); // record microseconds
 			//alert("took " + totalDuration + "ms\n" + window.scrollY + "avg:" + avg + "\n" + "max:" + max);
-		}
-	}, 10);
+		} else {
+          window.mozRequestAnimationFrame(run);
+        }
+	}
+    window.mozRequestAnimationFrame(run);
+
 }
