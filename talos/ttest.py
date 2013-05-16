@@ -167,7 +167,7 @@ class TTest(object):
             self._hostproc.removeDirectory(minidumpdir)
 
         if found:
-            raise talosCrash()
+            raise talosCrash("Found crashes after test run, terminating test")
 
     def setupRobocopTests(self, browser_config, profile_dir):
         try:
