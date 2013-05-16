@@ -189,8 +189,7 @@ the highest value.
                        'test_timeout': 3600,
                        'env': {'MOZ_CRASHREPORTER_NO_REPORT': '1',
                                'MOZ_CRASHREPORTER_SHUTDOWN': '1'},
-                       'dirs': {'chrome': '${talos}/page_load_test/chrome',
-                                'components': '${talos}/page_load_test/components'},
+                       'dirs': {},
                        'process': 'fennec',
                        'title': 'mobile',
                        'test_overrides': {'ts':
@@ -358,6 +357,10 @@ the highest value.
             fennecIDs = self.config.get('fennecIDs')
             if fennecIDs and not os.path.exists(fennecIDs):
                 raise ConfigurationError("Unable to find fennce IDs file, please ensure this file exists: %s" % fennecIDs)
+
+            # robocop based tests (which use fennecIDs) do not use or need the pageloader extension
+            if fennecIDs:
+                self.config['extensions'] = []
 
         # generic configuration validation
         Configuration.validate(self)
