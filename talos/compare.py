@@ -45,13 +45,13 @@ test_map['tsvgr_opacity'] = {'id': 225, 'tbplname': 'tsvgr_opacity'}
 test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
 test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
 test_map['tp5o'] = {'id': 255, 'tbplname': 'tp5o_paint'}
-tests = ['tdhtmlr', 'tresize', 'tdhtmlr_nochrome', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n']
+tests = ['tdhtmlr', 'tresize', 'tdhtmlr_nochrome', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n', 'tp5o']
 
-reverse_tests = ['dromaeo_css', 'dromaeo_dom']
+reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8']
 
 platform_map = {}
-platform_map['Linux'] = 14
-platform_map['Linux64'] = 15
+platform_map['Linux'] = 33 #14 - 14 is the old fedora, we are now on Ubuntu slaves
+platform_map['Linux64'] = 35 #15 - 15 is the old fedora, we are now on Ubuntu slaves
 platform_map['Win'] = 12
 platform_map['Win8'] = 31
 platform_map['WinXP'] = 1
@@ -263,7 +263,7 @@ def compareResults(revision, branch, masterbranch, startdate, enddate, platforms
                     if test_map[t]['tbplname'] in pgodzdata[p]:
                         pgodzval = pgodzdata[p][test_map[t]['tbplname']]
 
-            test_bid = branch_map[branch].nonpgo.id
+            test_bid = branch_map[branch]['nonpgo']['id']
             if p.startswith('OSX'):
                 test_bid = branch_map[branch]['pgo']['id']
 
@@ -366,13 +366,8 @@ def main():
             parser.error("ERROR: the testname '%s' you specified does not exist in '%s'" % (options.testname, tests))
 
     masterbranch = 'Firefox'
-    if options.masterbranch:
-        if options.masterbranch in branches:
-            masterbranch = branch_map[options.masterbranch]['nonpgo']['name']
-            if options.pgo:
-                masterbranch = branch_map[options.masterbranch]['pgo']['name']
-        else:
-            parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (options.masterbranch, branches))
+    if options.masterbranch and not options.masterbranch in branches:
+        parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (options.masterbranch, branches))
 
     branch = 'Try'
     if options.branch:
