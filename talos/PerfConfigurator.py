@@ -248,7 +248,22 @@ the highest value.
         'security.fileuri.strict_origin_policy': False,
         'toolkit.telemetry.prompted': 999,
         'toolkit.telemetry.notifiedOptOut': 999,
-        'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer': True
+        'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer': True,
+        'browser.safebrowsing.gethashURL': 'http://127.0.0.1/safebrowsing-dummy/gethash',
+        'browser.safebrowsing.keyURL': 'http://127.0.0.1/safebrowsing-dummy/newkey',
+        'browser.safebrowsing.updateURL': 'http://127.0.0.1/safebrowsing-dummy/update',
+        'extensions.update.url': 'http://127.0.0.1/extensions-dummy/updateURL',
+        'extensions.update.background.url': 'http://127.0.0.1/extensions-dummy/updateBackgroundURL',
+        'extensions.blocklist.url': 'http://127.0.0.1/extensions-dummy/blocklistURL',
+        'extensions.hotfix.url': 'http://127.0.0.1/extensions-dummy/hotfixURL',
+        'extensions.update.enabled': False,
+        'extensions.webservice.discoverURL': 'http://127.0.0.1/extensions-dummy/discoveryURL',
+        'extensions.getAddons.maxResults': 0,
+        'extensions.getAddons.get.url': 'http://127.0.0.1/extensions-dummy/repositoryGetURL',
+        'extensions.getAddons.getWithPerformance.url': 'http://127.0.0.1/extensions-dummy/repositoryGetWithPerformanceURL',
+        'extensions.getAddons.search.browseURL': 'http://127.0.0.1/extensions-dummy/repositoryBrowseURL',
+        'extensions.getAddons.search.url': 'http://127.0.0.1/extensions-dummy/repositorySearchURL',
+        'plugins.update.url': 'http://127.0.0.1/plugins-dummy/updateCheckURL'
     }
 
     # keys to generated self.config that are global overrides to tests
