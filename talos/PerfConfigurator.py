@@ -492,6 +492,7 @@ the highest value.
             value = self.config.pop(key, None)
             if value is not None:
                 global_overrides[key] = value
+
         # add noChrome to global overrides (HACK)
         noChrome = self.config.pop('noChrome', None)
         if noChrome:
@@ -509,6 +510,12 @@ the highest value.
         # add the tests to the configuration
         # XXX extending vs over-writing?
         self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides, counters))
+
+        if self.config.get('fennecIDs', ''):
+            # robopan is the only robocop based extension which uses roboextender
+            for test in self.config.get('tests', []):
+                if test['name'] == 'trobopan':
+                    self.config['extensions'] = ['${talos}/mobile_extensions/roboextender@mozilla.org']
 
         if self.remote:
             # fix up logfile preference
