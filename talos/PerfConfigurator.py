@@ -426,7 +426,7 @@ the highest value.
         if self.config.get('tpmozafterpaint'):
             self.config['preferences']['dom.send_after_paint_to_content'] = True
         extraPrefs = self.config.pop('extraPrefs', {})
-        extraPrefs = dict([(i, self.parsePref(j)) for i, j in extraPrefs.items()])
+        extraPrefs = dict([(i, utils.parsePref(j)) for i, j in extraPrefs.items()])
         self.config['preferences'].update(extraPrefs)
         # remove None values from preferences;
         # allows overrides
@@ -511,11 +511,10 @@ the highest value.
         # XXX extending vs over-writing?
         self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides, counters))
 
-        if self.config.get('fennecIDs', ''):
+        for test in self.config.get('tests', []):
             # robopan is the only robocop based extension which uses roboextender
-            for test in self.config.get('tests', []):
-                if test['name'] == 'trobopan':
-                    self.config['extensions'] = ['${talos}/mobile_extensions/roboextender@mozilla.org']
+            if self.config.get('fennecIDs', '') and test['name'] == 'trobopan':
+                self.config['extensions'] = ['${talos}/mobile_extensions/roboextender@mozilla.org']
 
         if self.remote:
             # fix up logfile preference
@@ -737,19 +736,6 @@ the highest value.
 
         # return new manifest
         return newManifestName
-
-    def parsePref(self, value):
-        """parse a preference value from a string"""
-        if not isinstance(value, basestring):
-            return value
-        if value.lower() == 'true':
-            return True
-        if value.lower() == 'false':
-            return False
-        try:
-            return int(value)
-        except ValueError:
-            return value
 
     def output_options(self):
         """configuration related to outputs;

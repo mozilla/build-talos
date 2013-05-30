@@ -305,3 +305,18 @@ def urlsplit(url, default_scheme='file'):
 
     # split the URL and return a list
     return [i for i in urlparse.urlsplit(url)]
+
+def parsePref(value):
+    """parse a preference value from a string"""
+    if not isinstance(value, basestring):
+        return value
+    if value.lower() == 'true':
+        return True
+    if value.lower() == 'false':
+        return False
+    try:
+        return int(value)
+    except ValueError:
+        return value
+
+

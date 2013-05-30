@@ -180,7 +180,7 @@ class PageloaderTest(Test):
             'rss', 'resolution', 'cycles',
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters', 'xperf_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
-            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters'
+            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences'
             ]
 
 class tp(PageloaderTest):
@@ -254,6 +254,7 @@ class tsvg(PageloaderTest):
     """
     tpmanifest = '${talos}/page_load_test/svg/svg.manifest'
     tpcycles = 5
+    preferences = {'layout.frame_rate': 10000}
 
 class tsvg_opacity(PageloaderTest):
     """
@@ -343,6 +344,7 @@ class tsvgr(tsvg):
     """
     tpcycles = 1
     tppagecycles = 25
+    preferences = {'layout.frame_rate': 10000}
 
 class tsvgr_opacity(tsvg_opacity):
     """

@@ -24,6 +24,7 @@ import subprocess
 import tempfile
 import time
 import utils
+import copy
 import mozcrash
 
 try:
@@ -98,12 +99,12 @@ class TTest(object):
             self._ffsetup.initializeRemoteDevice(browser_config, ffprocess)
             self._hostproc = ffprocess
 
-    def createProfile(self, profile_path, browser_config):
+    def createProfile(self, profile_path, preferences, extensions, webserver):
         # Create the new profile
         temp_dir, profile_dir = self._ffsetup.CreateTempProfileDir(profile_path,
-                                                     browser_config['preferences'],
-                                                     browser_config['extensions'],
-                                                     browser_config['webserver'])
+                                                     preferences,
+                                                     extensions,
+                                                     webserver)
         utils.debug("created profile")
         return profile_dir, temp_dir
 
@@ -270,7 +271,15 @@ class TTest(object):
 
             # make profile path work cross-platform
             test_config['profile_path'] = os.path.normpath(test_config['profile_path'])
-            profile_dir, temp_dir = self.createProfile(test_config['profile_path'], browser_config)
+
+            preferences = copy.deepcopy(browser_config['preferences'])
+            if 'preferences' in test_config and test_config['preferences']:
+                testPrefs = dict([(i, utils.parsePref(j)) for i, j in test_config['preferences'].items()])
+                preferences.update(testPrefs)
+            profile_dir, temp_dir = self.createProfile(test_config['profile_path'], 
+                                                       preferences, 
+                                                       browser_config['extensions'], 
+                                                       browser_config['webserver'])
             self.initializeProfile(profile_dir, browser_config)
 
             if browser_config['fennecIDs']:
