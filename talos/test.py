@@ -344,6 +344,16 @@ class tsvgr(tsvg):
     """
     tpcycles = 1
     tppagecycles = 25
+
+class tsvgx(tsvg):
+    """
+    Like the tsvg test this is an svg-only number that measures SVG
+    rendering performance. Unlike tsvg, this test is row-based instead
+    of column based.
+    """
+    tpmanifest = '${talos}/page_load_test/svgx/svg.manifest'
+    tpcycles = 1
+    tppagecycles = 25
     preferences = {'layout.frame_rate': 10000}
 
 class tsvgr_opacity(tsvg_opacity):
@@ -364,6 +374,16 @@ class tscrollr(PageloaderTest):
     tpcycles = 1
     tppagecycles = 25
 
+class tscrollx(PageloaderTest):
+    """
+    Like tscroll, this test does some scrolly thing. Unlike tscroll, this
+    test is row-based instead of column based.
+    """
+    tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
+    tpcycles = 1
+    tppagecycles = 25
+    preferences = {'layout.frame_rate': 10000}
+
 class a11yr(PageloaderTest):
     """
     Like a11y, this test ensures basic a11y tables and permutations do not
@@ -381,6 +401,7 @@ tests = [ts_paint, ts, tsvg, tdhtml,
          tp4m, tp5n, tp5o, tpaint, tresize,
          trobopan, tcheckerboard, tprovider, tcheck2,
          dromaeo_css, dromaeo_dom, v8_7, kraken,
-         tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr
+         tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
+         tsvgx, tscrollx
          ]
 test_dict = dict([(i.name(), i) for i in tests])
