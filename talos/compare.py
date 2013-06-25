@@ -22,7 +22,9 @@ branch_map['Inbound'] = {'pgo':    {'id': 63, 'name': 'Mozilla-Inbound'},
                          'nonpgo': {'id': 131, 'name': 'Mozilla-Inbound-Non-PGO'}}
 branch_map['Cedar']   = {'pgo':    {'id': 26, 'name': 'Cedar'}, 
                          'nonpgo': {'id': 26, 'name': 'Cedar'}}
-branches = ['Try', 'Firefox', 'Inbound', 'Cedar']
+branch_map['UX']      = {'pgo':    {'id': 59, 'name': 'UX'},
+                         'nonpgo': {'id': 137, 'name': 'UX-Non-PGO'}}
+branches = ['Try', 'Firefox', 'Inbound', 'Cedar', 'UX']
 
 # TODO: pull test names and reverse_tests from test.py in the future
 test_map = {}
