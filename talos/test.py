@@ -351,7 +351,7 @@ class tsvgx(tsvg):
     rendering performance. Unlike tsvg, this test is row-based instead
     of column based.
     """
-    tpmanifest = '${talos}/page_load_test/svgx/svg.manifest'
+    tpmanifest = '${talos}/page_load_test/svgx/svgx.manifest'
     tpcycles = 1
     tppagecycles = 25
     preferences = {'layout.frame_rate': 10000}
