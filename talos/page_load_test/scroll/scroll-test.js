@@ -76,7 +76,15 @@ function testScroll(target, stepSize)
 
         if (window.talosDebug)
           window.talosDebug.displayData = true; // In a browser: also display all data points.
-        tpRecordTime(durations.join(","));
+
+        // For analysis (otherwise, it's too many data points for talos):
+        // tpRecordTime(durations.join(","));
+        var sum = 0;
+        for (var i = 0; i < durations.length; i++)
+          sum += Number(durations[i]);
+        // Report average interval or (failsafe) 0 if no intervls were recorded
+        tpRecordTime(durations.length ? sum / durations.length : 0);
+
         return;
       }
 
