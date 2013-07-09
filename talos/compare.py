@@ -248,6 +248,7 @@ def parseGraphResultsByChangeset(data, changeset):
 
 
 def compareResults(revision, branch, masterbranch, startdate, enddate, platforms, tests, printurl, dzdata, pgodzdata):
+    print "   test\t\t\tmin.\t->\tmax.\trev."
     for p in platforms:
         print "%s:" % (p)
         for t in tests:
@@ -278,25 +279,25 @@ def compareResults(revision, branch, masterbranch, startdate, enddate, platforms
                 test = parseGraphResultsByChangeset(testdata, revision)
                 status = ''
                 if test['low'] < results['low']:
-                    status = ':) '
+                    status = ':)'
                     if t in reverse_tests:
-                        status = ':( '
+                        status = ':('
                 if test['high'] > results['high']:
-                    status = ':( '
+                    status = ':('
                     if t in reverse_tests:
-                        status = ':) '
+                        status = ':)'
 
                 if test['low'] == sys.maxint or results['low'] == sys.maxint or \
                    test['high'] == 0  or results['high'] == 0:
-                    print "    %s: No results found" % (t)
+                    print "   %-18s\tNo results found" % (t)
 
                 else:
                     url = ""
                     if printurl:
                         url = shorten("http://graphs.mozilla.org/graph.html#tests=[[%s,%s,%s]]" % (test_map[t]['id'], bid, platform_map[p]))
-                    print "    %s%s: %s -> %s; %s.  %s [%s] [PGO: %s]" % (status, t, results['low'], results['high'], test['low'], url, dzval, pgodzval)
+                    print "%2s %-18s\t%7.1f\t->\t%7.1f\t%7.1f\t[%s] [PGO: %s]\t%s" % (status, t, results['low'], results['high'], test['low'], dzval, pgodzval, url)
             else:
-                print "    %s: No data for platform" % t
+                print "   %-18s\tNo data for platform" % t
 
 class CompareOptions(OptionParser):
 
