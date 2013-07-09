@@ -28,8 +28,6 @@ branches = ['Try', 'Firefox', 'Inbound', 'Cedar', 'UX']
 
 # TODO: pull test names and reverse_tests from test.py in the future
 test_map = {}
-test_map['tdhtmlr'] = {'id':220, 'tbplname': 'tdhtmlr_paint'}
-test_map['tdhtmlr_nochrome'] = {'id': 221, 'tbplname': 'tdhtmlr_nochrome_paint'}
 test_map['ts_places_med'] = {'id': 53, 'tbplname': 'ts_places_generated_med'}
 test_map['ts_places_max'] = {'id': 54, 'tbplname': 'ts_places_generated_max'}
 test_map['tspaint_places_med'] = {'id': 226, 'tbplname': 'tspaint_places_generated_med'}
@@ -47,7 +45,7 @@ test_map['tsvgr_opacity'] = {'id': 225, 'tbplname': 'tsvgr_opacity'}
 test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
 test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
 test_map['tp5o'] = {'id': 255, 'tbplname': 'tp5o_paint'}
-tests = ['tdhtmlr', 'tresize', 'tdhtmlr_nochrome', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n', 'tp5o']
+tests = ['tresize', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n', 'tp5o']
 
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8']
 
