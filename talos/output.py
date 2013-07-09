@@ -451,7 +451,7 @@ class DatazillaOutput(Output):
                 # counters results_aux data
                 for cd in test.all_counter_results:
                     for name, vals in cd.items():
-                        res.add_auxiliary_results(suite, name, vals)
+                        res.add_talos_auxiliary(suite, name, vals)
             else:
                 # specific xperf_aux data
                 for cd in test.all_counter_results:
