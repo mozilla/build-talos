@@ -325,14 +325,14 @@ class CompareOptions(OptionParser):
                     help = "Specify the number of days to ignore results, default '0'.  Note: If a regression landed 4 days ago, use --skipdays=5")
 
     self.add_option("--platform",
-                    action = "store", type = "string", dest = "platform",
-                    default = None,
-                    help = "Specify a single platform to compare, default 'All'.  Options are: %s" % (platforms))
+                    action = "append", type = "choice", dest = "platforms",
+                    default = None, choices = platforms,
+                    help = "Specify a single platform to compare. This option can be specified multiple times and defaults to 'All' if not specified.  Options are: %s" % (platforms))
 
     self.add_option("--testname",
-                    action = "store", type = "string", dest = "testname",
-                    default = None,
-                    help = "Specify a single test to compare, default 'All'.  Options are: %s" % (tests))
+                    action = "append", type = "choice", dest = "testnames",
+                    default = None, choices = tests,
+                    help = "Specify a single test to compare. This option can be specified multiple times and defaults to 'All' if not specified. Options are: %s" % (tests))
 
     self.add_option("--print-graph-url",
                     action = "store_true", dest = "printurl",
@@ -354,17 +354,11 @@ def main():
     parser = CompareOptions()
     options, args = parser.parse_args()
 
-    if options.platform:
-        if options.platform in platforms:
-            platforms = [options.platform]
-        else:
-            parser.error("ERROR: the platform '%s' you specified does not exist in '%s'" % (options.platform, platforms))
+    if options.platforms:
+        platforms = options.platforms
 
-    if options.testname:
-        if options.testname in tests:
-            tests = [options.testname]
-        else:
-            parser.error("ERROR: the testname '%s' you specified does not exist in '%s'" % (options.testname, tests))
+    if options.testnames:
+        tests = options.testnames
 
     masterbranch = 'Firefox'
     if options.masterbranch and not options.masterbranch in branches:
