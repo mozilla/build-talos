@@ -50,13 +50,9 @@ class BrowserWaiter(threading.Thread):
     if self.url_timestamp:
       if self.remoteProcess: #working with a remote device
           curtime = self.remoteProcess.getCurrentTime()
-          if curtime is None:
-            self.returncode = 1
-            self.endtime = 0
-            return
       else: #non-remote device
-        curtime = str(int(time.time()*1000))
-      self.command += curtime
+        curtime = int(time.time()*1000)
+      self.command += str(curtime)
 
     self.firstTime = int(time.time()*1000)
     if self.remoteProcess: #working with a remote device
