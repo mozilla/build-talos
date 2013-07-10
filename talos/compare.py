@@ -311,12 +311,12 @@ class CompareOptions(OptionParser):
 
     self.add_option("--branch",
                     action = "store", type = "string", dest = "branch",
-                    default = None,
+                    default = "Try",
                     help = "branch that your revision landed on which you are testing, default 'Try'.  Options are: %s" % (branches))
 
     self.add_option("--masterbranch",
                     action = "store", type = "string", dest = "masterbranch",
-                    default = None,
+                    default = "Firefox",
                     help = "master branch that you will be comparing against, default 'Firefox'.  Options are: %s" % (branches))
 
     self.add_option("--skipdays",
@@ -360,18 +360,16 @@ def main():
     if options.testnames:
         tests = options.testnames
 
-    masterbranch = 'Firefox'
     if options.masterbranch and not options.masterbranch in branches:
         parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (options.masterbranch, branches))
 
-    branch = 'Try'
-    if options.branch:
-        if options.branch in branches:
-            branch = branch_map[options.branch]['nonpgo']['name']
-            if options.pgo:
-                branch = branch_map[options.branch]['pgo']['name']
-        else:
-            parser.error("ERROR: the branch '%s' you specified does not exist in '%s'" % (options.branch, branches))
+    branch = None
+    if options.branch in branches:
+        branch = branch_map[options.branch]['nonpgo']['name']
+        if options.pgo:
+            branch = branch_map[options.branch]['pgo']['name']
+    else:
+        parser.error("ERROR: the branch '%s' you specified does not exist in '%s'" % (options.branch, branches))
 
     if options.skipdays:
         if options.skipdays > 30:
@@ -390,7 +388,7 @@ def main():
     if options.xperf:
         print xperfdata
     else:
-        compareResults(options.revision, branch, masterbranch, startdate, enddate, platforms, tests, options.printurl, datazilla, pgodatazilla)
+        compareResults(options.revision, options.branch, options.masterbranch, startdate, enddate, platforms, tests, options.printurl, datazilla, pgodatazilla)
 
 def shorten(url):
     headers = {'content-type':'application/json'}
