@@ -247,8 +247,8 @@ def parseGraphResultsByChangeset(data, changeset):
     return {'low': low, 'high': high, 'count': count}
 
 
-def compareResults(revision, branch, masterbranch, startdate, enddate, platforms, tests, printurl, dzdata, pgodzdata):
-    print "   test\t\t\tmin.\t->\tmax.\trev."
+def compareResults(revision, branch, masterbranch, startdate, enddate, platforms, tests, pgo, printurl, dzdata, pgodzdata):
+    print "   test\t\t\tmin.\t->\tmax.\trev.\tDatazilla"
     for p in platforms:
         print "%s:" % (p)
         for t in tests:
@@ -265,11 +265,11 @@ def compareResults(revision, branch, masterbranch, startdate, enddate, platforms
                         pgodzval = pgodzdata[p][test_map[t]['tbplname']]
 
             test_bid = branch_map[branch]['nonpgo']['id']
-            if p.startswith('OSX'):
+            if p.startswith('OSX') or pgo:
                 test_bid = branch_map[branch]['pgo']['id']
 
             bid = branch_map[masterbranch]['nonpgo']['id']
-            if p.startswith('OSX'):
+            if p.startswith('OSX') or pgo:
                 bid = branch_map[masterbranch]['pgo']['id']
         
             data = getGraphData(test_map[t]['id'], bid, platform_map[p])
@@ -388,7 +388,7 @@ def main():
     if options.xperf:
         print xperfdata
     else:
-        compareResults(options.revision, options.branch, options.masterbranch, startdate, enddate, platforms, tests, options.printurl, datazilla, pgodatazilla)
+        compareResults(options.revision, options.branch, options.masterbranch, startdate, enddate, platforms, tests, options.pgo, options.printurl, datazilla, pgodatazilla)
 
 def shorten(url):
     headers = {'content-type':'application/json'}
