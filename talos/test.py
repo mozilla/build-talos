@@ -285,6 +285,17 @@ class kraken(PageloaderTest):
     tppagecycles = 1
     filters = [['mean', []]]
 
+class tcanvasmark(PageloaderTest):
+    """
+    CanvasMark benchmark v0.6
+    """
+    tpmanifest = '${talos}/page_load_test/canvasmark/canvasmark.manifest'
+    win_counters = w7_counters = linux_counters = mac_counters = None
+    remote_counters = None
+    tpcycles = 5
+    tppagecycles = 1
+    timeout = 900
+
 class tscroll(PageloaderTest):
     """
     This test does some scrolly thing.
@@ -399,7 +410,7 @@ class a11yr(PageloaderTest):
 tests = [ts_paint, ts, tsvg, tdhtml,
          tspaint_places_generated_max, tspaint_places_generated_med,
          tp4m, tp5n, tp5o, tpaint, tresize,
-         trobopan, tcheckerboard, tprovider, tcheck2,
+         trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
          tsvgx, tscrollx

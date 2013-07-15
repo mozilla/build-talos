@@ -140,6 +140,13 @@ class Output(object):
         utils.info("javascript benchmark")
         return sum(results)
 
+    @classmethod
+    def CanvasMark_Metric(cls, val_list):
+        """CanvasMark benchmark score (NOTE: this is identical to JS_Metric)"""
+        results = [i for i, j in val_list]
+        utils.info("CanvasMark benchmark")
+        return sum(results)
+
 
 class GraphserverOutput(Output):
 
@@ -261,6 +268,9 @@ class GraphserverOutput(Output):
         elif testname.startswith('kraken'):
             _type = 'AVERAGE'
             average = self.JS_Metric(vals)
+        elif testname.startswith('tcanvasmark'):
+            _type = 'AVERAGE'
+            average = self.CanvasMark_Metric(vals)
 
         # ensure that we have all of the info data available
         missing = [i for i in info_format if i not in info]
