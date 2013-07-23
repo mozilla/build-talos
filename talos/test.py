@@ -179,12 +179,39 @@ class PageloaderTest(Test):
     cycles = None
     timeout = None
     filters = None
-    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint',
+    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadaboutblank',
             'rss', 'resolution', 'cycles',
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters', 'xperf_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences', 'extensions'
             ]
+
+class tart(PageloaderTest):
+    """
+    Tab Animation Regression Test
+    Tests tab animation on these cases:
+    1. Simple: single new tab of about:blank open/close without affecting (shrinking/expanding) other tabs.
+    2. icon: same as above with favicons and long title instead of about:blank.
+    3. Newtab: newtab open with thumbnails preview - without affecting other tabs, with and without preload.
+    4. Fade: opens a tab, then measures fadeout/fadein (tab animation without the overhead of opening/closing a tab).
+    - Case 1 is tested with DPI scaling of 1.
+    - Case 2 is tested with DPI scaling of 1.0 and 2.0.
+    - Case 3 is tested with the default scaling of the test system.
+    - Case 4 is tested with DPI scaling of 2.0 with the "icon" tab (favicon and long title).
+    - Each animation produces 3 test results:
+      - error: difference between the designated duration and the actual completion duration from the trigger.
+      - half: average interval over the 2nd half of the animation.
+      - all: average interval over all recorded intervals.
+    """
+    tpmanifest = '${talos}/page_load_test/tart/tart.manifest'
+    extensions = '${talos}/page_load_test/tart/addon'
+    tpcycles = 1
+    tppagecycles = 25
+    tploadaboutblank = True
+    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
+    """The recording API is broken with OMTC as of 2013-07, so disabled for now"""
+    preferences = {'layout.frame_rate': 10000, 'docshell.event_starvation_delay_hint': 1,
+                   'layers.offmainthreadcomposition.enabled': False}
 
 class tp(PageloaderTest):
     """
@@ -417,6 +444,6 @@ tests = [ts_paint, ts, tsvg, tdhtml,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
-         tsvgx, tscrollx
+         tsvgx, tscrollx, tart
          ]
 test_dict = dict([(i.name(), i) for i in tests])

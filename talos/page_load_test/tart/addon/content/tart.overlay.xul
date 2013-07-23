@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<overlay id="Scrapper-Overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+<script type="application/x-javascript" src="tart.js" />
+<script type="application/x-javascript">
+
+function start(e) {
+  (new Tart()).startTest(e.doneCallback, e.config);
+}
+
+window.addEventListener("tartstart", start, false);
+
+</script>
+</overlay>

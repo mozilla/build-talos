@@ -149,6 +149,7 @@ the highest value.
                                   'tpmozafterpaint': False,
                                   'tpnoisy': True,
                                   'tppagecycles': 1,
+                                  'tploadaboutblank': False,
                                   'tprender': False,
                                   'win_counters': [],
                                   'w7_counters': [],

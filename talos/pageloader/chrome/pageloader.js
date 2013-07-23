@@ -39,6 +39,7 @@ var reportRSS = true;
 var useMozAfterPaint = false;
 var gPaintWindow = window;
 var gPaintListener = false;
+var loadAboutBlank = false;
 
 //when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
 var gTime = -1;
@@ -128,6 +129,7 @@ function plInit() {
     if (args.delay) delay = parseInt(args.delay);
     if (args.mozafterpaint) useMozAfterPaint = true;
     if (args.rss) reportRSS = true;
+    if (args.loadaboutblank) loadAboutBlank = true;
 
     forceCC = !args.noForceCC;
     doRenderTest = args.doRender;
@@ -342,7 +344,9 @@ function plLoadPage() {
 
 function startAndLoadURI(pageName) {
   start_time = Date.now();
-  content.loadURI(pageName);
+  if (loadAboutBlank)
+    content.loadURI('about:blank');
+  setTimeout(function() {content.loadURI(pageName) }, 0);
 }
 
 function loadFail() {
@@ -696,8 +700,8 @@ function plLoadURLsFromURI(manifestUri) {
     more = lstream.readLine(line);
     var s = line.value;
 
-    // strip comments
-    s = s.replace(/#.*/, '');
+    // strip comments (only leading ones)
+    s = s.replace(/^#.*/, '');
 
     // strip leading and trailing whitespace
     s = s.replace(/^\s*/, '').replace(/\s*$/, '');
