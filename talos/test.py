@@ -109,7 +109,7 @@ class tpaint(TsBase):
     display a window in the running instance of the browser. 
     (Measures ctrl-n performance.) 
     """
-    url = 'file://${talos}/startup_test/twinopen/winopen.xul?mozafterpaint=1%26phase1=20'
+    url = 'file://${talos}/startup_test/tpaint.html?auto=1'
     timeout = 300
     mobile = False # XUL based tests with local files.
 
