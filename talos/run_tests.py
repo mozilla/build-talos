@@ -163,7 +163,7 @@ def run_tests(configurator):
   tests = config['tests']
   tests = useBaseTestDefaults(config.get('basetest', {}), tests)
 
-  paths = ['profile_path', 'tpmanifest']
+  paths = ['profile_path', 'tpmanifest', 'extensions']
   for test in tests:
 
     # Check for profile_path, tpmanifest and interpolate based on Talos root

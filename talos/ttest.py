@@ -276,9 +276,14 @@ class TTest(object):
             if 'preferences' in test_config and test_config['preferences']:
                 testPrefs = dict([(i, utils.parsePref(j)) for i, j in test_config['preferences'].items()])
                 preferences.update(testPrefs)
+
+            extensions = copy.deepcopy(browser_config['extensions'])
+            if 'extensions' in test_config and test_config['extensions']:
+                extensions.append(test_config['extensions'])
+
             profile_dir, temp_dir = self.createProfile(test_config['profile_path'], 
                                                        preferences, 
-                                                       browser_config['extensions'], 
+                                                       extensions, 
                                                        browser_config['webserver'])
             self.initializeProfile(profile_dir, browser_config)
 

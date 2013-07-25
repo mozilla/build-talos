@@ -188,8 +188,9 @@ class TsResults(Results):
         for line in lines:
             result = {}
             r = line.strip().split(',')
-            if len(r) == 1:
-                break;
+            r = [i for i in r if i]
+            if len(r) <= 1:
+                continue
             result['index'] = index
             result['page'] = r[0]
             #note: if we have len(r) >1, then we have pagename,raw_results
@@ -236,6 +237,9 @@ class PageloaderResults(Results):
         for line in lines:
             result = {}
             r = line.strip('|').split(';')
+            r = [i for i in r if i]
+            if len(r) <= 2:
+                continue
             result['index'] = int(r[0])
             result['page'] = r[1]
             result['runs'] = [float(i) for i in r[2:]]
