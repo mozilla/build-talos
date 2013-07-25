@@ -59,7 +59,7 @@ class FFProcess(object):
         return terminate_result
 
     def GenerateBControllerCommandLine(self, command_line, browser_config, test_config):
-        bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait', 'test_timeout', 'browser_log']
+        bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait', 'test_timeout', 'browser_log', 'browser_path', 'error_filename']
 
         if 'xperf_path' in browser_config:
             bcontroller_vars.append('xperf_path')

@@ -12,6 +12,12 @@ import sys
 import xtalos
 import subprocess
 
+try:
+    import json
+except:
+    import simplejson as json
+
+
 EVENTNAME_INDEX = 0
 PROCESS_INDEX = 2
 THREAD_ID_INDEX = 3
@@ -227,8 +233,8 @@ def checkWhitelist(filename, whitelist):
             return True
     return False
 
-def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=None,
-              whitelist_file=None, all_stages=False, all_threads=False, debug=False):
+def etlparser(xperf_path, etl_filename, processID, approot=None, configFile=None, outputFile=None,
+              whitelist_file=None, error_filename=None, all_stages=False, all_threads=False, debug=False):
 
     # setup output file
     if outputFile:
@@ -240,6 +246,7 @@ def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=N
     io = {}
     stage = 0
 
+    print "reading etl filename: %s" % etl_filename
     csvname = etl2csv(xperf_path, etl_filename, debug=debug)
     for row in readFile(csvname):
         event = row[EVENTNAME_INDEX]
@@ -298,6 +305,95 @@ def etlparser(xperf_path, etl_filename, processID, configFile=None, outputFile=N
         # close the file handle
         outFile.close()
 
+    # We still like to have the outputfile to record the raw data, now filter out acceptable files/ranges
+    filename = None
+    wl_temp = {}
+    dirname = os.path.dirname(__file__)
+    if os.path.exists(os.path.join(dirname, 'xperf_whitelist.json')):
+        filename = os.path.join(dirname, 'xperf_whitelist.json')
+    elif os.path.exists(os.path.join(dirname, 'xtalos')) and os.path.exists(os.path.join(dirname, 'xtalos', 'xperf_whitelist.json')):
+        filename = os.path.join(dirname, 'xtalos', 'xperf_whitelist.json')
+
+    wl_temp = {}
+    if filename:
+        fHandle = open(filename, 'r')
+        wl_temp = json.load(fHandle)
+        fHandle.close()
+
+    # Approot is the full path where the application is located at
+    # We depend on it for dependentlibs.list to ignore files required for normal startup.
+    if approot:
+        if os.path.exists('%s\\dependentlibs.list' % approot):
+            fhandle = open('%s\\dependentlibs.list' % approot, 'r')
+            libs = fhandle.readlines()
+            fhandle.close()
+
+            for lib in libs:
+                wl_temp[lib] = {'ignore': True}
+
+    # Windows isn't case sensitive, this protects us against mismatched systems.
+    wl = {}
+    for item in wl_temp:
+        wl[item.lower()] = wl_temp[item]
+
+    errors = []
+    for row in filekeys:
+        filename = row[0]
+        filename = filename.lower()
+        # take care of 'program files (x86)' matching 'program files'
+        filename = filename.replace(" (x86)", '')
+        
+        paths = ['profile', 'firefox', 'desktop', 'talos']
+        for path in paths:
+            pathname = '%s\\' % path
+            parts = filename.split(pathname)
+            if len(parts) >= 2:
+                filename = "{%s}\\%s" % (path, pathname.join(parts[1:]))
+
+        parts = filename.split('\\installtime')
+        if len(parts) >= 2:
+            filename = "%s\\{time}" % parts[0]
+
+        #NOTE: this is Prefetch or prefetch, not case sensitive operating system
+        parts = filename.split('refetch')
+        if len(parts) >= 2:
+            filename = "%srefetch\\{prefetch}.pf" % parts[0]
+
+        if filename in wl:
+            if 'ignore' in wl[filename] and wl[filename]['ignore']:
+                continue
+
+# too noisy
+#            if wl[filename]['minbytes'] > (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']):
+#                print "%s: read %s bytes, less than expected minimum: %s" % (filename, (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']), wl[filename]['minbytes'])
+                
+# don't report in first round
+#            elif wl[filename]['maxbytes'] < (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']):
+#                errors.append("%s: read %s bytes, more than expected maximum: %s" % (filename, (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']), wl[filename]['maxbytes']))
+
+# too noisy
+#            elif wl[filename]['mincount'] > (files[row]['DiskReadCount'] + files[row]['DiskWriteCount']):
+#                print "%s: %s accesses, less than expected minimum: %s" % (filename, (files[row]['DiskReadCount'] + files[row]['DiskWriteCount']), wl[filename]['mincount'])
+
+# don't report in first round
+#            elif wl[filename]['maxcount'] < (files[row]['DiskReadCount'] + files[row]['DiskWriteCount']):
+#                errors.append("%s: %s accesses, more than expected maximum: %s" % (filename, (files[row]['DiskReadCount'] + files[row]['DiskWriteCount']), wl[filename]['maxcount']))
+        else:
+            errors.append("File '%s' was accessed and we were not expecting it.  DiskReadCount: %s, DiskWriteCount: %s, DiskReadBytes: %s, DiskWriteBytes: %s" % (filename, files[row]['DiskReadCount'], files[row]['DiskWriteCount'], files[row]['DiskReadBytes'], files[row]['DiskWriteBytes']))
+
+    if errors:
+        # output specific errors to be picked up by tbpl parser
+        for error in errors:
+            # NOTE: the ' :' is intentional, without the space before the :, some parser will translate this
+            print "TEST-UNEXPECTED-FAIL : xperf: %s" % error
+
+        # We detect if browser_failures.txt exists to exit and turn the job orange
+        if error_filename:
+            errorFile = open(error_filename, 'w')
+            errorFile.write('\n'.join(errors))
+            errorFile.close()
+
+
 def etlparser_from_config(config_file, **kwargs):
     """start from a YAML config file"""
 
@@ -306,7 +402,9 @@ def etlparser_from_config(config_file, **kwargs):
             'etl_filename': 'output.etl',
             'outputFile': None,
             'processID': None,
+            'approot': None,
             'whitelist_file': None,
+            'error_filename': None,
             'all_stages': False,
             'all_threads': False
             }
@@ -341,8 +439,8 @@ def main(args=sys.argv[1:]):
         parser.error("No process ID option given")
 
     # call API
-    etlparser(options.xperf_path, options.etl_filename, options.processID,
-              options.configFile, options.outputFile, options.whitelist_file,
+    etlparser(options.xperf_path, options.etl_filename, options.processID, options.approot,
+              options.configFile, options.outputFile, options.whitelist_file, options.error_filename,
               options.all_stages, options.all_threads,
               debug=options.debug_level >= xtalos.DEBUG_INFO)
 

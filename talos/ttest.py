@@ -34,7 +34,7 @@ except:
     # still support
     pass
 
-from utils import talosError, talosCrash
+from utils import talosError, talosCrash, talosRegression
 from ffprocess_linux import LinuxProcess
 from ffprocess_win32 import Win32Process
 from ffprocess_mac import MacProcess
@@ -319,6 +319,11 @@ class TTest(object):
                     os.chmod(browser_config['browser_log'], 0777)
                     os.remove(browser_config['browser_log'])
 
+                # remove the error file if it exists
+                if os.path.exists(browser_config['error_filename']):
+                    os.chmod(browser_config['error_filename'], 0777)
+                    os.remove(browser_config['error_filename'])
+
                 # on remote devices we do not have the fast launch/shutdown as we do on desktop
                 if not browser_config['remote']:
                     time.sleep(browser_config['browser_wait']) #wait out the browser closing
@@ -409,6 +414,10 @@ class TTest(object):
                 if not os.path.isfile(browser_log_filename):
                     raise talosError("no output from browser [%s]" % browser_log_filename)
 
+                # ensure the browser log exists
+                if os.path.exists(browser_config['error_filename']):
+                    raise talosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
+
                 # add the results from the browser output
                 test_results.add(browser_log_filename, counter_results=counter_results)
 
@@ -434,11 +443,8 @@ class TTest(object):
             # return results
             return test_results
 
-        except talosCrash, tc:
-            counters = None
-            if 'cm' in vars():
-                counters = cm
-            self.testCleanup(browser_config, profile_dir, test_config, counters, temp_dir)
-        except talosError, te:
+        except Exception, e:
+            counters = vars().get('cm', counters)
             self.testCleanup(browser_config, profile_dir, test_config, counters, temp_dir)
             raise
+

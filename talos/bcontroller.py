@@ -25,6 +25,7 @@ defaults = {'endTime': -1,
             'browser_wait': -1,
             'child_process': 'plugin-container',
             'process': 'firefox',
+            'browser_path': '',
             'host':  '',
             'deviceroot': '',
             'port': 20701,
@@ -33,6 +34,7 @@ defaults = {'endTime': -1,
             'xperf_providers': [],
             'xperf_user_providers': [],
             'xperf_stackwalk': [],
+            'error_filename': None,
             'configFile': 'bcontroller.yml'}
 
 class BrowserWaiter(threading.Thread):
@@ -109,6 +111,8 @@ class BrowserWaiter(threading.Thread):
           xtalos.etlparser.etlparser_from_config(self.configFile,
                                                  etl_filename=etlname,
                                                  outputFile=csvname,
+                                                 approot=os.path.dirname(self.options['browser_path']),
+                                                 error_filename=self.options['error_filename'],
                                                  processID=str(proc.pid)
                                                  )
       except Exception, e:

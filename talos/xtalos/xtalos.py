@@ -87,6 +87,14 @@ class XtalosOptions(optparse.OptionParser):
                         help="Include all threads in file I/O output, not just main")
         defaults["all_threads"] = False
 
+        self.add_option("-a", "--approot", dest="approot",
+                        help="Provide the root directory of the application we are testing to find related files (i.e. dependentlibs.list)")
+        defaults["approot"] = None
+
+        self.add_option("-a", "--error-filename", dest="error_filename",
+                        help="Filename to store the failures detected while runnning the test")
+        defaults["error_filename"] = None
+
         self.set_defaults(**defaults)
 
         self.set_usage('')

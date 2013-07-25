@@ -19,7 +19,7 @@ import utils
 
 from results import TalosResults
 from ttest import TTest
-from utils import talosError
+from utils import talosError, talosCrash, talosRegression
 
 # directory of this file
 here = os.path.dirname(os.path.realpath(__file__))
@@ -277,16 +277,25 @@ def run_tests(configurator):
         talos_results.add(mytest.runTest(browser_config, test))
       else:
         utils.stamped_msg("Error found while running %s" % testname, "Error")
-    except talosError, e:
+    except talosRegression, tr:
+      utils.stamped_msg("Detected a regression for " + testname, "Stopped")
+      print_logcat()
+      if httpd:
+        httpd.stop()
+      # by returning 1, we report an orange to buildbot
+      # http://docs.buildbot.net/latest/developer/results.html
+      return 1
+    except (talosCrash, talosError):
       # NOTE: if we get into this condition, talos has an internal problem and cannot continue
       #       this will prevent future tests from running
-      utils.stamped_msg("Failed " + testname, "Stopped")
+      utils.stamped_msg("Failed %" % testname, "Stopped")
       talosError_tb = sys.exc_info()
       traceback.print_exception(*talosError_tb)
       print_logcat()
       if httpd:
         httpd.stop()
-      raise e
+      # indicate a failure to buildbot, turn the job red
+      return 2
 
     utils.stamped_msg("Completed test " + testname, "Stopped")
     print_logcat()
@@ -302,6 +311,9 @@ def run_tests(configurator):
   # output results
   if results_urls:
     talos_results.output(results_urls, **results_options)
+
+  # we will stop running tests on a failed test, or we will return 0 for green
+  return 0
 
 def main(args=sys.argv[1:]):
 
@@ -321,10 +333,8 @@ def main(args=sys.argv[1:]):
   level = 'info'
   if options.debug:
     level = 'debug'
-  utils.startLogger(level)
-
-  # run tests
-  run_tests(parser)
+  utils.startLogger(level)	
+  sys.exit(run_tests(parser))
 
 if __name__=='__main__':
   main()

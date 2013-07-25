@@ -69,6 +69,11 @@ class talosError(Exception):
   def __str__(self):
     return repr(self.msg)
 
+class talosRegression(Exception):
+  """When a regression is detected at runtime, report it properly
+     Currently this is a simple definition so we can detect the class type
+  """
+
 class talosCrash(Exception):
   """Exception type where we want to report a crash and stay
      compatible with tbpl while allowing us to continue on.

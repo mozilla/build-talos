@@ -84,6 +84,9 @@ for datazilla auth.  Should have keys 'oauthSecret' and 'oauthKey'"""}),
         ('browser_log', {'help': 'Local log file to store the output from the browser in',
                          'default': 'browser_output.txt',
                          'flags': ['--logFile']}),
+        ('error_filename', {'help': 'Filename to store the errors found during the test.  Currently used for xperf only.',
+                         'default': os.path.abspath('browser_failures.txt'),
+                         'flags': ['--errorFile']}),
         ('shutdown', {'help': 'Record time browser takes to shutdown after testing',
                       'type': bool,
                       'flags': ['--noShutdown']}),
@@ -782,6 +785,7 @@ the highest value.
                     'test_timeout': 1200,
                     'webserver': '',
                     'xperf_path': None,
+                    'error_filename': None
                     }
         browser_config = dict(title=title)
         browser_config.update(dict([(i, self.config[i]) for i in required]))
