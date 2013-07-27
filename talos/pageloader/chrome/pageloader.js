@@ -10,6 +10,8 @@ try {
   }
 } catch (ex) {}
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+
 var NUM_CYCLES = 5;
 var numPageCycles = 1;
 
@@ -55,6 +57,17 @@ var pageUrls;
 // the io service
 var gIOS = null;
 
+// metro immersive environment helper
+function isImmersive() {
+  if (!Cc["@mozilla.org/windows-metroutils;1"])
+    return false;
+  let metroUtils = Cc["@mozilla.org/windows-metroutils;1"]
+                             .createInstance(Ci.nsIWinMetroUtils);
+  if (!metroUtils)
+    return false;
+  return metroUtils.immersive;
+}
+
 function plInit() {
   if (running) {
     return;
@@ -64,8 +77,41 @@ function plInit() {
   cycle = 0;
   pageCycle = 1;
 
+  // Tracks if we are running in a background tab in the metro browser
+  let metroTabbedChromeRun = false;
+
   try {
-    var args = window.arguments[0].wrappedJSObject;
+    var args;
+    
+    /*
+     * Desktop firefox:
+     * non-chrome talos runs - tp-cmdline will create and load pageloader
+     * into the main window of the app which displays and tests content.
+     * chrome talos runs - tp-cmdline does the same however pageloader
+     * creates a new chromed browser window below for content.
+     *    
+     * Immersive firefox:
+     * non-chrome talos runs - tp-cmdline will create and load pageloader
+     * into the main metro window without browser chrome.
+     * chrome talos runs - tp-cmdline loads the browser interface and
+     * passes pageloader in as the default uri. Pageloader then adds a new
+     * content tab which displays and tests content.
+     */
+
+    // In metro chrome runs, the browser window has our cmdline arguments. In
+    // every other case they are on window.
+    let toplevelwin = Services.wm.getMostRecentWindow("navigator:browser");
+    if (isImmersive() && toplevelwin.arguments[0].wrappedJSObject) {
+      args = toplevelwin.arguments[0].wrappedJSObject;
+      if (!args.useBrowserChrome) {
+        // Huh? Should never happen.
+        throw new Exception("non-browser chrome test requested but we detected a metro immersive in-tab run?");
+      }
+      // running in a background tab
+      metroTabbedChromeRun = true;
+    } else {
+      args = window.arguments[0].wrappedJSObject;
+    }
 
     var manifestURI = args.manifest;
     var startIndex = 0;
@@ -128,7 +174,22 @@ function plInit() {
 
     pageIndex = 0;
 
-    if (args.useBrowserChrome) {
+    if (metroTabbedChromeRun) {
+      // Pageloader script runs from a background tab, create the tab we'll
+      // be loading content into and measuring.
+      let tab = toplevelwin.Browser.addTab("about:blank", true);
+
+      // Various globals we need to do measurments
+      gPaintWindow = tab.browser.contentWindow;
+      content = tab.browser;
+
+      if (reportRSS) {
+        initializeMemoryCollector(plLoadPage, delay);
+      } else {
+        setTimeout(plLoadPage, delay);
+      }
+    } else if (args.useBrowserChrome) {
+      // Create a new chromed browser window for content
       var wwatch = Cc["@mozilla.org/embedcomp/window-watcher;1"]
         .getService(Ci.nsIWindowWatcher);
       var blank = Cc["@mozilla.org/supports-string;1"]
@@ -193,6 +254,7 @@ function plInit() {
 
       browserWindow.addEventListener('load', browserLoadFunc, true);
     } else {
+      // Loading content into the initial window we create
       gPaintWindow = window;
       window.resizeTo(winWidth, winHeight);
 
@@ -205,7 +267,7 @@ function plInit() {
       }
     }
   } catch(e) {
-    dumpLine(e);
+    dumpLine("pageloader exception: " + e);
     plStop(true);
   }
 }

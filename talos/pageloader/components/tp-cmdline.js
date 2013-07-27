@@ -52,6 +52,19 @@ const nsIComponentRegistrar     = Components.interfaces.nsIComponentRegistrar;
 const nsISupportsString         = Components.interfaces.nsISupportsString;
 const nsIWindowWatcher          = Components.interfaces.nsIWindowWatcher;
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+
+// metro immersive environment helper
+function isImmersive() {
+  if (!Components.classes["@mozilla.org/windows-metroutils;1"])
+    return false;
+  let metroUtils = Components.classes["@mozilla.org/windows-metroutils;1"]
+                             .createInstance(Components.interfaces.nsIWinMetroUtils);
+  if (!metroUtils)
+    return false;
+  return metroUtils.immersive;
+}
+
 function PageLoaderCmdLineHandler() {}
 PageLoaderCmdLineHandler.prototype =
 {
@@ -100,13 +113,20 @@ PageLoaderCmdLineHandler.prototype =
       return;
     }
 
-    // get our data through xpconnect
-    args.wrappedJSObject = args;
+    let chromeURL = "chrome://pageloader/content/pageloader.xul";
 
-    var wwatch = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
-                           .getService(nsIWindowWatcher);
-    wwatch.openWindow(null, "chrome://pageloader/content/pageloader.xul", "_blank",
-                      "chrome,dialog=no,all", args);
+    // In metro we load pageloader into a tab when running with chrome since we
+    // don't have multiple desktop windows to play with.
+    if (args.useBrowserChrome && isImmersive()) {
+      args.pageloadURL = chromeURL;
+      chromeURL = "chrome://browser/content/browser.xul";
+    }
+
+    args.wrappedJSObject = args;
+    Services.ww.openWindow(null, chromeURL, "_blank",
+                            "chrome,dialog=no,all", args);
+
+    // Don't pass command line to the default app processor
     cmdLine.preventDefault = true;
   },
 
