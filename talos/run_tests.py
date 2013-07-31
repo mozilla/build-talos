@@ -288,7 +288,7 @@ def run_tests(configurator):
     except (talosCrash, talosError):
       # NOTE: if we get into this condition, talos has an internal problem and cannot continue
       #       this will prevent future tests from running
-      utils.stamped_msg("Failed %" % testname, "Stopped")
+      utils.stamped_msg("Failed %s" % testname, "Stopped")
       talosError_tb = sys.exc_info()
       traceback.print_exception(*talosError_tb)
       print_logcat()
@@ -333,7 +333,7 @@ def main(args=sys.argv[1:]):
   level = 'info'
   if options.debug:
     level = 'debug'
-  utils.startLogger(level)	
+  utils.startLogger(level)
   sys.exit(run_tests(parser))
 
 if __name__=='__main__':
