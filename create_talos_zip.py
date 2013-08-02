@@ -49,7 +49,13 @@ mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                    ('mozprocess/mozprocess/processhandler.py', 'mozdevice/mozprocess/processhandler.py'),
                    ('mozprocess/mozprocess/qijo.py', 'mozdevice/mozprocess/qijo.py'),
                    ('mozprocess/mozprocess/winprocess.py', 'mozdevice/mozprocess/winprocess.py'),
-                   ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py')]
+                   ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py'),
+                   ('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
+                   ('mozprocess/mozprocess/pid.py', 'mozprocess/pid.py'),
+                   ('mozprocess/mozprocess/processhandler.py', 'mozprocess/processhandler.py'),
+                   ('mozprocess/mozprocess/qijo.py', 'mozprocess/qijo.py'),
+                   ('mozprocess/mozprocess/winprocess.py', 'mozprocess/winprocess.py'),
+                   ('mozprocess/mozprocess/wpk.py', 'mozprocess/wpk.py')]
 mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
 
 # datazilla client dependency

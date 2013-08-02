@@ -16,6 +16,7 @@ import shutil
 import utils
 import platform
 
+
 class MacProcess(FFProcess):
 
     def GenerateBrowserCommandLine(self, browser_path, extra_args, deviceroot, profile_dir, url):
@@ -45,7 +46,7 @@ class MacProcess(FFProcess):
 
         return cmd
 
-    def GetPidsByName(self, process_name):
+    def _GetPidsByName(self, process_name):
         """Searches for processes containing a given string.
 
         Args:
@@ -58,7 +59,7 @@ class MacProcess(FFProcess):
         processes = utils.running_processes(process_name, psarg='-Acj')
         return [pid for pid,_ in processes]
 
-    def TerminateProcess(self, pid, timeout):
+    def _TerminateProcess(self, pid, timeout):
         """Helper function to terminate a process, given the pid
 
         Args:
@@ -74,24 +75,6 @@ class MacProcess(FFProcess):
         except OSError, (errno, strerror):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
-
-    def TerminateAllProcesses(self, timeout, *process_names):
-        """Helper function to terminate all processes with the given process name
-
-        Args:
-            process_names: String or strings containing the process name, i.e. "firefox"
-        """
-        result = ''
-        for process_name in process_names:
-            pids = self.GetPidsByName(process_name)
-            for pid in pids:
-                ret = self.TerminateProcess(pid, timeout)
-                if result and ret:
-                    result = result + ', '
-                if ret:
-                    result = result + process_name + '(' + str(pid) + '): ' + ret
-        return result
-
 
     def NonBlockingReadProcessOutput(self, handle):
         """Does a non-blocking read from the output of the process

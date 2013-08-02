@@ -26,14 +26,26 @@ class FFProcess(object):
         Returns:
             An array with a list of processes in the list which are running
         """
-
         processes_with_names = []
         for process_name in process_names:
-            pids = self.GetPidsByName(process_name)
-            if len(pids) > 0:
-                processes_with_names.extend([(pid, process_name) for pid in pids])
+            pids = self._GetPidsByName(process_name)
+            processes_with_names.extend([(pid, process_name) for pid in pids])
+
         return processes_with_names
 
+    def TerminateAllProcesses(self, timeout, *process_names):
+        """Helper function to terminate all processes with the given process name
+
+        Args:
+            process_names: String or strings containing the process name, i.e. "firefox"
+        """
+        results = []
+        for process_name in process_names:
+            for pid in self._GetPidsByName(process_name):
+                ret = self._TerminateProcess(pid, timeout)
+                if ret:
+                    results.append("%s (%s): %s" % (process_name, pid, ret))
+        return ",".join(results)
 
     def checkAllProcesses(self, process_name, child_process):
         #is anything browser related active?

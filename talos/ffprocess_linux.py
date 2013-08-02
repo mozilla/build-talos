@@ -34,9 +34,8 @@ class LinuxProcess(FFProcess):
         return cmd
 
 
-    def GetPidsByName(self, process_name):
+    def _GetPidsByName(self, process_name):
         """Searches for processes containing a given string.
-            This function is UNIX specific.
 
         Args:
             process_name: The string to be searched for
@@ -65,54 +64,3 @@ class LinuxProcess(FFProcess):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
 
-    def TerminateAllProcesses(self, timeout, *process_names):
-        """Helper function to terminate all processes with the given process name
-
-        Args:
-            process_names: String or strings containing the process name, i.e. "firefox"
-        """
-
-        # Get all the process ids of running instances of this process,
-        # and terminate them
-        result = ''
-        for process_name in process_names:
-            pids = self.GetPidsByName(process_name)
-            for pid in pids:
-                ret = self.TerminateProcess(pid, timeout)
-                if result and ret:
-                    result = result + ', '
-                if ret:
-                    result = result + process_name + '(' + str(pid) + '): ' + ret 
-        return result
-
-
-    def NonBlockingReadProcessOutput(self, handle):
-        """Does a non-blocking read from the output of the process
-            with the given handle.
-
-        Args:
-            handle: The process handle returned from os.popen()
-            
-        Returns:
-            A tuple (bytes, output) containing the number of output
-            bytes read, and the actual output.
-        """
-
-        output = ""
-        num_avail = 0
-
-        # check for data
-        # select() does not seem to work well with pipes.
-        # after data is available once it *always* thinks there is data available
-        # readline() will continue to return an empty string however
-        # so we can use this behavior to work around the problem
-        while select([handle], [], [], 0)[0]:
-            line = handle.readline()
-            if line:
-                output += line
-            else:
-                break
-            # this statement is true for encodings that have 1byte/char
-            num_avail = len(output)
-
-        return (num_avail, output)

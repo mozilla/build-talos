@@ -17,6 +17,7 @@ dependencies = ['PyYAML',
                 'mozhttpd == 0.5',
                 'mozinfo == 0.4',
                 'datazilla == 1.4',
+                'mozprocess',
                 'httplib2',
                 'oauth2',
                 ]
@@ -27,17 +28,6 @@ try:
 except ImportError:
     # XXX you will need simplejson == 2.1.6 on python 2.4
     dependencies.append('simplejson')
-
-if os.name == 'nt':
-    base_link = "http://superb-sea2.dl.sourceforge.net/project/pywin32/"\
-                "pywin32/Build216/pywin32-216.%s-py%s.exe"
-    python_version = '%d.%d' % sys.version_info[0:2]
-    if sys.maxsize > 2**32:  # is 64bits?
-        platform_name = 'win-amd64'
-    else:
-        platform_name = 'win32'
-    dependencies.append('pywin32')
-    dependency_links.append(base_link % (platform_name, python_version))
 
 setup(name='talos',
       version=version,

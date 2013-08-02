@@ -146,25 +146,6 @@ class RemoteProcess(FFProcess):
         return result
 
 
-    def NonBlockingReadProcessOutput(self, handle):
-        """Does a non-blocking read from the output of the process
-           with the given handle.
-
-        Args:
-          handle: The process handle returned from os.popen()
-
-        Returns:
-          A tuple (bytes, output) containing the number of output
-          bytes read, and the actual output.
-        """
-
-        output = ""
-        try:
-            output = self.getFile(handle)
-            return (len(output), output)
-        except:
-            return (0, output)
-
     def getFile(self, remote_filename, local_filename = None):
         data = ''
         try:

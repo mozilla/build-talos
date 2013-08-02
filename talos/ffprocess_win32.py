@@ -6,14 +6,8 @@ from ffprocess import FFProcess
 import os
 import shutil
 import utils
-
 try:
-    import win32api
-    import win32file
-    import win32pdhutil
-    import win32pdh
-    import win32pipe
-    import msvcrt
+    import mozprocess.wpk as wpk
 except:
     pass
 
@@ -43,90 +37,19 @@ class Win32Process(FFProcess):
         return cmd
 
 
-    def TerminateProcess(self, pid):
-        """Helper function to terminate a process, given the pid
+    def _GetPidsByName(self, process_name):
+        """Searches for processes containing a given string.
 
         Args:
-            pid: integer process id of the process to terminate.
-        """
-        ret = ''
-        PROCESS_TERMINATE = 1
-        handle = win32api.OpenProcess(PROCESS_TERMINATE, False, pid)
-        win32api.TerminateProcess(handle, -1)
-        win32api.CloseHandle(handle)
-        ret = 'terminated with PROCESS_TERMINATE'
-        return ret
-
-
-    def ProcessesWithNames(self, *process_names):
-        """Returns a list of processes running with the given name(s).
-        Useful to check whether a Browser process is still running
-
-        Args:
-            process_names: String or strings containing process names, i.e. "firefox"
-
+            process_name: The string to be searched for
+        
         Returns:
-            An array with a list of processes in the list which are running
+           A list of PIDs containing the string. An empty list is returned if none are
+           found.
         """
+        return wpk.get_pids(process_name)
+ 
+    def _TerminateProcess(self, pid, timeout):
+        wpk.kill_pid(pid)
+        return "terminated with PROCESS_TERMINATE"
 
-        processes_with_names = []
-        for process_name in process_names:
-            try:
-                # refresh list of processes
-                win32pdh.EnumObjects(None, None, 0, 1)
-                pids = win32pdhutil.FindPerformanceAttributesByName(process_name, counter="ID Process")
-                if len(pids) > 0:
-                    processes_with_names.extend([(pid, process_name) for pid in pids])
-            except:
-                # Might get an exception if there are no instances of the process running.
-                continue
-        return processes_with_names
-
-    def TerminateAllProcesses(self, timeout, *process_names):
-        """Helper function to terminate all processes with the given process name
-
-        Args:
-            process_name: String or strings containing the process name, i.e. "firefox"
-        """
-        result = ''
-        for process_name in process_names:
-            # Get all the process ids of running instances of this process, and terminate them.
-            try:
-                # refresh list of processes
-                win32pdh.EnumObjects(None, None, 0, 1)
-                pids = win32pdhutil.FindPerformanceAttributesByName(process_name, counter="ID Process")
-                for pid in pids:
-                    ret = self.TerminateProcess(pid)
-                    if result and ret:
-                        result = result + ', '
-                    if ret:
-                        result = result + process_name + '(' + str(pid) + '): ' + ret
-            except:
-                # Might get an exception if there are no instances of the process running.
-                continue
-        return result
-
-
-    def NonBlockingReadProcessOutput(self, handle):
-        """Does a non-blocking read from the output of the process
-            with the given handle.
-
-        Args:
-            handle: The process handle returned from os.popen()
-
-        Returns:
-            A tuple (bytes, output) containing the number of output
-            bytes read, and the actual output.
-        """
-
-        output = ""
-
-        try:
-            osfhandle = msvcrt.get_osfhandle(handle.fileno())
-            (read, num_avail, num_message) = win32pipe.PeekNamedPipe(osfhandle, 0)
-            if num_avail > 0:
-                (error_code, output) = win32file.ReadFile(osfhandle, num_avail, None)
-
-            return (num_avail, output)
-        except:
-            return (0, output)

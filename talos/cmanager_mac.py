@@ -63,7 +63,7 @@ class MacCounterManager(CounterManager):
     CounterManager.__init__(self, ffprocess, process, counters)
 
     # the last process is the useful one
-    self.pid = self.ffprocess.GetPidsByName(process)[-1]
+    self.pid = self.ffprocess._GetPidsByName(process)[-1]
 
     self._loadCounters()
     self.registerCounters(counters)
