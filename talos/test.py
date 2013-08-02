@@ -369,7 +369,7 @@ class tsvgx(tsvg):
     tpmanifest = '${talos}/page_load_test/svgx/svgx.manifest'
     tpcycles = 1
     tppagecycles = 25
-    preferences = {'layout.frame_rate': 10000}
+    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
 
 class tsvgr_opacity(tsvg_opacity):
     """
@@ -397,7 +397,7 @@ class tscrollx(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 1
     tppagecycles = 25
-    preferences = {'layout.frame_rate': 10000}
+    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
 
 class a11yr(PageloaderTest):
     """
