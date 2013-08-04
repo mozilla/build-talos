@@ -17,7 +17,7 @@ dependencies = ['PyYAML',
                 'mozhttpd == 0.5',
                 'mozinfo == 0.4',
                 'datazilla == 1.4',
-                'mozprocess',
+                'mozprocess == 0.8',
                 'httplib2',
                 'oauth2',
                 ]
