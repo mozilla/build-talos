@@ -23,6 +23,9 @@ class Test(object):
             return "\n".join(description_lines)
 
     def __init__(self, **kw):
+        self.update(**kw)
+
+    def update(self, **kw):
         self.__dict__.update(kw)
 
     def items(self):
@@ -295,6 +298,7 @@ class tcanvasmark(PageloaderTest):
     tpcycles = 5
     tppagecycles = 1
     timeout = 900
+    tpmozafterpaint = False
 
 class tscroll(PageloaderTest):
     """

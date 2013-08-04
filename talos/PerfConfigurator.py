@@ -621,6 +621,10 @@ the highest value.
         for test_name in activeTests:
             test_class = test.test_dict[test_name]
 
+            # specific variables do not need overrides, in this case tpmozafterpaint
+            test_instance = test_class()
+            mozAfterPaint = getattr(test_instance, 'tpmozafterpaint', None)
+
             if self.config.get('deviceroot'):
                 if not test_class.mobile:
                     raise ConfigurationError("Test %s is not able to run on mobile devices at this time" % test_name)
@@ -634,7 +638,11 @@ the highest value.
             test_overrides.update(global_overrides or {})
 
             # instantiate the test
-            test_instance = test_class(**test_overrides)
+            test_instance.update(**test_overrides)
+
+            # update original value of mozAfterPaint, this could be 'false', so check for None
+            if mozAfterPaint is not None:
+                test_instance.tpmozafterpaint = mozAfterPaint
 
             # fix up url
             url = getattr(test_instance, 'url', None)
