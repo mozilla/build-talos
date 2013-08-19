@@ -258,6 +258,7 @@ the highest value.
         'browser.safebrowsing.updateURL': 'http://127.0.0.1/safebrowsing-dummy/update',
         'extensions.update.url': 'http://127.0.0.1/extensions-dummy/updateURL',
         'extensions.update.background.url': 'http://127.0.0.1/extensions-dummy/updateBackgroundURL',
+        'extensions.blocklist.enabled': False,
         'extensions.blocklist.url': 'http://127.0.0.1/extensions-dummy/blocklistURL',
         'extensions.hotfix.url': 'http://127.0.0.1/extensions-dummy/hotfixURL',
         'extensions.update.enabled': False,
