@@ -19,6 +19,7 @@ import platform
 import re
 import results
 import shutil
+import traceback
 import sys
 import subprocess
 import tempfile
@@ -226,8 +227,8 @@ class TTest(object):
                 self.cleanupProfile(temp_dir)
         except talosError, te:
             utils.debug("cleanup error: %s", te.msg)
-        except:
-            utils.debug("unknown error during cleanup")
+        except Exception:
+            utils.debug("unknown error during cleanup: %s" % (traceback.format_exc(),))
 
     def runTest(self, browser_config, test_config):
         """
