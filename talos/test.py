@@ -209,8 +209,9 @@ class tart(PageloaderTest):
     tppagecycles = 25
     tploadaboutblank = True
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
-    """The recording API is broken with OMTC as of 2013-07, so disabled for now"""
-    preferences = {'layout.frame_rate': 10000, 'docshell.event_starvation_delay_hint': 1,
+    """ ASAP mode """
+    """ The recording API is broken with OMTC as of 2013-07, so disabled for now """
+    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1,
                    'layers.offmainthreadcomposition.enabled': False}
 
 class tp(PageloaderTest):
@@ -284,6 +285,7 @@ class tsvg(PageloaderTest):
     """
     tpmanifest = '${talos}/page_load_test/svg/svg.manifest'
     tpcycles = 5
+    """ ASAP mode - keeping old pref (new is 0), since tsvg is being deprecated and we don't want to modify talos results for it now """
     preferences = {'layout.frame_rate': 10000}
 
 class tsvg_opacity(PageloaderTest):
@@ -396,6 +398,7 @@ class tsvgx(tsvg):
     tpmanifest = '${talos}/page_load_test/svgx/svgx.manifest'
     tpcycles = 1
     tppagecycles = 25
+    """ASAP mode"""
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
 
 class tsvgr_opacity(tsvg_opacity):
@@ -424,6 +427,7 @@ class tscrollx(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 1
     tppagecycles = 25
+    """ ASAP mode """
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
 
 class a11yr(PageloaderTest):
