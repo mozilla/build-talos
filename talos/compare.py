@@ -45,7 +45,11 @@ test_map['tsvgr_opacity'] = {'id': 225, 'tbplname': 'tsvgr_opacity'}
 test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
 test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
 test_map['tp5o'] = {'id': 255, 'tbplname': 'tp5o_paint'}
-tests = ['tresize', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'tscrollr', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr', 'tsvgr_opacity', 'tp5n', 'tp5o']
+test_map['tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
+test_map['tscrollx'] = {'id': 279, 'tbplname': 'tscrollx_paint'}
+test_map['tart'] = {'id': 293, 'tbplname': 'tart'}
+test_map['tcanvasmark'] = {'id': 297, 'tbplname': 'tcanvasmark_paint'}
+tests = ['tresize', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx']
 
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8']
 
