@@ -213,6 +213,7 @@ class tart(PageloaderTest):
     """ The recording API is broken with OMTC as of 2013-07, so disabled for now """
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1,
                    'layers.offmainthreadcomposition.enabled': False}
+    filters = [["ignore_first", [1]], ['median', []]]
 
 class tp(PageloaderTest):
     """
@@ -400,6 +401,7 @@ class tsvgx(tsvg):
     tppagecycles = 25
     """ASAP mode"""
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    filters = [["ignore_first", [5]], ['median', []]]
 
 class tsvgr_opacity(tsvg_opacity):
     """
@@ -409,6 +411,7 @@ class tsvgr_opacity(tsvg_opacity):
     """
     tpcycles = 1
     tppagecycles = 25
+    filters = [["ignore_first", [5]], ['median', []]]
 
 class tscrollr(PageloaderTest):
     """
@@ -429,6 +432,7 @@ class tscrollx(PageloaderTest):
     tppagecycles = 25
     """ ASAP mode """
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    filters = [["ignore_first", [5]], ['median', []]]
 
 class a11yr(PageloaderTest):
     """
