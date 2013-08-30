@@ -58,7 +58,7 @@ class BrowserWaiter(threading.Thread):
 
     self.firstTime = int(time.time()*1000)
     if self.remoteProcess: #working with a remote device
-      devroot = self.remoteProcess.getDeviceRoot()
+      devroot = self.options['deviceroot']
       if devroot is None:
         self.returncode = 1
       else:

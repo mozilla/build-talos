@@ -821,7 +821,10 @@ the highest value.
         # setup remote device
         try:
             self.testAgent = utils.testAgent(deviceip, deviceport)
-            self.deviceroot = self.testAgent.getDeviceRoot()
+            if 'deviceroot' in self.config:
+                self.deviceroot = self.config['deviceroot']
+            else:
+                self.deviceroot = self.testAgent.getDeviceRoot()
         except mozdevice.DMError:
             print "Remote Device Error: Unable to connect to remote device '%s'" % deviceip
 
