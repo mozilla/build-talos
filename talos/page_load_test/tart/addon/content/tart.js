@@ -274,7 +274,7 @@ Tart.prototype = {
       var disp = [].concat(res.value).map(function(a){return (isNaN(a) ? -1 : a.toFixed(1));}).join(" ");
       out += res.name + ": " + disp + "\n";
 
-      if (!isNaN(res.value)) { // raw intervals array is not reported to talos
+      if (!Array.isArray(res.value)) { // raw intervals array is not reported to talos
         testNames.push(res.name);
         testResults.push(res.value);
       }
