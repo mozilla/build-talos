@@ -66,21 +66,7 @@ function collectAndReport(aSubject, aTopic, aData) {
 function collectRSS() {
   var mgr = Components.classes["@mozilla.org/memory-reporter-manager;1"].
       getService(Components.interfaces.nsIMemoryReporterManager);
-  var e = mgr.enumerateReporters();
-  text = "";
-  while (e.hasMoreElements()) {
-    var reporter = e.getNext().QueryInterface(Components.interfaces.nsIMemoryReporter);
-    if (reporter.path == 'resident') {
-      procName = reporter.process;
-      if (procName == '')
-        procName = "Main";
-        
-      //For content process it is in the format "Content (<PID>)", we just want Content
-      procName = procName.split(' ')[0];
-      text += "RSS: " + procName + ": " + reporter.amount + "\n";
-    }
-  }
-  return text;
+  return "RSS: Main: " + mgr.resident + "\n";
 }
 
 /*
