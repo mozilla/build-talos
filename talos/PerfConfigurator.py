@@ -253,6 +253,7 @@ the highest value.
         'security.fileuri.strict_origin_policy': False,
         'toolkit.telemetry.prompted': 999,
         'toolkit.telemetry.notifiedOptOut': 999,
+        'dom.send_after_paint_to_content': True,
         'security.turn_off_all_security_so_that_viruses_can_take_over_this_computer': True,
         'browser.safebrowsing.gethashURL': 'http://127.0.0.1/safebrowsing-dummy/gethash',
         'browser.safebrowsing.keyURL': 'http://127.0.0.1/safebrowsing-dummy/newkey',
@@ -391,19 +392,6 @@ the highest value.
         if not 'print_tests' in self.parsed and not self.config.get('browser_path'):
             self.error(msg)
 
-        # add test_name_extension to config
-        # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/PerfConfigurator.py#l107
-        noChrome = self.config.get('noChrome')
-        mozAfterPaint = self.config.get('tpmozafterpaint')
-        if noChrome or mozAfterPaint and not self.config.get('test_name_extension'):
-            # (it would be nice to handle this more elegantly)
-            test_name_extension = ''
-            if noChrome:
-                test_name_extension += '_nochrome'
-            if mozAfterPaint:
-                test_name_extension += '_paint'
-            self.config['test_name_extension'] = test_name_extension
-
         # BBB: (resultsServer, resultsLink) -> results_url
         resultsServer = self.config.pop('resultsServer', None)
         resultsLink = self.config.pop('resultsLink', None)
@@ -428,9 +416,6 @@ the highest value.
             if not self.config.get('webserver'):
                 self.config['webserver'] = 'localhost:%s' % utils.findOpenPort('127.0.0.1')
 
-        # set preferences
-        if self.config.get('tpmozafterpaint'):
-            self.config['preferences']['dom.send_after_paint_to_content'] = True
         extraPrefs = self.config.pop('extraPrefs', {})
         extraPrefs = dict([(i, utils.parsePref(j)) for i, j in extraPrefs.items()])
         self.config['preferences'].update(extraPrefs)
@@ -626,6 +611,19 @@ the highest value.
             # specific variables do not need overrides, in this case tpmozafterpaint
             test_instance = test_class()
             mozAfterPaint = getattr(test_instance, 'tpmozafterpaint', None)
+
+            # add test_name_extension to config
+            # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/PerfConfigurator.py#l107
+            noChrome = self.config.get('noChrome')
+            if noChrome or mozAfterPaint and not self.config.get('test_name_extension'):
+                # (it would be nice to handle this more elegantly)
+                test_name_extension = ''
+                if noChrome:
+                    test_name_extension += '_nochrome'
+                if mozAfterPaint:
+                    test_name_extension += '_paint'
+                self.config['test_name_extension'] = test_name_extension
+
 
             if self.config.get('deviceroot'):
                 if not test_class.mobile:

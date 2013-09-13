@@ -58,7 +58,7 @@ class Test(object):
 class TsBase(Test):
     """abstract base class for ts-style tests"""
     keys = ['url', 'url_timestamp', 'timeout', 'cycles', 'shutdown', 'profile_path', 'xperf_counters',
-            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk']
+            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'tpmozafterpaint']
 
 class ts(TsBase):
     """
@@ -83,6 +83,8 @@ class ts_paint(ts):
     url = 'startup_test/tspaint_test.html?begin='
     shutdown = None
     xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'mainthread_readcount', 'mainthread_readbytes', 'mainthread_writecount', 'mainthread_writebytes']
+    filters = [["ignore_first", [1]], ['median', []]]
+    tpmozafterpaint = True
 
 class tspaint_places_generated_max(ts_paint):
     """
@@ -115,6 +117,8 @@ class tpaint(TsBase):
     url = 'file://${talos}/startup_test/tpaint.html?auto=1'
     timeout = 300
     mobile = False # XUL based tests with local files.
+    tpmozafterpaint = True
+    filters = [["ignore_first", [5]], ['median', []]]
 
 class tresize(TsBase):
     """
@@ -123,7 +127,8 @@ class tresize(TsBase):
     cycles = 20
     url = 'startup_test/tresize-test.html'
     timeout = 150
-    filters = [['mean', []]]
+    tpmozafterpaint = True
+    filters = [["ignore_first", [5]], ['median', []]]
 
 # mobile ts-type tests
 class trobopan(TsBase):
@@ -257,6 +262,7 @@ class tp5n(tp):
     tpmanifest = '${talos}/page_load_test/tp5n/tp5n.manifest'
     tpcycles = 1
     tppagecycles = 25
+    tpmozafterpaint = True
     rss = True
     win_counters = ['Main_RSS', 'Private Bytes', '% Processor Time']
     w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
@@ -264,12 +270,15 @@ class tp5n(tp):
     mac_counters = ['Private Bytes', 'Main_RSS']
     xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'mainthread_readcount', 'mainthread_readbytes', 'mainthread_writecount', 'mainthread_writebytes']
     mobile = False # too many files to run, we will hit OOM
+    filters = [["ignore_first", [5]], ['median', []]]
+    timeout = 3600
 
 class tp5o(tp5n):
     """
     Derived from the tp5n pageset, this is the 49 most reliable webpages.
     """
     tpmanifest = '${talos}/page_load_test/tp5n/tp5o.manifest'
+    responsiveness = True
 
 class tdhtml(PageloaderTest):
     """
@@ -328,7 +337,8 @@ class tcanvasmark(PageloaderTest):
     tpcycles = 5
     tppagecycles = 1
     timeout = 900
-    tpmozafterpaint = False
+    tpmozafterpaint = True
+    filters = [["ignore_first", [1]], ['median', []]]
 
 class tscroll(PageloaderTest):
     """
@@ -367,8 +377,10 @@ class a11y(PageloaderTest):
     performance regressions. 
     """
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
+    tpmozafterpaint = True
     tpcycles = 5
     mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
+    filters = [["ignore_first", [1]], ['median', []]]
 
 # 'r' tests are row based vs column based.
 class tdhtmlr(tdhtml):
@@ -443,6 +455,7 @@ class a11yr(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpcycles = 1
     tppagecycles = 25
+    tpmozafterpaint = True
     mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
 
 # global test data
