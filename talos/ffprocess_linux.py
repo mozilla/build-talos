@@ -47,7 +47,7 @@ class LinuxProcess(FFProcess):
         processes = utils.running_processes(process_name)
         return [pid for pid,_ in processes]
 
-    def TerminateProcess(self, pid, timeout):
+    def _TerminateProcess(self, pid, timeout):
         """Helper function to terminate a process, given the pid
 
         Args:
