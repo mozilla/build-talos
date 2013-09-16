@@ -140,6 +140,7 @@ class trobopan(TsBase):
     cycles = 5
     timeout = 300
     desktop = False
+    tpchrome = False
 
 class tcheckerboard(TsBase):
     """
@@ -149,6 +150,7 @@ class tcheckerboard(TsBase):
     cycles = 5
     timeout = 300
     desktop = False
+    tpchrome = False
 
 class tprovider(TsBase):
     """
@@ -158,6 +160,7 @@ class tprovider(TsBase):
     cycles = 5
     timeout = 300
     desktop = False
+    tpchrome = False
 
 class tcheck2(TsBase):
     """
@@ -168,6 +171,7 @@ class tcheck2(TsBase):
     cycles = 5
     timeout = 300
     desktop = False
+    tpchrome = False
 
 ### pageloader tests(tp5, tdhtml, etc)
 
@@ -245,6 +249,8 @@ class tp4m(tp):
     Firefox and is a blend of regular and mobile friendly pages.
     """
     tpmanifest = '${talos}/page_load_test/tp4m.manifest'
+    tpchrome = False
+    rss = True
     tpcycles = 2
     win_counters = w7_counters = linux_counters = mac_counters = None
     remote_counters = ['Main_RSS']
