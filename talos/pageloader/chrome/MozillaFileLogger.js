@@ -108,8 +108,22 @@ MozillaFileLogger.getLogCallback = function() {
 
 // This is only used from chrome space by the reftest harness
 MozillaFileLogger.log = function(msg) {
-  if (MozillaFileLogger._foStream)
-    MozillaFileLogger._foStream.write(msg, msg.length);
+  if (MozillaFileLogger && MozillaFileLogger._foStream) {
+    try {
+      MozillaFileLogger._foStream.write(msg, msg.length);
+    } catch(e) {
+      //most likely we have NS_BASE_STREAM_CLOSED, init and log original message
+      try {
+        var prefs = Components.classes['@mozilla.org/preferences-service;1']
+          .getService(Components.interfaces.nsIPrefBranch2);
+        var filename = prefs.getCharPref('talos.logfile');
+        MozillaFileLogger.init(filename);
+        MozillaFileLogger._foStream.write(msg, msg.length);
+      } catch (ex) {
+        dump("Unable to initialize file or write message: " + msg);
+      }
+    }
+  }
 }
 
 MozillaFileLogger.close = function() {
