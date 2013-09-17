@@ -343,7 +343,7 @@ class tcanvasmark(PageloaderTest):
     tpcycles = 5
     tppagecycles = 1
     timeout = 900
-    tpmozafterpaint = True
+    tpmozafterpaint = False
     filters = [["ignore_first", [1]], ['median', []]]
 
 class tscroll(PageloaderTest):
