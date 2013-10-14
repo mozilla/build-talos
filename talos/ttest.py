@@ -134,7 +134,8 @@ class TTest(object):
         if platform.system() in ('Windows', 'Microsoft'):
             stackwalkpaths = ['win32', 'minidump_stackwalk.exe']
         elif platform.system() == 'Linux':
-            if '64' in platform.architecture()[0]: #are we 64 bit?
+            # are we 64 bit?
+            if '64' in platform.architecture()[0]:
                 stackwalkpaths = ['linux64', 'minidump_stackwalk']
             else:
                 stackwalkpaths = ['linux', 'minidump_stackwalk']
@@ -146,27 +147,38 @@ class TTest(object):
         stackwalkbin = os.path.join(os.path.dirname(__file__), 'breakpad', *stackwalkpaths)
         assert os.path.exists(stackwalkbin), "minidump_stackwalk binary not found: %s" % stackwalkbin
 
-        # look for minidumps
-        minidumpdir = os.path.join(profile_dir, 'minidumps')
-        if browser_config['remote'] == True:
-            minidumpdir = tempfile.mkdtemp()
-            try:
-                remoteminidumpdir = profile_dir + '/minidumps/'
-                if self._ffprocess.testAgent.dirExists(remoteminidumpdir):
-                    self._ffprocess.testAgent.getDirectory(remoteminidumpdir, minidumpdir)
-            except mozdevice.DMError:
-                print "Remote Device Error: Error getting crash minidumps from device"
-                raise
+        if browser_config['remote'] is True:
+            # favour using Java exceptions in the logcat over minidumps
+            if os.path.exists('logcat.log'):
+                with open('logcat.log') as f:
+                    logcat = f.read().split('\r')
+                found = mozcrash.check_for_java_exception(logcat)
 
-        found = mozcrash.check_for_crashes(minidumpdir, 
-                                           browser_config['symbols_path'], 
-                                           stackwalk_binary=stackwalkbin,
-                                           test_name=test_name)
+            if not found:
+                # check for minidumps
+                minidumpdir = tempfile.mkdtemp()
+                try:
+                    remoteminidumpdir = profile_dir + '/minidumps/'
+                    if self._ffprocess.testAgent.dirExists(remoteminidumpdir):
+                        self._ffprocess.testAgent.getDirectory(remoteminidumpdir, minidumpdir)
+                except mozdevice.DMError:
+                    print "Remote Device Error: Error getting crash minidumps from device"
+                    raise
+                found = mozcrash.check_for_crashes(minidumpdir,
+                                                   browser_config['symbols_path'],
+                                                   stackwalk_binary=stackwalkbin,
+                                                   test_name=test_name)
 
-        if browser_config['remote'] == True:
             # cleanup dumps on remote
             self._ffprocess.testAgent.removeDir(remoteminidumpdir)
             self._hostproc.removeDirectory(minidumpdir)
+        else:
+            # check for minidumps
+            minidumpdir = os.path.join(profile_dir, 'minidumps')
+            found = mozcrash.check_for_crashes(minidumpdir,
+                                               browser_config['symbols_path'],
+                                               stackwalk_binary=stackwalkbin,
+                                               test_name=test_name)
 
         if found:
             raise talosCrash("Found crashes after test run, terminating test")
