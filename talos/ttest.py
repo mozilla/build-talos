@@ -12,13 +12,10 @@
      - waits for a 'dump' from the browser
 """
 
-import glob
 import mozinfo
 import os
 import platform
-import re
 import results
-import shutil
 import traceback
 import sys
 import subprocess
@@ -126,9 +123,9 @@ class TTest(object):
         """cleanup browser processes and process crashes if found"""
 
         # cleanup processes
-        cleanup_result = self._ffprocess.cleanupProcesses(browser_config['process'],
-                                                          browser_config['child_process'],
-                                                          browser_config['browser_wait'])
+        self._ffprocess.cleanupProcesses(browser_config['process'],
+                                         browser_config['child_process'],
+                                         browser_config['browser_wait'])
 
         # find stackwalk binary
         if platform.system() in ('Windows', 'Microsoft'):
@@ -200,7 +197,7 @@ class TTest(object):
                 try:
                     value.index(',')
                     print "Error: Found an ',' in our value, unable to process value."
-                except ValueError, e:
+                except ValueError:
                     envstr += "%s%s=%s" % (delim, key, value)
                     delim = ","
 
