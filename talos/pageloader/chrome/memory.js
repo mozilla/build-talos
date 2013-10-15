@@ -36,7 +36,7 @@ function initializeMemoryCollector(callback, args) {
       }
     }
  
-    memTimer = Components.classes["@mozilla.org/timer;1"].createInstance(Components.interfaces.nsITimer);
+    var memTimer = Components.classes["@mozilla.org/timer;1"].createInstance(Components.interfaces.nsITimer);
     memTimer.initWithCallback(event, 10000, Components.interfaces.nsITimer.TYPE_ONE_SHOT);
 
     os.notifyObservers(null, "child-memory-reporter-request", null);
