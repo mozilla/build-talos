@@ -98,7 +98,7 @@ class Output(object):
 
     @classmethod
     def responsiveness_Metric(cls, val_list):
-        return round(sum([int(x)*int(x) / 1000000.0 for x in val_list]))
+        return sum([float(x)*float(x) / 1000000.0 for x in val_list])
 
     @classmethod
     def v8_Metric(cls, val_list):

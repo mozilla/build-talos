@@ -280,7 +280,7 @@ class BrowserLogResults(object):
     RSS_REGEX = re.compile('RSS:\s+([a-zA-Z0-9]+):\s+([0-9]+)$')
 
     # regular expression for responsiveness results
-    RESULTS_RESPONSIVENESS_REGEX = re.compile('MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*?)$', re.DOTALL|re.MULTILINE)
+    RESULTS_RESPONSIVENESS_REGEX = re.compile('MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*\.?\d*)$', re.DOTALL|re.MULTILINE)
 
     # classes for results types
     classes = {'tsformat': TsResults,
