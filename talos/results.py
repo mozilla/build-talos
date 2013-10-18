@@ -306,17 +306,11 @@ class BrowserLogResults(object):
 
             if not os.path.isfile(filename):
                 raise utils.talosError("File '%s' does not exist" % filename)
-            f = file(filename)
-            exception = None
+
             try:
-                results_raw = f.read()
-            except Exception, exception:
-                pass
-            try:
-                f.close()
-            except:
-                pass
-            if exception:
+               with open(filename, 'r') as f:
+                   results_raw = f.read()
+            except Exception, e:
                 raise exception
 
         self.results_raw = results_raw

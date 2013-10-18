@@ -73,32 +73,7 @@ class RemoteProcess(FFProcess):
             return self.testAgent.getProcessList()
         except mozdevice.DMError:
             print "Remote Device Error: Error getting list of processes on remote device"
-            raise
-
-    def GenerateBrowserCommandLine(self, browser_path, extra_args, deviceroot, profile_dir, url):
-        """Generates the command line for a process to run Browser
-
-        Args:
-        browser_path: String containing the path to the browser exe to use
-        profile_dir: String containing the directory of the profile to run Browser in
-        url: String containing url to start with.
-        """
-
-        # For the robocop tests they use 'am instrument ...' and do not launch fennec or a url proper
-        # However we need to fill in the device root path into the placeholder in the test definition
-        if url.startswith('am instrument'):
-            return url % deviceroot
-
-        profile_arg = ''
-        if profile_dir:
-            profile_arg = '-profile %s' % profile_dir
-
-        cmd = '%s %s %s %s' % (browser_path,
-                                 extra_args,
-                                 profile_arg,
-                                 url)
-        return cmd
-  
+            raise  
 
     def ProcessesWithNames(self, *process_names):
         """Returns a list of processes running with the given name(s).
@@ -252,4 +227,33 @@ class RemoteProcess(FFProcess):
         #we will not raise an error here because the functions that depend on this do their own error handling
         data = self.testAgent.getDeviceRoot()
         return data
+
+
+    def runProgram(self, browser_config, command_args, timeout=1200):
+        remoteLog = os.path.join(self.getDeviceRoot() + '/' + browser_config['browser_log'])
+        self._ffprocess.removeFile(remoteLog)
+        # bug 816719, remove sessionstore.js so we don't interfere with talos
+        self._ffprocess.removeFile(os.path.join(self.getDeviceRoot(), "profile/sessionstore.js"))
+
+        env = ""
+        for key, value in browser_config['env'].items():
+            env = "%s %s=%s" % (env, key, value)
+        command_line = "%s %s" % (env, ' '.join(command_args))
+
+        self.recordLogcat()
+        #TODO: figure out timeout
+        retVal = self.launchProcess(' '.join(command_args), outputFile=remoteLog, timeout=timeout)
+        logcat = self.getLogcat()
+        if logcat:
+            with open('logcat.log', 'w') as f:
+                f.write(''.join(logcat[-500:-1]))
+        if retVal:
+            self.getFile(retVal, browser_config['browser_log'])
+        else:
+            data = self.getFile(remoteLog, browser_config['browser_log'])
+            if data == '':
+                raise talosError("missing data from remote log file")
+
+        # Wait out the browser closing
+        time.sleep(browser_config['browser_wait'])
 

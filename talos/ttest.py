@@ -24,6 +24,7 @@ import time
 import utils
 import copy
 import mozcrash
+from threading import Thread
 
 try:
     import mozdevice
@@ -37,6 +38,7 @@ from ffprocess_linux import LinuxProcess
 from ffprocess_win32 import Win32Process
 from ffprocess_mac import MacProcess
 from ffsetup import FFSetup
+import talosProcess
 
 class TTest(object):
 
@@ -216,9 +218,6 @@ class TTest(object):
 
     def testCleanup(self, browser_config, profile_dir, test_config, cm, temp_dir):
         try:
-            if cm:
-                cm.stopMonitor()
-
             if os.path.isfile(browser_config['browser_log']):
                 results_file = open(browser_config['browser_log'], "r")
                 results_raw = results_file.read()
@@ -239,6 +238,20 @@ class TTest(object):
         except Exception:
             utils.debug("unknown error during cleanup: %s" % (traceback.format_exc(),))
 
+
+    def collectCounters(self):
+        #set up the counters for this test
+        if self.counters:
+            while not self.isFinished:
+                time.sleep(self.resolution)
+                # Get the output from all the possible counters
+                for count_type in self.counters:
+                    if not self.cm:
+                        continue
+                    val = self.cm.getCounterValue(count_type)
+                    if val and self.counter_results:
+                        self.counter_results[count_type].append(val)
+
     def runTest(self, browser_config, test_config):
         """
             Runs an url based test on the browser as specified in the browser_config dictionary
@@ -251,8 +264,8 @@ class TTest(object):
         self.initializeLibraries(browser_config)
 
         utils.debug("operating with platform_type : %s", self.platform_type)
-        counters = test_config.get(self.platform_type + 'counters', [])
-        resolution = test_config['resolution']
+        self.counters = test_config.get(self.platform_type + 'counters', [])
+        self.resolution = test_config['resolution']
         utils.setEnvironmentVars(browser_config['env'])
         utils.setEnvironmentVars({'MOZ_CRASHREPORTER_NO_REPORT': '1'})
 
@@ -334,10 +347,6 @@ class TTest(object):
                     os.chmod(browser_config['error_filename'], 0777)
                     os.remove(browser_config['error_filename'])
 
-                # on remote devices we do not have the fast launch/shutdown as we do on desktop
-                if not browser_config['remote']:
-                    time.sleep(browser_config['browser_wait']) #wait out the browser closing
-
                 # check to see if the previous cycle is still hanging around
                 if (i > 0) and self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
                     raise talosError("previous cycle still running")
@@ -345,79 +354,50 @@ class TTest(object):
                 # Run the test
                 timeout = test_config.get('timeout', 7200) # 2 hours default
                 total_time = 0
-                url = test_config['url']
-                command_line = self._ffprocess.GenerateBrowserCommandLine(browser_config['browser_path'],
-                                                                        browser_config['extra_args'],
-                                                                        browser_config['deviceroot'],
-                                                                        profile_dir,
-                                                                        url)
 
-                utils.debug("command line: %s", command_line)
+                command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"], 
+                                                                browser_config["extra_args"], 
+                                                                browser_config["deviceroot"],
+                                                                profile_dir, 
+                                                                test_config['url'])
 
-                b_log = browser_config['browser_log']
-                if self.remote == True:
-                    b_log = browser_config['deviceroot'] + '/' + browser_config['browser_log']
-                    self._ffprocess.removeFile(b_log)
-                    # bug 816719, remove sessionstore.js so we don't interfere with talos
-                    self._ffprocess.testAgent.removeFile(os.path.join(self._ffprocess.testAgent.getDeviceRoot(), "profile/sessionstore.js"))
-
-                b_cmd = self._ffprocess.GenerateBControllerCommandLine(command_line, browser_config, test_config)
-                try:
-                    process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
-                except:
-                    raise talosError("error executing browser command line '%s': %s" % (subprocess.list2cmdline(b_cmd), sys.exc_info()[0]))
-
-                #give browser a chance to open
-                # this could mean that we are losing the first couple of data points
-                # as the tests starts, but if we don't provide
-                # some time for the browser to start we have trouble connecting the CounterManager to it
-                # on remote devices we do not have the fast launch/shutdown as we do on desktop
                 if not browser_config['remote']:
-                    time.sleep(browser_config['browser_wait'])
+                    if test_config['setup']:
+                        # Generate bcontroller.yml for xperf
+                        utils.GenerateTalosConfig(command_args, browser_config, test_config)
+                        setup = talosProcess.talosProcess(['python'] + test_config['setup'].split())
+                        setup.run()
+                        setup.wait()
 
-                #set up the counters for this test
-                counter_results = None
-                if counters:
-                    cm = self.CounterManager(self._ffprocess, browser_config['process'], counters)
-                    counter_results = dict([(counter, []) for counter in counters])
+                    self.isFinished = False
+                    browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
+                    browser.run(timeout=timeout)
+                    self.pid = browser.pid
 
-                #the main test loop, monitors counters and checks for browser output
-                dumpResult = ""
-                while total_time < timeout:
-                    # Sleep for [resolution] seconds
-                    time.sleep(resolution)
-                    total_time += resolution
-                    fileData = self._ffprocess.getFile(b_log)
-                    if fileData and len(fileData) > 0:
-                        newResults = fileData.replace(dumpResult, '')
-                        if len(newResults.strip()) > 0:
-                            utils.info(newResults)
-                            dumpResult = fileData
+                    self.counter_results = None
+                    if self.counters:
+                        self.cm = self.CounterManager(browser_config['process'], self.counters)
+                        self.counter_results = dict([(counter, []) for counter in self.counters])
+                        cmthread = Thread(target=self.collectCounters)
+                        cmthread.setDaemon(True) # don't hang on quit
+                        cmthread.start()
 
-                    # Get the output from all the possible counters
-                    for count_type in counters:
-                        val = cm.getCounterValue(count_type)
-                        if val:
-                            counter_results[count_type].append(val)
-                    if process.poll() != None: #browser_controller completed, file now full
-                        break
+                    # todo: ctrl+c doesn't close the browser windows
+                    browser.wait()
+                    browser = None
+                    self.isFinished = True
+ 
+                    if test_config['cleanup']:
+                        #HACK: add the pid to support xperf where we require the pid in post processing
+                        utils.GenerateTalosConfig(command_args, browser_config, test_config, pid=self.pid)
+                        cleanup = talosProcess.talosProcess(['python'] + test_config['cleanup'].split())
+                        cleanup.run()
+                        cleanup.wait()
 
-                if hasattr(process, 'kill'):
-                    # BBB python 2.4 does not have Popen.kill(); see
-                    # https://bugzilla.mozilla.org/show_bug.cgi?id=752951#c6
-                    try:
-                        process.kill()
-                    except OSError, e:
-                        if (not mozinfo.isWin) and (e.errno != 3):
-                            # 3 == No such process in Linux and Mac (errno.h)
-                            raise
-
-                if total_time >= timeout:
-                    raise talosError("timeout exceeded")
-
-                #stop the counter manager since this test is complete
-                if counters:
-                    cm.stopMonitor()
+                    # allow mozprocess to terminate fully.  It appears our log file is partial unless we wait
+                    time.sleep(5)
+                else:
+                    self.ffprocess.runProgram(browser_config, command_args, timeout=timeout)
 
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']
@@ -429,19 +409,12 @@ class TTest(object):
                     raise talosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
 
                 # add the results from the browser output
-                test_results.add(browser_log_filename, counter_results=counter_results)
-
-                # on remote devices we do not have the fast launch/shutdown as we do on desktop
-                if not browser_config['remote']:
-                    time.sleep(browser_config['browser_wait'])
+                test_results.add(browser_log_filename, counter_results=self.counter_results)
 
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
                 #clean up the bcontroller process
                 timer = 0
-                while ((process.poll() is None) and timer < browser_config['browser_wait']):
-                    time.sleep(1)
-                    timer+=1
 
             # cleanup
             self.cleanupProfile(temp_dir)
@@ -454,7 +427,7 @@ class TTest(object):
             return test_results
 
         except Exception, e:
-            counters = vars().get('cm', counters)
-            self.testCleanup(browser_config, profile_dir, test_config, counters, temp_dir)
+            self.counters = vars().get('cm', self.counters)
+            self.testCleanup(browser_config, profile_dir, test_config, self.counters, temp_dir)
             raise
 

@@ -6,6 +6,8 @@
 
 import subprocess
 from cmanager import CounterManager
+import utils
+from mozprocess import pid as mozpid
 
 
 def GetProcessData(pid):
@@ -54,23 +56,28 @@ class MacCounterManager(CounterManager):
   counterDict = {"Private Bytes": GetPrivateBytes,
                  "RSS": GetResidentSize}
 
-  def __init__(self, ffprocess, process, counters=None):
+  def __init__(self, process, counters=None):
     """Args:
          counters: A list of counters to monitor. Any counters whose name does
          not match a key in 'counterDict' will be ignored.
     """
 
-    CounterManager.__init__(self, ffprocess, process, counters)
+    CounterManager.__init__(self)
 
     # the last process is the useful one
-    self.pid = self.ffprocess._GetPidsByName(process)[-1]
+    self.pid = mozpid.get_pids(process)[-1]
 
     self._loadCounters()
     self.registerCounters(counters)
 
   def getCounterValue(self, counterName):
     """Returns the last value of the counter 'counterName'"""
+    if counterName not in self.registeredCounters:
+        print "Warning: attempting to collect counter %s and it is not registered" % counterName
+        return
+
     try:
       return self.registeredCounters[counterName][0](self.pid)
-    except:
-      print "Error in collecting counter: " + counterName
+    except Exception, e:
+      print "Error in collecting counter: %s, pid: %s, exception: %s" % (counterName, self.pid, e)
+

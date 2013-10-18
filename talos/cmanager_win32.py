@@ -71,8 +71,8 @@ _PDH_FMT_LONG = 0x00000100
 
 class WinCounterManager(CounterManager):
 
-  def __init__(self, ffprocess, process, counters=None, childProcess="plugin-container"):
-    self.ffprocess = ffprocess
+  def __init__(self, process, counters=None, childProcess="plugin-container"):
+    CounterManager.__init__(self)
     self.childProcess = childProcess
     self.registeredCounters = {}
     self.registerCounters(counters)

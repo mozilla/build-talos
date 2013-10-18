@@ -151,7 +151,7 @@ def trackThread(row, firefoxPID):
     event, proc, tid = row[EVENTNAME_INDEX], row[PROCESS_INDEX], row[THREAD_ID_INDEX]
     if event in ["T-DCStart", "T-Start"]:
         procName, procID = re.search("^(.*) \(\s*(\d+)\)$", proc).group(1, 2)
-        if procID == firefoxPID:
+        if procID == str(firefoxPID):
             imgIdx = getIndex(event, IMAGEFUNC_COL)
             img = re.match("([^!]+)!", row[imgIdx]).group(1)
             if img == procName:
@@ -399,8 +399,8 @@ def etlparser_from_config(config_file, **kwargs):
 
     # option defaults
     args = {'xperf_path': 'xperf.exe',
-            'etl_filename': 'output.etl',
-            'outputFile': None,
+            'etl_filename': 'test.etl',
+            'outputFile': 'etl_output.csv',
             'processID': None,
             'approot': None,
             'whitelist_file': None,

@@ -19,46 +19,6 @@ import platform
 
 class MacProcess(FFProcess):
 
-    def GenerateBrowserCommandLine(self, browser_path, extra_args, deviceroot, profile_dir, url):
-        """Generates the command line for a process to run Browser
-
-        Args:
-            browser_path: String containing the path to the browser binary to use
-            profile_dir: String containing the directory of the profile to run Browser in
-            url: String containing url to start with.
-        """
-
-        profile_arg = ''
-        if profile_dir:
-            profile_arg = '-profile %s' % profile_dir
-
-        cmd = '%s -foreground %s %s %s' % (browser_path,
-                            extra_args,
-                            profile_arg,
-                            url)
-        """
-        If running on OS X 10.5 or older, wrap |cmd| so that it will
-        be executed as an i386 binary, in case it's a 32-bit/64-bit universal
-        binary.
-        """
-        if hasattr(platform, 'mac_ver') and platform.mac_ver()[0][:4] == '10.5':
-            return "arch -arch i386 " + cmd
-
-        return cmd
-
-    def _GetPidsByName(self, process_name):
-        """Searches for processes containing a given string.
-
-        Args:
-            process_name: The string to be searched for
-
-        Returns:
-            A list of PIDs containing the string. An empty list is returned if none are
-            found.
-        """
-        processes = utils.running_processes(process_name, psarg='-Acj')
-        return [pid for pid,_ in processes]
-
     def _TerminateProcess(self, pid, timeout):
         """Helper function to terminate a process, given the pid
 

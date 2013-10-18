@@ -10,6 +10,7 @@ import sys
 import time
 import utils
 from utils import talosError,MakeDirectoryContentsWritable
+from mozprocess import pid as mozpid
 
 class FFProcess(object):
     testAgent = None
@@ -28,7 +29,7 @@ class FFProcess(object):
         """
         processes_with_names = []
         for process_name in process_names:
-            pids = self._GetPidsByName(process_name)
+            pids = mozpid.get_pids(process_name)
             processes_with_names.extend([(pid, process_name) for pid in pids])
 
         return processes_with_names
@@ -41,7 +42,7 @@ class FFProcess(object):
         """
         results = []
         for process_name in process_names:
-            for pid in self._GetPidsByName(process_name):
+            for pid in mozpid.get_pids(process_name):
                 ret = self._TerminateProcess(pid, timeout)
                 if ret:
                     results.append("%s (%s): %s" % (process_name, pid, ret))
@@ -69,43 +70,6 @@ class FFProcess(object):
                 raise talosError("failed to cleanup processes: %s" % processes)
 
         return terminate_result
-
-    def GenerateBControllerCommandLine(self, command_line, browser_config, test_config):
-        bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait', 'test_timeout', 'browser_log', 'browser_path', 'error_filename']
-
-        if 'xperf_path' in browser_config:
-            bcontroller_vars.append('xperf_path')
-            bcontroller_vars.extend(['buildid', 'sourcestamp', 'repository', 'title'])
-            if 'name' in test_config:
-              bcontroller_vars.append('testname')
-              browser_config['testname'] = test_config['name']
-
-        if (browser_config['webserver'] != 'localhost'):
-            bcontroller_vars.extend(['host', 'port', 'deviceroot', 'env'])
-
-        browser_config['command'] = command_line
-        if 'url_timestamp' in test_config:
-            browser_config['url_timestamp'] = test_config['url_timestamp']
-            bcontroller_vars.append('url_timestamp')
-
-        if (('xperf_providers' in test_config) and
-            ('xperf_user_providers' in test_config) and
-            ('xperf_stackwalk' in test_config)):
-            print "extending with xperf!"
-            browser_config['xperf_providers'] = test_config['xperf_providers']
-            browser_config['xperf_user_providers'] = test_config['xperf_user_providers']
-            browser_config['xperf_stackwalk'] = test_config['xperf_stackwalk']
-            bcontroller_vars.extend(['xperf_providers', 'xperf_user_providers', 'xperf_stackwalk'])
-
-        content = utils.writeConfigFile(browser_config, bcontroller_vars)
-
-        fhandle = open(browser_config['bcontroller_config'], "w")
-        fhandle.write(content)
-        fhandle.close()
-
-        here = os.path.dirname(os.path.realpath(__file__))
-        return [sys.executable, os.path.join(here, 'bcontroller.py'),
-                '--configFile', browser_config['bcontroller_config']]
 
     def addRemoteServerPref(self, profile_dir, server):
         """

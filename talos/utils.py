@@ -14,6 +14,8 @@ import yaml
 import string
 import mozlog
 from mozlog import debug,info
+import platform
+from mozprocess import pid as mozpid
 
 # directory of this file for use with interpolatePath()
 here = os.path.dirname(os.path.realpath(__file__))
@@ -118,90 +120,9 @@ def zip_extractall(zipfile, rootdir):
       f.write(data)
       f.close()
 
-def _parse_ps(_ps_output):
-  """parse the output of the ps command"""
-  retval = []
-  header = None
-  for line in _ps_output.splitlines():
-    line = line.strip()
-    if header is None:
-      # first line is the header
-      header = line.split()
-      continue
-    split = line.split(None, len(header)-1)
-    if len(split) < len(header):
-      if 'STAT' in header and len(split) == len(header) - 1:
-        # STAT may be empty on ps -Acj for Mac
-        # https://bugzilla.mozilla.org/show_bug.cgi?id=734146
-        stat_index = header.index('STAT')
-        split.insert(stat_index, '')
-      else:
-        print >> sys.stderr, "ps %s output:" % arg
-        print >> sys.stderr, _ps_output
-        raise talosError("ps line, '%s', does not match headers: %s" % (line, header))
-    process_dict = dict(zip(header, split))
-    retval.append(process_dict)
-  return retval
-
-def ps(arg='axwww'):
-  """
-  python front-end to `ps`
-  http://en.wikipedia.org/wiki/Ps_%28Unix%29
-  """
-  global _ps_output # last ps output, for diagnostics
-  process = subprocess.Popen(['ps', arg], stdout=subprocess.PIPE)
-  _ps_output, _ = process.communicate()
-  return _parse_ps(_ps_output)
-
 def is_running(pid, psarg='axwww'):
   """returns if a pid is running"""
-  return bool([i for i in ps(psarg) if pid == int(i['PID'])])
-
-def running_processes(name, psarg='axwww', defunct=False):
-  """
-  returns a list of 2-tuples of running processes:
-  (pid, ['path/to/executable', 'args', '...'])
-  with the executable named `name`.
-  - defunct: whether to return defunct processes
-  """
-  retval = []
-  for process in ps(psarg):
-    command = process.get('COMMAND', process.get('CMD'))
-    if command is None:
-      print >> sys.stderr, "ps %s output:" % psarg
-      print >> sys.stderr, _ps_output
-      raise talosError("command not found in %s" % process)
-
-    if name not in command:
-      # filter out commands where the name doesn't occur
-      continue
-
-    try:
-      command = shlex.split(command)
-    except ValueError:
-      # https://bugzilla.mozilla.org/show_bug.cgi?id=784863
-      # shlex error in checking for processes in utils.py
-      print command
-      raise
-
-    if command[-1] == '<defunct>':
-      # ignore defunct processes
-      command = command[:-1]
-      if not command or not defunct:
-        continue
-
-    if 'STAT' in process and not defunct:
-      if process['STAT'] == 'Z+':
-        # ignore zombie processes
-        continue
-
-    prog = command[0]
-    if prog.startswith('(') and prog.endswith(')'):
-      prog = prog[1:-1]
-    basename = os.path.basename(prog)
-    if basename == name:
-      retval.append((int(process['PID']), command))
-  return retval
+  return bool([i for i in mozpid.ps(psarg) if pid == int(i['PID'])])
 
 def interpolatePath(path):
   return string.Template(path).safe_substitute(talos=here)
@@ -324,4 +245,59 @@ def parsePref(value):
     except ValueError:
         return value
 
+def GenerateTalosConfig(command_line, browser_config, test_config, pid=None):
+    bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait', 'test_timeout', 'browser_log', 'browser_path', 'error_filename']
+
+    if 'xperf_path' in browser_config:
+        bcontroller_vars.append('xperf_path')
+        bcontroller_vars.extend(['buildid', 'sourcestamp', 'repository', 'title'])
+        if 'name' in test_config:
+          bcontroller_vars.append('testname')
+          browser_config['testname'] = test_config['name']
+
+    if (browser_config['webserver'] != 'localhost'):
+        bcontroller_vars.extend(['host', 'port', 'deviceroot', 'env'])
+
+    browser_config['command'] = ' '.join(command_line)
+    if 'url_timestamp' in test_config:
+        browser_config['url_timestamp'] = test_config['url_timestamp']
+        bcontroller_vars.append('url_timestamp')
+
+    if (('xperf_providers' in test_config) and
+        ('xperf_user_providers' in test_config) and
+        ('xperf_stackwalk' in test_config)):
+        print "extending with xperf!"
+        browser_config['xperf_providers'] = test_config['xperf_providers']
+        browser_config['xperf_user_providers'] = test_config['xperf_user_providers']
+        browser_config['xperf_stackwalk'] = test_config['xperf_stackwalk']
+        browser_config['processID'] = pid
+        browser_config['approot'] = os.path.dirname(browser_config['browser_path'])
+        bcontroller_vars.extend(['xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'processID', 'approot'])
+
+    content = writeConfigFile(browser_config, bcontroller_vars)
+
+    with open(browser_config['bcontroller_config'], "w") as fhandle:
+        fhandle.write(content)
+
+def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir, url):
+    #TODO: allow for spaces in file names on Windows
+
+    command_args = [browser_path.strip()]
+    if platform.system() == "Darwin":
+       command_args.extend(['-foreground'])
+
+    #TODO: figure out a robust method to allow extra_args as a list instead of assuming a string
+    if extra_args.strip():
+        command_args.extend([extra_args])
+
+    command_args.extend(['-profile', profile_dir])
+    command_args.extend(url.split(' '))
+
+    # Handle robocop case
+    if url.startswith('am instrument'):
+        command = url % deviceroot
+        command_args = command.split(' ')
+
+    debug("command line: %s", ' '.join(command_args))
+    return command_args
 

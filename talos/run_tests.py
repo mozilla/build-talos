@@ -163,7 +163,7 @@ def run_tests(configurator):
   tests = config['tests']
   tests = useBaseTestDefaults(config.get('basetest', {}), tests)
 
-  paths = ['profile_path', 'tpmanifest', 'extensions']
+  paths = ['profile_path', 'tpmanifest', 'extensions', 'setup', 'cleanup']
   for test in tests:
 
     # Check for profile_path, tpmanifest and interpolate based on Talos root
@@ -178,6 +178,8 @@ def run_tests(configurator):
       # build 'url' for tptest
       test['url'] = buildCommandLine(test)
     test['url'] = utils.interpolatePath(test['url'])
+    test['setup'] = utils.interpolatePath(test['setup'])
+    test['cleanup'] = utils.interpolatePath(test['cleanup'])
 
     # ensure test-specific filters are valid
     if 'filters' in test:

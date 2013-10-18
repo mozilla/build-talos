@@ -8,33 +8,19 @@ import os
 import sys
 import xtalos
 import subprocess
+import etlparser
 
-def start(xperf_path, xperf_providers, xperf_stackwalk, xperf_user_providers, etl_filename, debug=False):
-
-    xperf_cmd = [xperf_path,
-                 '-on', '+'.join(xperf_providers),
-                 '-stackwalk', '+'.join(xperf_stackwalk),
-                 '-MaxBuffers', '1024',
-                 '-BufferSize', '1024',
-                 '-f', '%s.kernel' % etl_filename,
-                 '-start', 'talos_ses',
-                 '-on', '+'.join(xperf_user_providers),
-                 '-MaxBuffers', '1024',
-                 '-BufferSize', '1024',
-                 '-f', '%s.user' % etl_filename
-                 ]
+def stop(xperf_path, debug=False):
+    xperf_cmd = [xperf_path, '-stop', '-stop', 'talos_ses']
     if debug:
         print "executing '%s'" % subprocess.list2cmdline(xperf_cmd)
     subprocess.call(xperf_cmd)
 
-def start_from_config(config_file=None, debug=False, **kwargs):
+def stop_from_config(config_file=None, debug=False, **kwargs):
     """start from a YAML config file"""
 
     # required options and associated error messages
     required = {'xperf_path': "xperf_path not given",
-                'xperf_providers': "No xperf providers given",
-                'xperf_user_providers': "No xperf user providers given",
-                'xperf_stackwalk': "No xperf stackwalk options given",
                 "etl_filename": "No etl_filename given"}
     for key in required:
         if key not in kwargs:
@@ -54,11 +40,18 @@ def start_from_config(config_file=None, debug=False, **kwargs):
         raise xtalos.xtalosError("ERROR: xperf_path '%s' does not exist" % kwargs['xperf_path'])
 
     # make calling arguments
-    args = dict([(key, kwargs[key]) for key in required.keys()])
-    args['debug'] = debug
+    stopargs = {}
+    stopargs['xperf_path'] = kwargs['xperf_path']
+    stopargs['debug'] = debug
 
     # call start
-    start(**args)
+    stop(**stopargs)
+
+    etlparser.etlparser_from_config(config_file,
+                                    approot=kwargs['approot'],
+                                    error_filename=kwargs['error_filename'],
+                                    processID=kwargs['processID']
+                                    )
 
 def main(args=sys.argv[1:]):
 
@@ -68,7 +61,7 @@ def main(args=sys.argv[1:]):
 
     # start xperf
     try:
-        start_from_config(config_file=args[0],
+        stop_from_config(config_file=args[0],
                           debug=options.debug_level >= xtalos.DEBUG_INFO,
                           **options.__dict__)
     except xtalos.xtalosError, e:

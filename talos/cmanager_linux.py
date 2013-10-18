@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 from cmanager import CounterManager
+from mozprocess import pid as mozpid
 
 
 def xrestop(binary='xrestop'):
@@ -156,18 +157,17 @@ class LinuxCounterManager(CounterManager):
 
   pollInterval = .25
 
-  def __init__(self, ffprocess, process, counters=None, childProcess="plugin-container"):
+  def __init__(self, process, counters=None, childProcess="plugin-container"):
     """Args:
          counters: A list of counters to monitor. Any counters whose name does
          not match a key in 'counterDict' will be ignored.
     """
 
-    CounterManager.__init__(self, ffprocess, process, counters)
-
+    CounterManager.__init__(self)
     self.childProcess = childProcess
     self.runThread = False
     self.pidList = []
-    self.primaryPid = self.ffprocess._GetPidsByName(process)[-1]
+    self.primaryPid = mozpid.get_pids(process)[-1]
     os.stat('/proc/%s' % self.primaryPid)
 
     self._loadCounters()
@@ -185,7 +185,7 @@ class LinuxCounterManager(CounterManager):
     """Updates the list of PIDs we're interested in"""
     try:
       self.pidList = [self.primaryPid]
-      childPids = self.ffprocess._GetPidsByName(self.childProcess)
+      childPids = mozpid.get_pids(self.childProcess)
       for pid in childPids:
         os.stat('/proc/%s' % pid)
         self.pidList.append(pid)

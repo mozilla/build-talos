@@ -57,6 +57,8 @@ from utils import talosError, zip_extractall,MakeDirectoryContentsWritable
 import utils
 import subprocess
 
+import talosProcess
+
 
 class FFSetup(object):
 
@@ -266,44 +268,32 @@ class FFSetup(object):
         INFO_REGEX = re.compile('__browserInfo(.*)__browserInfo', re.DOTALL|re.MULTILINE)
         PROFILE_REGEX = re.compile('__metrics(.*)__metrics', re.DOTALL|re.MULTILINE)
 
-        command_line = self.ffprocess.GenerateBrowserCommandLine(browser_config["browser_path"], 
-                                                                 browser_config["extra_args"], 
-                                                                 browser_config["deviceroot"],
-                                                                 profile_dir, 
-                                                                 browser_config["init_url"])
+        command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"], 
+                                                        browser_config["extra_args"], 
+                                                        browser_config["deviceroot"],
+                                                        profile_dir, 
+                                                        browser_config["init_url"])
 
-        log = browser_config['browser_log']
-
-        b_cmd = self.ffprocess.GenerateBControllerCommandLine(command_line, browser_config, {})
-        try:
-            process = subprocess.Popen(b_cmd, universal_newlines=True, bufsize=0, env=os.environ)
-        except:
-            print "Error running '%s'." % subprocess.list2cmdline(b_cmd)
-            raise
-
-        timeout = True
-        total_time = 0
-        while total_time < 1200: #20 minutes
-            time.sleep(1)
-            if process.poll() != None: #browser_controller completed, file now full
-                timeout = False
-                break
-            total_time += 1
-        if timeout:
-            raise talosError("initialization timed out")
+        if not browser_config['remote']:
+            browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
+            browser.run()
+            browser.wait()
+            browser = None
+            time.sleep(5)
+        else:
+            self.ffprocess.runProgram(browser_config, command_args, timeout=1200)
 
         res = 0
-        if not os.path.isfile(log):
+        if not os.path.isfile(browser_config['browser_log']):
             raise talosError("initalization has no output from browser")
-        results_file = open(log, "r")
+        results_file = open(browser_config['browser_log'], "r")
         results_raw = results_file.read()
         results_file.close()
         match = PROFILE_REGEX.search(results_raw)
         if match:
             res = 1
-            print match.group(1)
         else:
-            utils.info("Could not find %s in browser_log: %s", PROFILE_REGEX.pattern, log)
+            utils.info("Could not find %s in browser_log: %s", PROFILE_REGEX.pattern, browser_config['browser_log'])
             utils.info("Raw results:%s", results_raw)
             utils.info("Initialization of new profile failed")
         match = INFO_REGEX.search(results_raw)

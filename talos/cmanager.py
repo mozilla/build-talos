@@ -6,10 +6,9 @@ class CounterManager(object):
 
   counterDict = {}
 
-  def __init__(self, ffprocess, process, counters=None, childProcess="plugin-container"):
+  def __init__(self):
     self.allCounters = {}
     self.registeredCounters = {}
-    self.ffprocess = ffprocess
 
   def _loadCounters(self):
     """Loads all of the counters defined in the counterDict"""

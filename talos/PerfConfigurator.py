@@ -156,6 +156,8 @@ the highest value.
                                   'linux_counters': [],
                                   'mac_counters': [],
                                   'xperf_counters': [],
+                                  'setup': None,
+                                  'cleanup': None
                                   },
                       'flags': []}),
         ('test_overrides', {'help': 'test overrides from .config file',

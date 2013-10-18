@@ -45,7 +45,7 @@ class XtalosOptions(optparse.OptionParser):
 
         self.add_option("-e", "--etl_filename", dest="etl_filename",
                         help = "Name of the .etl file to work with. Defaults to 'output.etl'")
-        defaults["etl_filename"] = "output.etl"
+        defaults["etl_filename"] = "test.etl"
 
         self.add_option("-d", "--debug",
                         type="int", dest="debug_level",
@@ -54,7 +54,7 @@ class XtalosOptions(optparse.OptionParser):
 
         self.add_option("-o", "--output-file", dest="outputFile",
                         help="Filename to write all output to, default is stdout")
-        defaults["outputFile"] = None
+        defaults["outputFile"] = 'etl_output.csv'
 
         self.add_option("-r", "--providers", dest="xperf_providers",
                         action="append",
@@ -91,7 +91,7 @@ class XtalosOptions(optparse.OptionParser):
                         help="Provide the root directory of the application we are testing to find related files (i.e. dependentlibs.list)")
         defaults["approot"] = None
 
-        self.add_option("-a", "--error-filename", dest="error_filename",
+        self.add_option("--error-filename", dest="error_filename",
                         help="Filename to store the failures detected while runnning the test")
         defaults["error_filename"] = None
 
