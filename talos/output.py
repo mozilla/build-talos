@@ -4,6 +4,7 @@
 
 """output formats for Talos"""
 
+import datetime
 import filter
 import imp
 import mozinfo
@@ -523,30 +524,44 @@ class DatazillaOutput(Output):
 
         # TBPL output
         # URLs are in the form of
-        # https://datazilla.mozilla.org/<path>/summary/<branch>/<revision>?product=Firefox&branch_version=16.0a1
-        # see https://bugzilla.mozilla.org/show_bug.cgi?id=816634#c8
+        # https://datazilla.mozilla.org/?start=1379423909&stop=1380028709&product=Firefox&repository=Mozilla-Inbound&os=linux&os_version=Ubuntu%2012.04&test=a11yr&x86=false&project=talos
         if results.branch and results.revision:
-
             # compute url
-            path = '/%s/summary/%s/%s' % (project, results.branch, results.revision)
-            query = '&'.join(['%s=%s' % (j, urllib.quote(getattr(results, i)))
-                              for i, j in
-                              (('build_name', 'product'),
-                               ('version', 'branch_version'))
-                              if getattr(results, i)])
-            if query:
-                query = '?' + query
-            url = '%(scheme)s://%(server)s%(path)s%(query)s' % dict(scheme=scheme,
+            now = str(datetime.datetime.now())
+            diff = str(datetime.datetime.now() - datetime.timedelta(days=7))
+            jsend = int(time.mktime(time.strptime(now.split('.')[0], "%Y-%m-%d %H:%M:%S")))
+            jsstart = int(time.mktime(time.strptime(diff.split('.')[0], "%Y-%m-%d %H:%M:%S")))
+
+            params = {}
+            if results.platform == 'x86':
+                params['x86_64'] = 'false'
+            else:
+                params['x86'] = 'false'
+
+            revision = ""
+            if results.revision and results.revision != 'NULL':
+                params['graph_search'] = results.revision
+
+            params['start'] = jsstart
+            params['stop'] = jsend
+            params['product'] = results.build_name
+            params['repository'] = results.branch
+            params['os'] = results.os.lower()
+            params['os_version'] = results.os_version
+            params['project'] = project
+            query = '?%s' % '&'.join(['%s=%s' % (key, urllib.quote(str(value))) for key, value in params.items()])
+
+            url = '%(scheme)s://%(server)s%(query)s' % dict(scheme=scheme,
                                                                     server=server,
-                                                                    path=path,
                                                                     query=query)
 
             # build TBPL output
             # XXX this will not work for multiple URLs :(
             tbpl_output.setdefault('datazilla', {})
             for dataset in results.datasets():
+                url = "%s&test=%s" % (url, dataset['testrun']['suite'])
                 tbpl_output['datazilla'][dataset['testrun']['suite']] = {'url': url}
-            utils.info("Datazilla results at %s", url)
+                utils.info("Datazilla results at %s", url)
 
     def run_options(self, test):
         """test options for datazilla"""
