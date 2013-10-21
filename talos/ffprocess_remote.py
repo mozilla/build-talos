@@ -231,9 +231,9 @@ class RemoteProcess(FFProcess):
 
     def runProgram(self, browser_config, command_args, timeout=1200):
         remoteLog = os.path.join(self.getDeviceRoot() + '/' + browser_config['browser_log'])
-        self._ffprocess.removeFile(remoteLog)
+        self.removeFile(remoteLog)
         # bug 816719, remove sessionstore.js so we don't interfere with talos
-        self._ffprocess.removeFile(os.path.join(self.getDeviceRoot(), "profile/sessionstore.js"))
+        self.removeFile(os.path.join(self.getDeviceRoot(), "profile/sessionstore.js"))
 
         env = ""
         for key, value in browser_config['env'].items():
@@ -241,18 +241,19 @@ class RemoteProcess(FFProcess):
         command_line = "%s %s" % (env, ' '.join(command_args))
 
         self.recordLogcat()
-        #TODO: figure out timeout
+        firstTime = time.time()
         retVal = self.launchProcess(' '.join(command_args), outputFile=remoteLog, timeout=timeout)
         logcat = self.getLogcat()
         if logcat:
             with open('logcat.log', 'w') as f:
                 f.write(''.join(logcat[-500:-1]))
-        if retVal:
-            self.getFile(retVal, browser_config['browser_log'])
-        else:
-            data = self.getFile(remoteLog, browser_config['browser_log'])
-            if data == '':
-                raise talosError("missing data from remote log file")
+
+        data = self.getFile(remoteLog, browser_config['browser_log'])
+        with open(browser_config['browser_log'], 'a') as logfile:
+            logfile.write("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % (firstTime * 1000))
+            logfile.write("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % int(time.time() * 1000))
+        if not retVal and data == '':
+            raise talosError("missing data from remote log file")
 
         # Wait out the browser closing
         time.sleep(browser_config['browser_wait'])

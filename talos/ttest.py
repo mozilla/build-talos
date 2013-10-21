@@ -361,7 +361,11 @@ class TTest(object):
                                                                 profile_dir, 
                                                                 test_config['url'])
 
+                self.counter_results = None
                 if not browser_config['remote']:
+                    # set the current time
+                    if 'url_timestamp' in test_config and test_config['url_timestamp']:
+                        command_args[-1] += str(int(time.time()) * 1000)
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
                         utils.GenerateTalosConfig(command_args, browser_config, test_config)
@@ -374,7 +378,6 @@ class TTest(object):
                     browser.run(timeout=timeout)
                     self.pid = browser.pid
 
-                    self.counter_results = None
                     if self.counters:
                         self.cm = self.CounterManager(browser_config['process'], self.counters)
                         self.counter_results = dict([(counter, []) for counter in self.counters])
@@ -397,7 +400,10 @@ class TTest(object):
                     # allow mozprocess to terminate fully.  It appears our log file is partial unless we wait
                     time.sleep(5)
                 else:
-                    self.ffprocess.runProgram(browser_config, command_args, timeout=timeout)
+                    # set the current time
+                    if 'url_timestamp' in test_config and test_config['url_timestamp']:
+                        command_args[-1] += self._ffprocess.getCurrentTime()
+                    self._ffprocess.runProgram(browser_config, command_args, timeout=timeout)
 
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']

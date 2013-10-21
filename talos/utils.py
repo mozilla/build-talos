@@ -259,9 +259,6 @@ def GenerateTalosConfig(command_line, browser_config, test_config, pid=None):
         bcontroller_vars.extend(['host', 'port', 'deviceroot', 'env'])
 
     browser_config['command'] = ' '.join(command_line)
-    if 'url_timestamp' in test_config:
-        browser_config['url_timestamp'] = test_config['url_timestamp']
-        bcontroller_vars.append('url_timestamp')
 
     if (('xperf_providers' in test_config) and
         ('xperf_user_providers' in test_config) and
