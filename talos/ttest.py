@@ -363,9 +363,6 @@ class TTest(object):
 
                 self.counter_results = None
                 if not browser_config['remote']:
-                    # set the current time
-                    if 'url_timestamp' in test_config and test_config['url_timestamp']:
-                        command_args[-1] += str(int(time.time()) * 1000)
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
                         utils.GenerateTalosConfig(command_args, browser_config, test_config)
@@ -374,6 +371,9 @@ class TTest(object):
                         setup.wait()
 
                     self.isFinished = False
+                    # set the current time
+                    if 'url_timestamp' in test_config and test_config['url_timestamp']:
+                        command_args[-1] += str(int(time.time()) * 1000)
                     browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
                     browser.run(timeout=timeout)
                     self.pid = browser.pid

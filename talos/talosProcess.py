@@ -20,7 +20,7 @@ class talosProcess(ProcessHandler):
                        logfile=None,
                        **kwargs):
 
-        self.firstTime = int(time.time())
+        self.firstTime = int(time.time()) * 1000
         self.logfile = logfile
         self.results_file = None
         ProcessHandler.__init__(self, cmd, args=args, cwd=cwd, env=env,
@@ -43,14 +43,14 @@ class talosProcess(ProcessHandler):
         for i in range(1, timeout):
             if self.proc.returncode != None:
                 self.logToFile("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % self.firstTime)
-                self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % int(time.time()))
+                self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % (int(time.time()) * 1000))
                 self.closeLogFile()
                 return
             time.sleep(1)
 
         self.proc.kill()
         self.logToFile("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % self.firstTime)
-        self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % int(time.time()))
+        self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % (int(time.time()) * 1000))
         self.closeLogFile()
 
     def onTimeout(self):
