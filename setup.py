@@ -13,11 +13,11 @@ version = "0.0"
 dependencies = ['PyYAML',
                 'mozlog',
                 'mozcrash == 0.9',
-                'mozdevice == 0.19',
+                'mozdevice == 0.26',
                 'mozhttpd == 0.5',
                 'mozinfo == 0.4',
                 'datazilla == 1.4',
-                'mozprocess == 0.8',
+                'mozprocess == 0.11',
                 'httplib2',
                 'oauth2',
                 ]

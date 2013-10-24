@@ -34,29 +34,23 @@ mozfile = [(mozfile_src, 'mozfile.py')]
 mozlog_src = 'https://raw.github.com/mozilla/mozbase/master/mozlog/mozlog/logger.py'
 mozlog = [(mozlog_src, 'mozlog.py')]
 
-mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.19/'
+mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.26/'
 mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
-                   ('mozdevice/mozdevice/emulator.py', 'mozdevice/emulator.py'),
                    ('mozdevice/mozdevice/Zeroconf.py', 'mozdevice/Zeroconf.py'),
-                   ('mozdevice/mozdevice/b2gemulator.py', 'mozdevice/b2gemulator.py'),
-                   ('mozdevice/mozdevice/emulator_battery.py', 'mozdevice/emulator_battery.py'),
                    ('mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
                    ('mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
                    ('mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
-                   ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py'),
-                   ('mozprocess/mozprocess/__init__.py', 'mozdevice/mozprocess/__init__.py'),
-                   ('mozprocess/mozprocess/pid.py', 'mozdevice/mozprocess/pid.py'),
-                   ('mozprocess/mozprocess/processhandler.py', 'mozdevice/mozprocess/processhandler.py'),
-                   ('mozprocess/mozprocess/qijo.py', 'mozdevice/mozprocess/qijo.py'),
-                   ('mozprocess/mozprocess/winprocess.py', 'mozdevice/mozprocess/winprocess.py'),
-                   ('mozprocess/mozprocess/wpk.py', 'mozdevice/mozprocess/wpk.py'),
-                   ('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
-                   ('mozprocess/mozprocess/pid.py', 'mozprocess/pid.py'),
-                   ('mozprocess/mozprocess/processhandler.py', 'mozprocess/processhandler.py'),
-                   ('mozprocess/mozprocess/qijo.py', 'mozprocess/qijo.py'),
-                   ('mozprocess/mozprocess/winprocess.py', 'mozprocess/winprocess.py'),
-                   ('mozprocess/mozprocess/wpk.py', 'mozprocess/wpk.py')]
+                   ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py')]
 mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
+
+mozprocess_src = 'https://raw.github.com/mozilla/mozbase/mozprocess-0.11/'
+mozprocess_files = [('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
+                    ('mozprocess/mozprocess/pid.py', 'mozprocess/pid.py'),
+                    ('mozprocess/mozprocess/processhandler.py', 'mozprocess/processhandler.py'),
+                    ('mozprocess/mozprocess/qijo.py', 'mozprocess/qijo.py'),
+                    ('mozprocess/mozprocess/winprocess.py', 'mozprocess/winprocess.py'),
+                    ('mozprocess/mozprocess/wpk.py', 'mozprocess/wpk.py')]
+mozprocess = [(mozprocess_src + src, destination) for src, destination in mozprocess_files]
 
 # datazilla client dependency
 datazilla_client = [('https://raw.github.com/mozilla/datazilla_client/master/dzclient/client.py',
@@ -121,7 +115,7 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = mozhttpd + mozinfo + mozcrash + mozfile + mozlog + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2
+manifest = mozhttpd + mozinfo + mozcrash + mozfile + mozlog + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2 + mozprocess
 manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
 def download(*resources):
