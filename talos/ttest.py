@@ -153,11 +153,11 @@ class TTest(object):
                     logcat = f.read().split('\r')
                 found = mozcrash.check_for_java_exception(logcat)
 
+            remoteminidumpdir = profile_dir + '/minidumps/'
             if not found:
                 # check for minidumps
                 minidumpdir = tempfile.mkdtemp()
                 try:
-                    remoteminidumpdir = profile_dir + '/minidumps/'
                     if self._ffprocess.testAgent.dirExists(remoteminidumpdir):
                         self._ffprocess.testAgent.getDirectory(remoteminidumpdir, minidumpdir)
                 except mozdevice.DMError:
@@ -167,10 +167,10 @@ class TTest(object):
                                                    browser_config['symbols_path'],
                                                    stackwalk_binary=stackwalkbin,
                                                    test_name=test_name)
+                self._hostproc.removeDirectory(minidumpdir)
 
             # cleanup dumps on remote
             self._ffprocess.testAgent.removeDir(remoteminidumpdir)
-            self._hostproc.removeDirectory(minidumpdir)
         else:
             # check for minidumps
             minidumpdir = os.path.join(profile_dir, 'minidumps')
