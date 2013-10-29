@@ -43,7 +43,7 @@ mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                    ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py')]
 mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
 
-mozprocess_src = 'https://raw.github.com/mozilla/mozbase/mozprocess-0.11/'
+mozprocess_src = 'https://raw.github.com/mozilla/mozbase/mozprocess-0.13/'
 mozprocess_files = [('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
                     ('mozprocess/mozprocess/pid.py', 'mozprocess/pid.py'),
                     ('mozprocess/mozprocess/processhandler.py', 'mozprocess/processhandler.py'),
