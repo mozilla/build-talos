@@ -70,8 +70,7 @@ class ts(TsBase):
     """
     cycles = 20
     timeout = 150
-    url = 'startup_test/startup_test.html?begin='
-    url_timestamp = True
+    url = 'startup_test/startup_test.html'
     shutdown = True
 
 class ts_paint(ts):
@@ -80,7 +79,7 @@ class ts_paint(ts):
     waits for [MozAfterPaint and onLoad] to fire, then records the end
     time and calculates the time to startup.
     """
-    url = 'startup_test/tspaint_test.html?begin='
+    url = 'startup_test/tspaint_test.html'
     shutdown = None
     xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'mainthread_readcount', 'mainthread_readbytes', 'mainthread_writecount', 'mainthread_writebytes']
     filters = [["ignore_first", [1]], ['median', []]]

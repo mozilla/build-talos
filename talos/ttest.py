@@ -371,9 +371,6 @@ class TTest(object):
                         setup.wait()
 
                     self.isFinished = False
-                    # set the current time
-                    if 'url_timestamp' in test_config and test_config['url_timestamp']:
-                        command_args[-1] += str(int(time.time()) * 1000)
                     browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
                     browser.run(timeout=timeout)
                     self.pid = browser.pid
@@ -400,9 +397,6 @@ class TTest(object):
                     # allow mozprocess to terminate fully.  It appears our log file is partial unless we wait
                     time.sleep(5)
                 else:
-                    # set the current time
-                    if 'url_timestamp' in test_config and test_config['url_timestamp']:
-                        command_args[-1] += self._ffprocess.getCurrentTime()
                     self._ffprocess.runProgram(browser_config, command_args, timeout=timeout)
 
                 # ensure the browser log exists

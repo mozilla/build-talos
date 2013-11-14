@@ -9,15 +9,26 @@
 <script language="Javascript" type="text/javascript" src="../scripts/MozillaFileLogger.js"></script>
 <script language="JavaScript" type="text/javascript" src="../page_load_test/quit.js"></script>
 <script language="javascript" type="text/javascript">
-var gBegin = document.location.search.split('=')[1]; // ?begin=nnnnn
 
 function painted() {
+  var now = Date.now();
+
   window.removeEventListener("MozAfterPaint", painted, true);
 
-  var now = (new Date()).getTime();
-  var startupTime = now - gBegin;
+  var startupTime = -1;
+  if (useSpecialPowers) {
+    // We need to define this still
+    throw('NOT DEFINED');
+  } else {
+    try {
+      netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+      var startupInfo = Components.classes['@mozilla.org/toolkit/app-startup;1'].
+                                   getService(Ci.nsIAppStartup).getStartupInfo();
+      startupTime = now - startupInfo['process'];
+    } catch(ex) { dumpLog(ex + '\n'); }
+  }
+
   document.body.textContent = 'Startup time = ' + startupTime + ' ms';
-  now = (new Date()).getTime();
   if (window.dump) {
     dumpLog('__start_report' + startupTime + '__end_report\n\n');
   }
