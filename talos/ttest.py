@@ -234,7 +234,7 @@ class TTest(object):
             if temp_dir:
                 self.cleanupProfile(temp_dir)
         except talosError, te:
-            utils.debug("cleanup error: %s", te.msg)
+            utils.debug("cleanup error: %s", te)
         except Exception:
             utils.debug("unknown error during cleanup: %s" % (traceback.format_exc(),))
 

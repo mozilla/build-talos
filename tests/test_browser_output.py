@@ -158,9 +158,18 @@ __startAfterTerminationTimestamp1333663596551__endAfterTerminationTimestamp
         try:
             BrowserLogResults(results_raw=browser_log)
         except talosError, e:
-            if substr not in e.msg:
+            if substr not in e:
                 import pdb; pdb.set_trace()
-            self.assertTrue(substr in e.msg)
+            self.assertTrue(substr in e)
+class TestTalosError(unittest.TestCase):
+    """
+    test talosError class
+    """
+    def test_browser_log_results(self):
+        #an example that should fail
+        #passing invalid value for argument result_raw
+        with self.assertRaises(talosError):
+            BrowserLogResults(results_raw = "__FAIL<bad test>__FAIL")
 
 if __name__ == '__main__':
     unittest.main()

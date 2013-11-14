@@ -91,7 +91,7 @@ class TalosResults(object):
                 _output.output('file://%s' % os.path.join(os.getcwd(), 'results.out'), results)
             except:
                 pass
-            print '\nFAIL: %s' % e.msg.replace('\n', '\nRETURN:')
+            print '\nFAIL: %s' % str(e).replace('\n', '\nRETURN:')
             raise e
 
         print "TinderboxPrint: TalosResult: %s" % json.dumps(tbpl_output)

@@ -66,10 +66,7 @@ def restoreEnvironmentVars():
     os.environ[var] = saved_environment[var]
 
 class talosError(Exception):
-  def __init__(self, msg):
-    self.msg = msg
-  def __str__(self):
-    return repr(self.msg)
+    "Errors found while running the talos harness."
 
 class talosRegression(Exception):
   """When a regression is detected at runtime, report it properly
@@ -82,10 +79,6 @@ class talosCrash(Exception):
 
      https://bugzilla.mozilla.org/show_bug.cgi?id=829734
   """
-  def __init__(self, msg):
-    self.msg = msg
-  def __str__(self):
-    return repr(self.msg)
 
 def writeConfigFile(obj, vals):
   retVal = ""

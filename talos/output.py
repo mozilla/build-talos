@@ -321,7 +321,7 @@ class GraphserverOutput(Output):
                     links.append(self.process_Request(post_file.post_multipart(server, path, files=[("filename", "data_string", data_string)])))
                     break
                 except utils.talosError, e:
-                    msg = e.msg
+                    msg = str(e)
                 except Exception, e:
                     msg = str(e)
                 times += 1
