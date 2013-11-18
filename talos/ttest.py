@@ -371,7 +371,7 @@ class TTest(object):
                         setup.wait()
 
                     self.isFinished = False
-                    browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
+                    browser = talosProcess.talosProcess(command_args, logfile=browser_config['browser_log'])
                     browser.run(timeout=timeout)
                     self.pid = browser.pid
 
