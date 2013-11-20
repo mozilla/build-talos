@@ -158,9 +158,9 @@ __startAfterTerminationTimestamp1333663596551__endAfterTerminationTimestamp
         try:
             BrowserLogResults(results_raw=browser_log)
         except talosError, e:
-            if substr not in e:
+            if substr not in str(e):
                 import pdb; pdb.set_trace()
-            self.assertTrue(substr in e)
+            self.assertTrue(substr in str(e))
 class TestTalosError(unittest.TestCase):
     """
     test talosError class
