@@ -100,7 +100,7 @@ def getDatazillaPlatform(os, platform, osversion, product):
         else:
             platform = 'Linux'
     elif os == 'win':
-        if osversion == '6.1.7600':
+        if osversion == '6.1.7600' or osversion == '6.1.7601':
             platform = 'Win'
         elif osversion == '6.2.9200':
             platform = 'Win8'
