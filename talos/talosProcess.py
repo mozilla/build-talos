@@ -15,7 +15,7 @@ class talosProcess(ProcessHandler):
     """
     def __init__(self, cmd,
                        args=None, cwd=None,
-                       env=os.environ.copy(),
+                       env={},
                        ignore_children=False,
                        logfile=None,
                        **kwargs):

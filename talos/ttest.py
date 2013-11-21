@@ -366,12 +366,12 @@ class TTest(object):
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
                         utils.GenerateTalosConfig(command_args, browser_config, test_config)
-                        setup = talosProcess.talosProcess(['python'] + test_config['setup'].split())
+                        setup = talosProcess.talosProcess(['python'] + test_config['setup'].split(), env=os.environ.copy())
                         setup.run()
                         setup.wait()
 
                     self.isFinished = False
-                    browser = talosProcess.talosProcess(command_args, logfile=browser_config['browser_log'])
+                    browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
                     browser.run(timeout=timeout)
                     self.pid = browser.pid
 
@@ -390,7 +390,7 @@ class TTest(object):
                     if test_config['cleanup']:
                         #HACK: add the pid to support xperf where we require the pid in post processing
                         utils.GenerateTalosConfig(command_args, browser_config, test_config, pid=self.pid)
-                        cleanup = talosProcess.talosProcess(['python'] + test_config['cleanup'].split())
+                        cleanup = talosProcess.talosProcess(['python'] + test_config['cleanup'].split(), env=os.environ.copy())
                         cleanup.run()
                         cleanup.wait()
 
