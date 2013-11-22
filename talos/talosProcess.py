@@ -15,7 +15,7 @@ class talosProcess(ProcessHandler):
     """
     def __init__(self, cmd,
                        args=None, cwd=None,
-                       env={},
+                       env=None,
                        ignore_children=False,
                        logfile=None,
                        **kwargs):
@@ -23,6 +23,9 @@ class talosProcess(ProcessHandler):
         self.firstTime = int(time.time()) * 1000
         self.logfile = logfile
         self.results_file = None
+        if env is None:
+            env = os.environ.copy()
+
         ProcessHandler.__init__(self, cmd, args=args, cwd=cwd, env=env,
                                 ignore_children=ignore_children, logfile=self.logfile, **kwargs)
 
