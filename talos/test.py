@@ -219,9 +219,10 @@ class tart(PageloaderTest):
     tploadaboutblank = True
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
     """ ASAP mode """
-    """ The recording API is broken with OMTC as of 2013-07, so disabled for now """
-    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1,
-                   'layers.offmainthreadcomposition.enabled': False}
+    """ The recording API is broken with OMTC before ~2013-11-27 """
+    """ After ~2013-11-27, disabling OMTC will also implicitly disable OGL HW composition """
+    """ to disable OMTC with older firefox builds, also set 'layers.offmainthreadcomposition.enabled': False """
+    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
     filters = [["ignore_first", [1]], ['median', []]]
 
 class tp(PageloaderTest):
