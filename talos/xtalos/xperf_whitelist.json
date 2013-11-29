@@ -39,5 +39,8 @@
  "{firefox}\\browser\\chrome.manifest": {"mincount": 2, "maxcount": 2, "minbytes": 80, "maxbytes": 80},
  "{firefox}\\msvcr100.dll": {"mincount": 24, "maxcount": 24, "minbytes": 1572864, "maxbytes": 1572864},
  "{firefox}\\gkmedias.dll": {"mincount": 106, "maxcount": 106, "minbytes": 6946816, "maxbytes": 6946816},
+ "{firefox}\\icuin50.dll": {"mincount": 38, "maxcount": 38, "minbytes": 2490368, "maxbytes": 2490368},
+ "{firefox}\\icuuc50.dll": {"mincount": 30, "maxcount": 30, "minbytes": 1966080, "maxbytes": 1966080},
+ "{firefox}\\icudt50.dll": {"mincount": 276, "maxcount": 276, "minbytes": 18087936, "maxbytes": 18087936},
  "c:\\program files\\desktop.ini": {"mincount": 2, "maxcount": 2, "minbytes": 352, "maxbytes": 352}
 }
