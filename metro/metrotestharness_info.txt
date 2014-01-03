@@ -1,2 +1,9 @@
 metrotestharness.exe is based off the version in the following tests.zip:
-http://ftp.mozilla.org/pub/mozilla.org/firefox/tinderbox-builds/mozilla-central-win32/1382374937/firefox-27.0a1.en-US.win32.tests.zip
+
+History:
+    10/25/13
+    http://ftp.mozilla.org/pub/mozilla.org/firefox/tinderbox-builds/mozilla-central-win32/1382374937/firefox-27.0a1.en-US.win32.tests.zip
+
+Current:
+    01/01/14
+    http://ftp.mozilla.org/pub/mozilla.org/firefox/tinderbox-builds/mozilla-central-win32/1388536346/firefox-29.0a1.en-US.win32.tests.zip
