@@ -602,6 +602,16 @@ class DatazillaOutput(Output):
             platform = mozinfo.os
             version = mozinfo.version
             processor = mozinfo.processor
+            # Bug 940690 - Get existing metrofx talos tests running on
+            # release/project branches:
+            #    let's give suites that ran against the metro browser their own
+            #    datazilla platform
+            # DatazillaResultsCollection takes an os and os_version.
+            # Differentiate between win8 non-metro and win8 metro
+            # by again appending an '.m' suffix to the os_version
+            if self.results.title.endswith(".m") and not version.endswith('.m'):
+                # we are running this against win 8 metro
+                version = '%s.m' % (version,)
 
         return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
 

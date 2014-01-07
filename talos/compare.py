@@ -104,6 +104,8 @@ def getDatazillaPlatform(os, platform, osversion, product):
             platform = 'Win'
         elif osversion == '6.2.9200':
             platform = 'Win8'
+        elif osversion == '6.2.9200.m':
+            platform = 'Win8.m'
         else:
             platform = 'WinXP'
     elif os == 'mac':

@@ -234,6 +234,17 @@ def run_tests(configurator):
   title = config.get('title', '')
   testdate = config.get('testdate', '')
 
+  # Bug 940690 - Get existing metrofx talos tests running on release/project
+  # branches:
+  #    Identify when we do a win8 metro talos run, and a non metro run.  We do
+  #    this so we can differentiate results in datazilla and graph server.
+  #    Below will append a '.m' suffix to the title. The title will be used in
+  #    datazilla via DatazillaOutput.test_machine() and graph server will match
+  #    the title against an associated machine name in the graphserver sql database.
+  if 'metrotestharness' in browser_config['browser_path'] and not title.endswith(".m"):
+    # we are running this with win 8 metro
+    title = "%s.m" % (title,)
+
   # get the process name from the path to the browser
   if not browser_config['process']:
       browser_config['process'] = os.path.basename(browser_config['browser_path'])
