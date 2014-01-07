@@ -25,7 +25,7 @@ NOISY = 0
 START_TIME = 0
 saved_environment = {}
 log_levels = {'debug': mozlog.DEBUG, 'info': mozlog.INFO}
- 
+
 def startTimer():
   global START_TIME
   START_TIME = time.time()
@@ -117,8 +117,16 @@ def is_running(pid, psarg='axwww'):
   """returns if a pid is running"""
   return bool([i for i in mozpid.ps(psarg) if pid == int(i['PID'])])
 
-def interpolatePath(path):
-  return string.Template(path).safe_substitute(talos=here)
+def interpolatePath(path, profile_dir=None, firefox_path=None):
+  path = string.Template(path).safe_substitute(talos=here)
+
+  if profile_dir:
+      path = string.Template(path).safe_substitute(profile=profile_dir)
+
+  if firefox_path:
+      path = string.Template(path).safe_substitute(firefox=firefox_path)
+
+  return path
 
 def testAgent(host, port):
   if port == -1:
@@ -287,6 +295,10 @@ def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir
     if url.startswith('am instrument'):
         command = url % deviceroot
         command_args = command.split(' ')
+
+    # Handle media performance tests
+    if url.find('media_manager.py') != -1:
+      command_args = url.split(' ')
 
     debug("command line: %s", ' '.join(command_args))
     return command_args

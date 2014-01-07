@@ -172,13 +172,24 @@ class tcheck2(TsBase):
     desktop = False
     tpchrome = False
 
+### Media Test
+class media_tests(TsBase):
+    """
+    Media Performance Tests
+    """
+    cycles = 5
+    desktop = True
+    mobile = False
+    url = 'python ${talos}/startup_test/media/media_manager.py -p ${profile} -b ${firefox}  -t ${talos} -r http://localhost/results'
+    timeout = 360
+
 ### pageloader tests(tp5, tdhtml, etc)
 
 ### The overall test number is determined by first calculating the median
 ### page load time for each page in the set (excluding the max page load 
 ### per individual page). The max median from that set is then excluded and
 ### the average is taken; that becomes the number reported to the tinderbox
-### waterfall. 
+### waterfall.
 
 class PageloaderTest(Test):
     """abstract base class for a Talos Pageloader test"""
@@ -470,7 +481,7 @@ tests = [ts_paint, ts, tsvg, tdhtml,
          tspaint_places_generated_max, tspaint_places_generated_med,
          tp4m, tp5n, tp5o, tpaint, tresize,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
-         dromaeo_css, dromaeo_dom, v8_7, kraken,
+         dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
          tsvgx, tscrollx, tart
          ]

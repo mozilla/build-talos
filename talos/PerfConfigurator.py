@@ -87,6 +87,9 @@ for datazilla auth.  Should have keys 'oauthSecret' and 'oauthKey'"""}),
         ('error_filename', {'help': 'Filename to store the errors found during the test.  Currently used for xperf only.',
                          'default': os.path.abspath('browser_failures.txt'),
                          'flags': ['--errorFile']}),
+        ('results_log', {'help': 'Filename to store to results collected from mozhttpd internal webserver.',
+                         'default': os.path.abspath('results_log.txt'),
+                         'flags': ['--resultsLog']}),
         ('shutdown', {'help': 'Record time browser takes to shutdown after testing',
                       'type': bool,
                       'flags': ['--noShutdown']}),
@@ -272,7 +275,11 @@ the highest value.
         'extensions.getAddons.getWithPerformance.url': 'http://127.0.0.1/extensions-dummy/repositoryGetWithPerformanceURL',
         'extensions.getAddons.search.browseURL': 'http://127.0.0.1/extensions-dummy/repositoryBrowseURL',
         'extensions.getAddons.search.url': 'http://127.0.0.1/extensions-dummy/repositorySearchURL',
-        'plugins.update.url': 'http://127.0.0.1/plugins-dummy/updateCheckURL'
+        'plugins.update.url': 'http://127.0.0.1/plugins-dummy/updateCheckURL',
+        'media.navigator.enabled': True,
+        'media.peerconnection.enabled': True,
+        'media.navigator.permission.disabled': True,
+        'media.capturestream_hints.enabled': True
     }
 
     # keys to generated self.config that are global overrides to tests
@@ -686,13 +693,21 @@ the highest value.
         and copy that file to the remote device.
         """
 
-        if '://' in url:
-            # assume a fully qualified url
-            return url
-
         # get the webserver
         webserver = self.config.get('webserver')
         if not webserver:
+            return url
+
+        # fix results url if present anywhere in the
+        # test's url input. results url will be used in tests
+        # to log results to be collected by the Talos internal
+        # mozHttpd server.
+        if 'http://localhost/results' in url:
+            replace_url = 'http://%s/results' % webserver
+            url = url.replace('http://localhost/results', replace_url)
+
+        if '://' in url:
+            # assume a fully qualified url
             return url
 
         # We cannot load .xul remotely and winopen.xul is the only instance.
@@ -774,7 +789,8 @@ the highest value.
 
         required = ['preferences', 'extensions',
                     'browser_path', 'browser_log', 'browser_wait',
-                    'extra_args', 'buildid', 'env', 'init_url'
+                    'extra_args', 'buildid', 'env', 'init_url',
+                    'results_log'
                     ]
         optional = {'bcontroller_config': 'bcontroller.yml',
                     'branch_name': '',

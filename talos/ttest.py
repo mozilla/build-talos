@@ -24,6 +24,7 @@ import time
 import utils
 import copy
 import mozcrash
+import shutil
 from threading import Thread
 
 try:
@@ -218,6 +219,9 @@ class TTest(object):
 
     def testCleanup(self, browser_config, profile_dir, test_config, cm, temp_dir):
         try:
+            if os.path.isfile(browser_config['results_log']):
+                shutil.move(browser_config['results_log'], browser_config['browser_log'])
+
             if os.path.isfile(browser_config['browser_log']):
                 results_file = open(browser_config['browser_log'], "r")
                 results_raw = results_file.read()
@@ -309,6 +313,7 @@ class TTest(object):
                                                        extensions, 
                                                        browser_config['webserver'])
             self.initializeProfile(profile_dir, browser_config)
+            test_config['url'] = utils.interpolatePath(test_config['url'], profile_dir=profile_dir, firefox_path=browser_config['browser_path'])
 
             if browser_config['fennecIDs']:
                 # This pushes environment variables to the device, be careful of placement
@@ -398,6 +403,10 @@ class TTest(object):
                     time.sleep(5)
                 else:
                     self._ffprocess.runProgram(browser_config, command_args, timeout=timeout)
+
+                # check if we found results from our webserver
+                if os.path.isfile(browser_config['results_log']):
+                    shutil.move(browser_config['results_log'], browser_config['browser_log'])
 
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']
