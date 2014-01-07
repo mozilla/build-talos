@@ -421,6 +421,7 @@ class DatazillaOutput(Output):
         results_url_split = utils.urlsplit(results_url)
         results_scheme, results_server, results_path, _, _ = results_url_split
 
+        utils.info("TALOSDATA: %s" % json.dumps(results.datasets()))
         if results_scheme in ('http', 'https'):
             self.post(results, results_server, results_path, results_scheme, tbpl_output)
         elif results_scheme == 'file':
