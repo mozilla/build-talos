@@ -548,6 +548,10 @@ class DatazillaOutput(Output):
             params['product'] = results.build_name
             params['repository'] = results.branch
             params['os'] = results.os.lower()
+            # As per bug 957166, we need to Capitalize Android
+            if params['os'] == 'android':
+                params['os'] = 'Android'
+
             params['os_version'] = results.os_version
             params['project'] = project
             query = '?%s' % '&'.join(['%s=%s' % (key, urllib.quote(str(value))) for key, value in params.items()])
