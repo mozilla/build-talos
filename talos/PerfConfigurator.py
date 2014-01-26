@@ -512,6 +512,9 @@ the highest value.
         self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides, counters))
 
         for test in self.config.get('tests', []):
+            # test for --fennecIDs
+            if self.config.get('fennecIDs','') and not test['fennecIDs']:
+                raise ConfigurationError("You passed in --fennecIDs and this is only supported for robocop based tests")
             # robopan is the only robocop based extension which uses roboextender
             if self.config.get('fennecIDs', '') and test['name'] == 'trobopan':
                 self.config['extensions'] = ['${talos}/mobile_extensions/roboextender@mozilla.org']

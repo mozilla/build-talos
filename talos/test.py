@@ -8,6 +8,7 @@ class Test(object):
     keys = []
     desktop = True
     mobile = True
+    fennecIDs = False
 
     @classmethod
     def name(cls):
@@ -58,7 +59,7 @@ class Test(object):
 class TsBase(Test):
     """abstract base class for ts-style tests"""
     keys = ['url', 'url_timestamp', 'timeout', 'cycles', 'shutdown', 'profile_path', 'xperf_counters',
-            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'tpmozafterpaint', 'setup', 'cleanup']
+            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'tpmozafterpaint', 'setup', 'cleanup','fennecIDs']
 
 class ts(TsBase):
     """
@@ -140,6 +141,7 @@ class trobopan(TsBase):
     timeout = 300
     desktop = False
     tpchrome = False
+    fennecIDs = True
 
 class tcheckerboard(TsBase):
     """
@@ -150,6 +152,7 @@ class tcheckerboard(TsBase):
     timeout = 300
     desktop = False
     tpchrome = False
+    fennecIDs = True
 
 class tprovider(TsBase):
     """
@@ -160,6 +163,7 @@ class tprovider(TsBase):
     timeout = 300
     desktop = False
     tpchrome = False
+    fennecIDs = True
 
 class tcheck2(TsBase):
     """
@@ -171,6 +175,7 @@ class tcheck2(TsBase):
     timeout = 300
     desktop = False
     tpchrome = False
+    fennecIDs = True
 
 ### Media Test
 class media_tests(TsBase):
@@ -203,7 +208,7 @@ class PageloaderTest(Test):
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters', 'xperf_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences', 'extensions',
-            'setup', 'cleanup'
+            'setup', 'cleanup','fennecIDs'
             ]
 
 class tart(PageloaderTest):
