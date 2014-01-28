@@ -241,6 +241,23 @@ class tart(PageloaderTest):
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
     filters = [["ignore_first", [1]], ['median', []]]
 
+class cart(PageloaderTest):
+    """
+    Customize Animation Regression Test
+    Tests Australis customize animation. Uses the TART addon but with a different URL.
+    Reports the same animation values as TART (.half/.all/.error).
+    All comments for TART also apply here (e.g. for ASAP+OMTC, etc)
+    """
+    tpmanifest = '${talos}/page_load_test/tart/cart.manifest'
+    extensions = '${talos}/page_load_test/tart/addon'
+    tpcycles = 1
+    tppagecycles = 25
+    tploadaboutblank = True
+    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
+    """ ASAP mode """
+    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    filters = [["ignore_first", [1]], ['median', []]]
+
 class tp(PageloaderTest):
     """
     Base class for all tp based tests (tp = test pageload)
@@ -488,6 +505,6 @@ tests = [ts_paint, ts, tsvg, tdhtml,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
-         tsvgx, tscrollx, tart
+         tsvgx, tscrollx, tart, cart
          ]
 test_dict = dict([(i.name(), i) for i in tests])

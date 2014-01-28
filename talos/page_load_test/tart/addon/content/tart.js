@@ -63,6 +63,20 @@ Tart.prototype = {
     this._win.gBrowser.selectedTab.setAttribute("fadein", "true");
   },
 
+
+  addSomeChromeUriTab: function() {
+    this._win.gBrowser.selectedTab = this._win.gBrowser.addTab("chrome://tart/content/blank.icon.html");
+  },
+
+  triggerCustomizeEnter: function() {
+    this._win.gCustomizeMode.enter();
+  },
+
+  triggerCustomizeExit: function() {
+    this._win.gCustomizeMode.exit();
+  },
+
+
   pinTart: function() {
     return this._win.gBrowser.pinTab(this._tartTab);
   },
@@ -83,7 +97,7 @@ Tart.prototype = {
     var self = this;
     var recordingHandle;
     var timeoutId = 0;
-    var listnerObject;
+    var listnerObjects;
     var rAF = window.requestAnimationFrame || window.mozRequestAnimationFrame;
     const Ci = Components.interfaces;
     const Cc = Components.classes;
@@ -175,12 +189,16 @@ Tart.prototype = {
     }
 
     function transEnd(e) {
-      if (e && e.propertyName!="max-width") { // If it's an event (and not a timeout) then only max-width indicates end of animation.
+      // If it's an event (and not a timeout) then make sure it's either tab animation end (has max-width), or detect customize animation.
+      if (e && (e.type!="customization-transitionend" && e.propertyName!="max-width")) {
         return;
       }
       // First cancel any further end-events for this animation.
       clearTimeout(timeoutId);
-      listnerObject.removeEventListener("transitionend", transEnd);
+      for (let i in listnerObjects) {
+        let e = listnerObjects[i];
+        e.listener.removeEventListener(e.eventType, e.handler);
+      }
 
       // Get the recorded frame intervals and append result if required
       let intervals = stopRecord(recordingHandle);
@@ -226,7 +244,21 @@ Tart.prototype = {
         triggerFunc();
         // Listen to tabstrip instead of tab because when closing a tab, the listener ends up on an inactive tab,
         // thus throttled timers -> inaccurate (possibly late) finish event timing
-        (listnerObject = self._win.gBrowser.tabContainer).addEventListener("transitionend", transEnd);
+        listnerObjects = [];
+        listnerObjects.push ({
+          listener: self._win.gBrowser.tabContainer,
+          eventType: "transitionend",
+          handler: transEnd
+        });
+        listnerObjects.push ({
+          listener: self._win.gNavToolbox,
+          eventType: "customization-transitionend",
+          handler: transEnd
+        });
+        for (let i in listnerObjects) {
+          let e = listnerObjects[i];
+          e.listener.addEventListener(e.eventType, e.handler);
+        }
       });
     }, preWaitMs);
 
@@ -316,6 +348,10 @@ Tart.prototype = {
     var fadein = this.fadeInCurrentTab.bind(this);
     var fadeout = this.fadeOutCurrentTab.bind(this);
 
+    var addSomeTab = this.addSomeChromeUriTab.bind(this);
+    var cutsomizeEnter = this.triggerCustomizeEnter.bind(this);
+    var cutsomizeExit = this.triggerCustomizeExit.bind(this);
+
     var next = this._nextCommand.bind(this);
     var rest = 500; //500ms default rest before measuring an animation
     if (this._config.rest) {
@@ -332,12 +368,25 @@ Tart.prototype = {
       }
     }
 
+    function getReferenceCustomizationDuration() {
+      // Code by jaws.
+      try {
+        let tabViewDeck = document.getElementById("tab-view-deck");
+        let cstyle = window.getComputedStyle(tabViewDeck);
+        return 1000 * parseFloat(cstyle.transitionDuration, 10);
+      } catch (e) {
+        return 150; // Value at the time of writing
+      }
+    }
+
     this.unpinTart();
     var tabRefDuration = getMaxTabTransitionTimeMs(this._tartTab);
     if (tabRefDuration < 20 || tabRefDuration > 2000) {
       // hardcoded fallback in case the value doesn't make sense as tab animation duration.
       tabRefDuration = 250;
     }
+
+    var custRefDuration = getReferenceCustomizationDuration();
 
     var subtests = {
       init: [ // This is called before each subtest, so it's safe to assume the following prefs:
@@ -492,6 +541,20 @@ Tart.prototype = {
                    next();},
         function(){animate(rest, fadeout, next, true, "lastTabFade-close-DPIcurrent", tabRefDuration);},
         function(){animate(rest, fadein, next, true, "lastTabFade-open-DPIcurrent", tabRefDuration);},
+      ],
+
+      customize: [
+        // Test australis customize mode animation.
+        // Adding a non-newtab since the behavior of exiting customize mode which was entered on newtab may change. See bug 957202.
+        function(){animate(0, addSomeTab, next);},
+
+        // Hacky: After entering and exiting customize mode (even after the event indicating that the animation is over),
+        // should wait a bit before continuing, or else customize mode can be left in unstable state.
+        // The prefixes 1- and 2- were added because talos cuts common prefixes on all "pages", which ends up as "customize-e" prefix.
+        function(){animate(rest, cutsomizeEnter, next, true, "1-customize-enter", custRefDuration);},
+        function(){animate(rest, cutsomizeExit, next, true, "2-customize-exit", custRefDuration);},
+
+        function(){animate(rest, closeCurrentTab, next);}
       ]
     };
 
