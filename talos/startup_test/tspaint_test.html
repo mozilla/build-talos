@@ -32,7 +32,17 @@ function painted() {
   if (window.dump) {
     dumpLog('__start_report' + startupTime + '__end_report\n\n');
   }
+  dumpConsoleAndQuit();
+}
 
+function failed() {
+  if (window.dump) {
+    dumpLog('BROWSER FAILED TO GENERATE MOZAFTERPAINT IN 5 SECONDS');
+  }
+  dumpConsoleAndQuit();
+}
+
+function dumpConsoleAndQuit() {
   var messages = {}
   if (useSpecialPowers) {
     messages = SpecialPowers.getConsoleMessages();
@@ -56,7 +66,9 @@ function painted() {
     window.close();
   }, 0);
 }
+
 window.addEventListener("MozAfterPaint", painted, true);
+setTimeout(failed, 5000);
 
 </script>
 <body></body>

@@ -77,6 +77,8 @@ class RemoteProcess(FFProcess):
 
     def ProcessesWithNames(self, *process_names):
         """Returns a list of processes running with the given name(s).
+           For the remote case (this file), we will look for activities intead of raw processname.
+
         Useful to check whether a Browser process is still running
 
         Args:
@@ -86,20 +88,11 @@ class RemoteProcess(FFProcess):
             An array with a list of processes in the list which are running
         """
 
-        # refresh list of processes
-        data = self.GetRunningProcesses()
-        if not data:
-            return []
-
         processes_with_names = []
+        topActivity = self.testAgent.getTopActivity()
         for process_name in process_names:
-            try:
-                for pid, appname, userid in data:
-                    if process_name == appname:
-                        processes_with_names.append((pid, process_name))
-            except:
-                # Might get an exception if there are no instances of the process running.
-                continue
+            if topActivity == process_name:
+                processes_with_names.append((-1, process_name))
         return processes_with_names
 
     def TerminateAllProcesses(self, timeout, *process_names):
@@ -146,10 +139,7 @@ class RemoteProcess(FFProcess):
     def getLogcat(self):
         return self.testAgent.getLogcat()
 
-    def launchProcess(self, cmd, outputFile = "process.txt", timeout = -1):
-        if (outputFile == "process.txt"):
-            outputFile = self.rootdir + self.dirSlash + "process.txt"
-            cmd += " > " + outputFile
+    def launchProcess(self, cmd, processname, outputFile = "process.txt", timeout = -1):
         try:
             cmds = cmd.split()
             waitTime = 30
@@ -164,7 +154,7 @@ class RemoteProcess(FFProcess):
                 total_time = 0
                 while total_time < timeout:
                     time.sleep(5)
-                    if not self.testAgent.processExist(cmd):
+                    if not self.testAgent.getTopActivity() == processname:
                         timed_out = False
                         break
                     total_time += 1
@@ -242,7 +232,7 @@ class RemoteProcess(FFProcess):
 
         self.recordLogcat()
         firstTime = time.time()
-        retVal = self.launchProcess(' '.join(command_args), outputFile=remoteLog, timeout=timeout)
+        retVal = self.launchProcess(' '.join(command_args), browser_config['browser_path'], outputFile=remoteLog, timeout=timeout)
         logcat = self.getLogcat()
         if logcat:
             with open('logcat.log', 'w') as f:

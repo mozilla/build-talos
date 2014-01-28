@@ -129,12 +129,11 @@ def interpolatePath(path, profile_dir=None, firefox_path=None):
   return path
 
 def testAgent(host, port):
+  from mozdevice import droid
   if port == -1:
-    from mozdevice import devicemanagerADB
-    return devicemanagerADB.DeviceManagerADB(host, port)
+    return droid.DroidADB(host, port, deviceRoot='/mnt/sdcard/tests')
   else:
-    from mozdevice import devicemanagerSUT
-    return devicemanagerSUT.DeviceManagerSUT(host, port)
+    return droid.DroidSUT(host, port, deviceRoot='/mnt/sdcard/tests')
 
 def findall(string, token):
   """find all occurances in a string"""
