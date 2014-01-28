@@ -39,7 +39,7 @@ var reportRSS = true;
 var useMozAfterPaint = false;
 var gPaintWindow = window;
 var gPaintListener = false;
-var loadAboutBlank = false;
+var loadNoCache = false;
 
 //when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
 var gTime = -1;
@@ -129,7 +129,7 @@ function plInit() {
     if (args.delay) delay = parseInt(args.delay);
     if (args.mozafterpaint) useMozAfterPaint = true;
     if (args.rss) reportRSS = true;
-    if (args.loadaboutblank) loadAboutBlank = true;
+    if (args.loadnocache) loadNoCache = true;
 
     forceCC = !args.noForceCC;
     doRenderTest = args.doRender;
@@ -344,9 +344,12 @@ function plLoadPage() {
 
 function startAndLoadURI(pageName) {
   start_time = Date.now();
-  if (loadAboutBlank)
-    content.loadURI('about:blank');
-  setTimeout(function() {content.loadURI(pageName) }, 0);
+
+  if (loadNoCache) {
+    content.loadURIWithFlags(pageName, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
+  } else {
+    content.loadURI(pageName);
+  }
 }
 
 function loadFail() {

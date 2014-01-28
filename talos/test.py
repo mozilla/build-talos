@@ -203,7 +203,7 @@ class PageloaderTest(Test):
     cycles = None
     timeout = None
     filters = None
-    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadaboutblank',
+    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadnocache',
             'rss', 'resolution', 'cycles',
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters', 'xperf_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
@@ -232,7 +232,7 @@ class tart(PageloaderTest):
     extensions = '${talos}/page_load_test/tart/addon'
     tpcycles = 1
     tppagecycles = 25
-    tploadaboutblank = True
+    tploadnocache = True
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
     """ ASAP mode """
     """ The recording API is broken with OMTC before ~2013-11-27 """
@@ -252,7 +252,7 @@ class cart(PageloaderTest):
     extensions = '${talos}/page_load_test/tart/addon'
     tpcycles = 1
     tppagecycles = 25
-    tploadaboutblank = True
+    tploadnocache = True
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
     """ ASAP mode """
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
