@@ -29,8 +29,13 @@ class FFProcess(object):
         """
         processes_with_names = []
         for process_name in process_names:
-            pids = mozpid.get_pids(process_name)
-            processes_with_names.extend([(pid, process_name) for pid in pids])
+            try:
+                pids = mozpid.get_pids(process_name)
+                processes_with_names.extend([(pid, process_name) for pid in pids])
+            except:
+                # on osx 10.6, we get a keyerror on 'CMD' inside mozprocess.pids
+                # it appears we have the browser terminating, appears to be a race condition
+                pass
 
         return processes_with_names
 
@@ -42,10 +47,15 @@ class FFProcess(object):
         """
         results = []
         for process_name in process_names:
-            for pid in mozpid.get_pids(process_name):
-                ret = self._TerminateProcess(pid, timeout)
-                if ret:
-                    results.append("%s (%s): %s" % (process_name, pid, ret))
+            try:
+                for pid in mozpid.get_pids(process_name):
+                    ret = self._TerminateProcess(pid, timeout)
+                    if ret:
+                        results.append("%s (%s): %s" % (process_name, pid, ret))
+            except:
+                # on osx 10.6, we get a keyerror on 'CMD' inside mozprocess.pids
+                # it appears we have the browser terminating, appears to be a race condition
+                pass
         return ",".join(results)
 
     def checkAllProcesses(self, process_name, child_process):
