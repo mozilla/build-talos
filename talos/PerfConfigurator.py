@@ -184,6 +184,10 @@ the highest value.
                         'flags': ['--deviceRoot']}),
         ('fennecIDs', {'help': 'Location of the fennec_ids.txt map file, used for robocop based tests',
                        'flags': ['--fennecIDs']}),
+        ('robocopTestName', {'help': "Default value is org.mozilla.roboexample.test",
+                     'default': ''}),
+        ('robocopTestPackage', {'help': "Default value is org.mozilla.gecko",
+                     'default': ''}),
         ]
 
     # remote-specific defaults
@@ -643,6 +647,14 @@ the highest value.
             elif not test_class.desktop:
                 raise ConfigurationError("Test %s is not able to run on desktop builds at this time" % test_name)
 
+            # Test for ensuring that both robocopTestPackage and robocopTestName should be specified or else both should be None.
+            if (not self.config.get('robocopTestName','') and self.config.get('robocopTestPackage','')) or (self.config.get('robocopTestName','') and not self.config.get('robocopTestPackage','')):
+                raise ConfigurationError('robocopTestName and robocopTestPackage must be specified together')
+            # Assigning default values to robocopTestPackage and robocopTestName if both are empty.
+            if (not self.config.get('robocopTestName','')) and (not self.config.get('robocopTestPackage','')):
+                self.config['robocopTestName'] = 'org.mozilla.roboexample.test'
+                self.config['robocopTestPackage'] = 'org.mozilla.gecko'
+
             # use test-specific overrides
             test_overrides = overrides.get(test_name, {})
 
@@ -660,6 +672,8 @@ the highest value.
             url = getattr(test_instance, 'url', None)
             if url:
                 test_instance.url = self.convertUrlToRemote(url)
+                if self.config.get('robocopTestName') and self.config.get('robocopTestPackage'):
+                    test_instance.url = utils.interpolatePath(url,None,None,self.config.get('robocopTestPackage'),self.config.get('robocopTestName'))
 
             # fix up tpmanifest
             tpmanifest = getattr(test_instance, 'tpmanifest', None)

@@ -136,7 +136,7 @@ class trobopan(TsBase):
     Panning performance test. Value is square of frame delays (ms greater
     than 25 ms) encountered while panning. Lower values are better.
     """
-    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.gecko.tests.testPan org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testPan ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
     desktop = False
@@ -147,7 +147,7 @@ class tcheckerboard(TsBase):
     """
     Simple measure of 'checkerboarding'. Lower values are better.
     """
-    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.gecko.tests.testCheck org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testCheck ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
     desktop = False
@@ -158,7 +158,7 @@ class tprovider(TsBase):
     """
     A mobile ts_type test (docstring to be updated)
     """
-    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.gecko.tests.testBrowserProviderPerf org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testBrowserProviderPerf ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
     desktop = False
@@ -170,7 +170,7 @@ class tcheck2(TsBase):
     Measure of 'checkerboarding' during simulation of real user interaction
     with page. Lower values are better.
     """
-    url = 'am instrument -w -e deviceroot %s -e class org.mozilla.gecko.tests.testCheck2 org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner'
+    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testCheck2 ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
     cycles = 5
     timeout = 300
     desktop = False

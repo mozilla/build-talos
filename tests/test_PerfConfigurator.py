@@ -75,7 +75,68 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # cleanup
         os.remove(outfile)
-    
+
+    # Need a real device to get this to work.
+    '''
+    def test_cli_robocop_withoutpath(self):
+
+        example = PerfConfigurator()
+
+        # parse the standard commands
+        outfile = tempfile.mktemp(suffix='.yaml')
+        options, args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', '', '--robocopTestPackage', '', '-o', outfile])
+        self.assertTrue(os.path.exists(outfile))
+
+        # ensure that the options appropriately get set
+        self.assertEqual(bool(args), False) # no arguments
+        self.assertEqual(options.activeTests, 'trobopan')
+        self.assertEqual(options.robocopTestName, 'org.mozilla.roboexample.test')
+        self.assertEqual(options.robocopTestPackage, 'org.mozilla.gecko')
+
+        # ensure that the configuration appropriately gets updated
+        self.assertEqual(example.config['tests'][0]['name'], 'trobopan')
+        self.assertEqual(example.config['robocopTestName'], 'org.mozilla.roboexample.test')
+        self.assertEqual(example.config['robocopTestPackage'], 'org.mozilla.gecko')
+
+        # ensure that the yaml information are accurate with respect to the data given
+        yaml = YAML()
+        content = yaml.read(outfile)
+        self.assertEqual(content['tests'][0]['url'], 'am instrument -w -e deviceroot %s -e class org.mozilla.gecko.tests.testPan org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner')
+        self.assertEqual(content['tests'][0]['name'], 'trobopan')
+
+        # cleanup
+        os.remove(outfile)
+
+    def test_cli_robocop_withpath(self):
+
+        example = PerfConfigurator()
+
+        # parse the standard commands
+        outfile = tempfile.mktemp(suffix='.yaml')
+        options, args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', 'pathtofile', '--robocopTestPackage', 'pathtofile', '-o', outfile])
+        self.assertTrue(os.path.exists(outfile))
+
+        # ensure that the options appropriately get set
+        self.assertEqual(bool(args), False) # no arguments
+        self.assertEqual(options.activeTests, 'trobopan')
+        self.assertEqual(options.robocopTestName, 'pathtofile')
+        self.assertEqual(options.robocopTestPackage, 'pathtofile')
+
+        # ensure that the configuration appropriately gets updated
+        self.assertEqual(example.config['tests'][0]['name'], 'trobopan')
+        self.assertEqual(example.config['robocopTestName'], 'pathtofile')
+        self.assertEqual(example.config['robocopTestPackage'], 'pathtofile')
+
+        # ensure that the yaml information are accurate with respect to the data given
+        yaml = YAML()
+        content = yaml.read(outfile)
+        self.assertEqual(content['tests'][0]['url'], 'am instrument -w -e deviceroot %s -e class pathtofile.tests.testPan pathtofile/pathtofile.FennecInstrumentationTestRunner')
+        self.assertEqual(content['tests'][0]['name'], 'trobopan')
+
+        # cleanup
+        os.remove(outfile)
+    '''
+
     def test_errors(self):
         """
         Tests if errors and exceptions are correctly raised.
@@ -102,6 +163,14 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
                                       'args':['--activeTests', 'trobopan', '--develop', '-e', ffox_path, '--fennecIDs', 'filedoesnotexist.txt', "-o", outfile],
                                       'except_fault' : 'invalid --fennecIDs raised an error that is not ConfigurationError',
                                       'non_raises_fault' : 'invalid --fennecIDs passed test'},
+                       '--robocopTestName':{'error':ConfigurationError,
+                                      'args':['--activeTests', 'trobopan', '--develop', '-e', ffox_path, '--robocopTestName', 'pathdoesnotexist', "-o", outfile],
+                                      'except_fault' : 'invalid --robocopTestName raised an error that is not ConfigurationError',
+                                      'non_raises_fault' : 'invalid --robocopTestName passed test'},
+                       '--robocopTestPackage':{'error':ConfigurationError,
+                                      'args':['--activeTests', 'trobopan', '--develop', '-e', ffox_path, '--robocopTestPackage', 'pathdoesnotexist', "-o", outfile],
+                                      'except_fault' : 'invalid --robocopTestPackage raised an error that is not ConfigurationError',
+                                      'non_raises_fault' : 'invalid --robocopTestPackage passed test'},
                        '--filter':{'error':ConfigurationError,
                                    'args' : ['--activeTests', 'ts', '--develop',  '-e', ffox_path, '--filter', 'badfilter', '-o', outfile],
                                    'except_fault' : 'invalid --filter raised an error that is not ConfigurationError',

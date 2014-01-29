@@ -117,8 +117,12 @@ def is_running(pid, psarg='axwww'):
   """returns if a pid is running"""
   return bool([i for i in mozpid.ps(psarg) if pid == int(i['PID'])])
 
-def interpolatePath(path, profile_dir=None, firefox_path=None):
+def interpolatePath(path, profile_dir=None, firefox_path=None, robocop_TestPackage=None, robocop_TestName=None):
   path = string.Template(path).safe_substitute(talos=here)
+
+  if robocop_TestName and robocop_TestPackage:
+      path = string.Template(path).safe_substitute(robocopTestPackage=robocop_TestPackage)
+      path = string.Template(path).safe_substitute(robocopTestName=robocop_TestName)
 
   if profile_dir:
       path = string.Template(path).safe_substitute(profile=profile_dir)
