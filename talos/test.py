@@ -204,7 +204,7 @@ class PageloaderTest(Test):
     timeout = None
     filters = None
     keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadnocache',
-            'rss', 'resolution', 'cycles',
+            'rss', 'resolution', 'cycles', 'tptimeout',
             'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters', 'xperf_counters',
             'timeout', 'shutdown', 'responsiveness', 'profile_path',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences', 'extensions',
@@ -303,6 +303,7 @@ class tp5n(tp):
     tpcycles = 1
     tppagecycles = 25
     tpmozafterpaint = True
+    tptimeout = 5000
     rss = True
     win_counters = ['Main_RSS', 'Private Bytes', '% Processor Time']
     w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']

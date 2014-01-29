@@ -15,6 +15,9 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 var NUM_CYCLES = 5;
 var numPageCycles = 1;
 
+var numRetries = 0;
+var maxRetries = 20;
+
 var pageFilterRegexp = null;
 var useBrowser = true;
 var winWidth = 1024;
@@ -284,11 +287,15 @@ var removeLastAddedMsgListener = null;
 function plLoadPage() {
   var pageName = pages[pageIndex].url.spec;
 
-  if (removeLastAddedListener)
+  if (removeLastAddedListener) {
     removeLastAddedListener();
+    removeLastAddedListener = null;
+  }
 
-  if (removeLastAddedMsgListener)
+  if (removeLastAddedMsgListener) {
     removeLastAddedMsgListener();
+    removeLastAddedMsgListener = null;
+  }
 
   if (plPageFlags() & TEST_DOES_OWN_TIMING) {
     // if the page does its own timing, use a capturing handler
@@ -333,7 +340,7 @@ function plLoadPage() {
   }
 
   if (timeout > 0) {
-    timeoutEvent = setTimeout('loadFail()', timeout);
+    timeoutEvent = setTimeout(function () {loadFail(); }, timeout);
   }
   if (reportRSS) {
     collectMemory(startAndLoadURI, pageName);
@@ -344,7 +351,6 @@ function plLoadPage() {
 
 function startAndLoadURI(pageName) {
   start_time = Date.now();
-
   if (loadNoCache) {
     content.loadURIWithFlags(pageName, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
   } else {
@@ -354,8 +360,28 @@ function startAndLoadURI(pageName) {
 
 function loadFail() {
   var pageName = pages[pageIndex].url.spec;
-  dumpLine("__FAILTimeout exceeded on " + pageName + "__FAIL")
-  plStop(true);
+  numRetries++;
+
+  if (numRetries >= maxRetries) {
+    dumpLine('__FAILTimeout (' + numRetries + '/' + maxRetries + ') exceeded on ' + pageName + '__FAIL');
+    plStop(true);
+  } else {
+    dumpLine('__WARNTimeout (' + numRetries + '/' + maxRetries + ') exceeded on ' + pageName + '__WARN');
+    // TODO: make this a cleaner cleanup
+    pageCycle--;
+    content.removeEventListener('load', plLoadHandler, true);
+    content.removeEventListener('load', plLoadHandlerCapturing, true);
+    content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
+    content.removeEventListener("MozAfterPaint", plPainted, true);
+    gPaintWindow.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
+    gPaintWindow.removeEventListener("MozAfterPaint", plPainted, true);
+    removeLastAddedListener = null;
+    removeLastAddedMsgListener = null;
+    gPaintListener = false;
+
+    //TODO: consider adding a tab and removing the old tab?!?
+    setTimeout(plLoadPage, delay);
+  }
 }
 
 function plNextPage() {
@@ -431,6 +457,7 @@ function plLoadHandlerCapturing(evt) {
   }
 
   content.removeEventListener('load', plLoadHandlerCapturing, true);
+  removeLastAddedListener = null;
 
   setTimeout(plWaitForPaintingCapturing, 0);
 }
@@ -520,17 +547,6 @@ function plPainted() {
 function _loadHandler() {
   if (timeout > 0) { 
     clearTimeout(timeoutEvent);
-  }
-  var docElem;
-  if (browserWindow)
-    docElem = browserWindow.frames["content"].document.documentElement;
-  else
-    docElem = content.contentDocument.documentElement;
-  var width;
-  if ("getBoundingClientRect" in docElem) {
-    width = docElem.getBoundingClientRect().width;
-  } else if ("offsetWidth" in docElem) {
-    width = docElem.offsetWidth;
   }
 
   var end_time = Date.now();
@@ -678,7 +694,7 @@ function plStopAll(force) {
     }
   }
 
-  if (MozillaFileLogger)
+  if (MozillaFileLogger && MozillaFileLogger._foStream)
     MozillaFileLogger.close();
 
   goQuitApplication();
@@ -758,7 +774,7 @@ function plLoadURLsFromURI(manifestUri) {
 }
 
 function dumpLine(str) {
-  if (MozillaFileLogger)
+  if (MozillaFileLogger && MozillaFileLogger._foStream)
     MozillaFileLogger.log(str + "\n");
   dump(str);
   dump("\n");

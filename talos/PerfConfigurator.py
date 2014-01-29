@@ -117,6 +117,8 @@ the highest value.
         ('tpmanifest', {'help': 'manifest file to test'}),
         ('tpcycles', {'help': 'number of pageloader cycles to run',
                       'type': int}),
+        ('tptimeout', {'help': 'number of milliseconds to wait for a load event after calling loadURI before timing out',
+                      'type': int}),
         ('tppagecycles', {'help': 'number of pageloader cycles to run for each page in the manifest',
                           'type': int}),
         ('tpdelay', {'help': 'length of the pageloader delay',
@@ -295,6 +297,7 @@ the highest value.
                         'tpdelay',
                         'tppagecycles',
                         'tpmanifest',
+                        'tptimeout',
                         'tpmozafterpaint'
                         ]
 
@@ -446,6 +449,12 @@ the highest value.
             log_file = os.path.abspath(log_file)
             self.config['preferences']['talos.logfile'] = log_file
 
+        # TODO: Investigate MozillaFileLogger and stability on OSX 10.6 and Win7
+        #       hack here to not set logfile - this will break tp5n-xperf and remote tests, so we don't do it there
+        if 'talos.logfile' in self.config['preferences']:
+            if not self.remote and not xperf_path:
+                del self.config['preferences']['talos.logfile']
+
         if 'init_url' in self.config:
             # fix init_url
             self.config['init_url'] = self.convertUrlToRemote(self.config['init_url'])
@@ -525,7 +534,12 @@ the highest value.
 
         if self.remote:
             # fix up logfile preference
-            logfile = self.config['preferences'].get('talos.logfile')
+            logfile = None
+            try:
+                logfile = self.config['preferences'].get('talos.logfile')
+            except:
+                pass
+
             if logfile:
                 # use the last part of the browser_log overridden for the remote log
                 # from the global; see
