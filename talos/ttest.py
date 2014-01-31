@@ -24,6 +24,7 @@ import time
 import utils
 import copy
 import mozcrash
+import talosconfig
 import shutil
 from threading import Thread
 
@@ -370,7 +371,7 @@ class TTest(object):
                 if not browser_config['remote']:
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
-                        utils.GenerateTalosConfig(command_args, browser_config, test_config)
+                        talosconfig.generateTalosConfig(command_args, browser_config, test_config)
                         setup = talosProcess.talosProcess(['python'] + test_config['setup'].split(), env=os.environ.copy())
                         setup.run()
                         setup.wait()
@@ -394,7 +395,7 @@ class TTest(object):
  
                     if test_config['cleanup']:
                         #HACK: add the pid to support xperf where we require the pid in post processing
-                        utils.GenerateTalosConfig(command_args, browser_config, test_config, pid=self.pid)
+                        talosconfig.generateTalosConfig(command_args, browser_config, test_config, pid=self.pid)
                         cleanup = talosProcess.talosProcess(['python'] + test_config['cleanup'].split(), env=os.environ.copy())
                         cleanup.run()
                         cleanup.wait()
