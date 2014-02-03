@@ -17,7 +17,8 @@ import urllib2
 
 # globals
 here = os.path.dirname(os.path.abspath(__file__))
-VIRTUALENV='https://raw.github.com/pypa/virtualenv/develop/virtualenv.py'
+#VIRTUALENV='https://raw.github.com/pypa/virtualenv/develop/virtualenv.py'
+VIRTUALENV='https://raw.github.com/pypa/virtualenv/1.10/virtualenv.py'
 
 class TalosInstallation(unittest.TestCase):
 

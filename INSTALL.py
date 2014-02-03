@@ -22,7 +22,7 @@ except:
 
 # globals
 here = os.path.dirname(os.path.abspath(__file__))
-VIRTUALENV='https://raw.github.com/pypa/virtualenv/develop/virtualenv.py'
+VIRTUALENV='https://raw.github.com/pypa/virtualenv/1.10/virtualenv.py'
 
 def which(binary, path=os.environ['PATH']):
     dirs = path.split(os.pathsep)
