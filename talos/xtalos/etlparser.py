@@ -329,7 +329,7 @@ def etlparser(xperf_path, etl_filename, processID, approot=None, configFile=None
             fhandle.close()
 
             for lib in libs:
-                wl_temp[lib] = {'ignore': True}
+                wl_temp['{firefox}\\%s' % lib.strip()] = {'ignore': True}
 
     # Windows isn't case sensitive, this protects us against mismatched systems.
     wl = {}
