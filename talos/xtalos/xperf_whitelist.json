@@ -14,6 +14,7 @@
  "{profile}\\extensions\\pageloader@mozilla.org\\chrome.manifest": {"mincount": 2, "maxcount": 2, "minbytes": 600, "maxbytes": 600},
  "{profile}\\mimetypes.rdf": {"mincount": 2, "maxcount": 2, "minbytes": 8192, "maxbytes": 8192},
  "{firefox}\\profiles.ini": {"mincount": 2, "maxcount": 2, "minbytes": 8192, "maxbytes": 8192},
+ "c:\\program files\\nvidia corporation\\3d vision\\nvstereoapii.dll": {"mincount": 0, "maxcount": 4, "minbytes": 2, "maxbytes": 33792},
  "c:\\programdata\\nvidia corporation\\drs\\nvdrssel.bin": {"mincount": 2, "maxcount": 2, "minbytes": 2, "maxbytes": 2},
  "c:\\programdata\\nvidia corporation\\drs\\nvapptimestamps": {"mincount": 22, "maxcount": 22, "minbytes": 704, "maxbytes": 704},
  "{firefox}\\browser\\components\\components.manifest": {"mincount": 2, "maxcount": 2, "minbytes": 68, "maxbytes": 68},
