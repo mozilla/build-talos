@@ -363,6 +363,12 @@ function loadFail() {
   numRetries++;
 
   if (numRetries >= maxRetries) {
+    let parts = pageName.split('/');
+    let testname = "pageloader";
+    if (parts.length > 4) {
+      testname = parts[4];
+    }
+    dumpLine('__FAILTimeout in ' + testname + '__FAIL');
     dumpLine('__FAILTimeout (' + numRetries + '/' + maxRetries + ') exceeded on ' + pageName + '__FAIL');
     plStop(true);
   } else {
