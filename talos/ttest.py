@@ -180,6 +180,7 @@ class TTest(object):
                                                browser_config['symbols_path'],
                                                stackwalk_binary=stackwalkbin,
                                                test_name=test_name)
+            self._hostproc.removeDirectory(minidumpdir)
 
         if found:
             raise talosCrash("Found crashes after test run, terminating test")
