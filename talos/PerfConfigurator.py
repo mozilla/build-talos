@@ -426,6 +426,8 @@ the highest value.
                 if xperf_path.startswith(quote) and xperf_path.endswith(quote):
                     self.config['xperf_path'] = xperf_path[1:-1]
                     break
+            if not os.path.exists(self.config.get('xperf_path')):
+                raise ConfigurationError("xperf.exe cannot be found at the path specified")
 
         # fix options for --develop
         if self.config.get('develop'):
