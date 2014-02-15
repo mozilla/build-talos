@@ -7,9 +7,9 @@ from threading import Thread
 import os
 import time
 
-from utils import talosError
+from utils import TalosError
 
-class talosProcess(ProcessHandler):
+class TalosProcess(ProcessHandler):
     """
     Process handler for running peptests
     """
@@ -64,7 +64,7 @@ class talosProcess(ProcessHandler):
             os.chmod(self.logfile, 0777)
         self.logToFile("\n__FAILbrowser frozen__FAIL\n")
         self.closeLogFile()
-        raise talosError("timeout")
+        raise TalosError("timeout")
 
     def processOutputLine(self, line):
         """

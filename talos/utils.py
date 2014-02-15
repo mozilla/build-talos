@@ -65,15 +65,15 @@ def restoreEnvironmentVars():
   for var in saved_environment:
     os.environ[var] = saved_environment[var]
 
-class talosError(Exception):
+class TalosError(Exception):
     "Errors found while running the talos harness."
 
-class talosRegression(Exception):
+class TalosRegression(Exception):
   """When a regression is detected at runtime, report it properly
      Currently this is a simple definition so we can detect the class type
   """
 
-class talosCrash(Exception):
+class TalosCrash(Exception):
   """Exception type where we want to report a crash and stay
      compatible with tbpl while allowing us to continue on.
 

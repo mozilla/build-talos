@@ -7,7 +7,7 @@ from ctypes import windll
 from ctypes.wintypes import DWORD, HANDLE, LPSTR, LPCSTR, LPCWSTR, Structure, pointer, LONG
 from ctypes import byref, create_string_buffer, memmove, Union, c_double, c_longlong
 import struct
-from utils import talosError
+from utils import TalosError
 pdh = windll.pdh
 
 _LONGLONG = c_longlong
@@ -84,7 +84,7 @@ class WinCounterManager(CounterManager):
       try:
         # Add the counter path for the default process.
         self._addCounter(process, 'process', counter)
-      except talosError:
+      except TalosError:
         # Assume that this is a memory counter for the system, not a process
         # counter
         # If we got an error that has nothing to do with that, the exception
@@ -109,7 +109,7 @@ class WinCounterManager(CounterManager):
     if pdh.PdhMakeCounterPathA(pointer(pCounterPathElements),
                                LPCSTR(0), pointer(pcchbufferSize),
                                DWORD(0)) != _PDH_MORE_DATA:
-      raise talosError("Could not create counter path for counter %s for %s" %
+      raise TalosError("Could not create counter path for counter %s for %s" %
                        (counterName, processName))
 
     szFullPathBuffer = LPCSTR('\0'*pcchbufferSize.value)
@@ -117,18 +117,18 @@ class WinCounterManager(CounterManager):
     if pdh.PdhMakeCounterPathA(pointer(pCounterPathElements),
                                szFullPathBuffer, pointer(pcchbufferSize),
                                DWORD(0)) != 0:
-      raise talosError("Could not create counter path for counter %s for %s" %
+      raise TalosError("Could not create counter path for counter %s for %s" %
                        (counterName, processName))
 
     path = szFullPathBuffer.value
 
     hq = HANDLE()
     if pdh.PdhOpenQuery(None, None, byref(hq)) != 0:
-      raise talosError("Could not open win32 counter query")
+      raise TalosError("Could not open win32 counter query")
 
     hc = HANDLE()
     if pdh.PdhAddCounterA(hq, path, 0, byref(hc)) != 0:
-      raise talosError("Could not add win32 counter %s" % path)
+      raise TalosError("Could not add win32 counter %s" % path)
 
     self.registeredCounters[counterName] = [hq, [(hc, path)]]
 
@@ -165,7 +165,7 @@ class WinCounterManager(CounterManager):
         try:
           newhc = HANDLE()
           if pdh.PdhAddCounterA(hq, expandedPath, 0, byref(newhc)) != 0:
-            raise talosError("Could not add expanded win32 counter %s" %
+            raise TalosError("Could not add expanded win32 counter %s" %
                              expandedPath)
           self.registeredCounters[counter][1].append((newhc, expandedPath))
         except:

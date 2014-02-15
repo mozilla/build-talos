@@ -9,7 +9,7 @@ import shutil
 import sys
 import time
 import utils
-from utils import talosError,MakeDirectoryContentsWritable
+from utils import TalosError,MakeDirectoryContentsWritable
 from mozprocess import pid as mozpid
 
 class FFProcess(object):
@@ -89,7 +89,7 @@ class FFProcess(object):
             time.sleep(browser_wait)
             processes = self.checkAllProcesses(process_name, child_process)
             if processes:
-                raise talosError("failed to cleanup processes: %s" % processes)
+                raise TalosError("failed to cleanup processes: %s" % processes)
 
         return terminate_result
 
@@ -109,7 +109,7 @@ class FFProcess(object):
             server.startswith('file:///')):
           scheme = ""
         elif (server.find('://') >= 0):
-          raise talosError("Unable to parse user defined webserver: '%s'" % (server))
+          raise TalosError("Unable to parse user defined webserver: '%s'" % (server))
 
         url = urlparse.urlparse('%s%s' % (scheme, server))
 

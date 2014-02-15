@@ -20,7 +20,7 @@ import json
 
 from results import TalosResults
 from ttest import TTest
-from utils import talosError, talosCrash, talosRegression
+from utils import TalosError, TalosCrash, TalosRegression
 
 # directory of this file
 here = os.path.dirname(os.path.realpath(__file__))
@@ -94,11 +94,11 @@ def buildCommandLine(test):
   # sanity check pageloader values
   # mandatory options: tpmanifest, tpcycles
   if test['tpcycles'] not in range(1, 1000):
-    raise talosError('pageloader cycles must be int 1 to 1,000')
+    raise TalosError('pageloader cycles must be int 1 to 1,000')
   if test.get('tpdelay') and test['tpdelay'] not in range(1, 10000):
-    raise talosError('pageloader delay must be int 1 to 10,000')
+    raise TalosError('pageloader delay must be int 1 to 10,000')
   if 'tpmanifest' not in test:
-    raise talosError("tpmanifest not found in test: %s" % test)
+    raise TalosError("tpmanifest not found in test: %s" % test)
     # TODO: should probably check if the tpmanifest exists
 
   # build pageloader command from options
@@ -193,7 +193,7 @@ def run_tests(configurator):
   try:
       filters = filter.filters_args(filters)
   except AssertionError, e:
-      raise talosError(str(e))
+      raise TalosError(str(e))
 
   # get the test data
   tests = config['tests']
@@ -222,9 +222,9 @@ def run_tests(configurator):
       try:
         filter.filters_args(test['filters'])
       except AssertionError, e:
-        raise talosError(str(e))
+        raise TalosError(str(e))
       except IndexError, e:
-        raise talosError(str(e))
+        raise TalosError(str(e))
 
 
   # set browser_config
@@ -329,7 +329,7 @@ def run_tests(configurator):
         talos_results.add(mytest.runTest(browser_config, test))
       else:
         utils.stamped_msg("Error found while running %s" % testname, "Error")
-    except talosRegression, tr:
+    except TalosRegression, tr:
       utils.stamped_msg("Detected a regression for " + testname, "Stopped")
       print_logcat()
       if httpd:
@@ -337,12 +337,12 @@ def run_tests(configurator):
       # by returning 1, we report an orange to buildbot
       # http://docs.buildbot.net/latest/developer/results.html
       return 1
-    except (talosCrash, talosError):
+    except (TalosCrash, TalosError):
       # NOTE: if we get into this condition, talos has an internal problem and cannot continue
       #       this will prevent future tests from running
       utils.stamped_msg("Failed %s" % testname, "Stopped")
-      talosError_tb = sys.exc_info()
-      traceback.print_exception(*talosError_tb)
+      TalosError_tb = sys.exc_info()
+      traceback.print_exception(*TalosError_tb)
       print_logcat()
       if httpd:
         httpd.stop()

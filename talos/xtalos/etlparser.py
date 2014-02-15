@@ -419,11 +419,11 @@ def etlparser_from_config(config_file, **kwargs):
 
     # ensure process ID is given
     if not args.get('processID'):
-        raise xtalos.xtalosError("No process ID option given")
+        raise xtalos.XTalosError("No process ID option given")
 
     # ensure path to xperf given
     if not os.path.exists(args['xperf_path']):
-        raise xtalos.xtalosError("ERROR: xperf_path '%s' does not exist" % args['xperf_path'])
+        raise xtalos.XTalosError("ERROR: xperf_path '%s' does not exist" % args['xperf_path'])
 
     # update args with config file
     args['configFile'] = config_file

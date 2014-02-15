@@ -13,7 +13,7 @@ DEBUG_WARNING = 2
 DEBUG_INFO =    3
 DEBUG_VERBOSE = 4
 
-class xtalosError(Exception):
+class XTalosError(Exception):
     """error related to xtalos invocation"""
 
 def options_from_config(options, config_file):

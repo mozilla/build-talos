@@ -33,11 +33,11 @@ def stop_from_config(config_file=None, debug=False, **kwargs):
     # ensure the required options are given
     for key, msg in required.items():
         if not kwargs.get(key):
-            raise xtalos.xtalosError(msg)
+            raise xtalos.XTalosError(msg)
 
     # ensure path to xperf actually exists
     if not os.path.exists(kwargs['xperf_path']):
-        raise xtalos.xtalosError("ERROR: xperf_path '%s' does not exist" % kwargs['xperf_path'])
+        raise xtalos.XTalosError("ERROR: xperf_path '%s' does not exist" % kwargs['xperf_path'])
 
     # make calling arguments
     stopargs = {}
@@ -64,7 +64,7 @@ def main(args=sys.argv[1:]):
         stop_from_config(config_file=args[0],
                           debug=options.debug_level >= xtalos.DEBUG_INFO,
                           **options.__dict__)
-    except xtalos.xtalosError, e:
+    except xtalos.XTalosError, e:
         parser.error(str(e))
 
 if __name__ == "__main__":

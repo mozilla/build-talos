@@ -50,7 +50,7 @@ class TalosResults(object):
         formats = output_formats.keys()
         missing = self.check_formats_exist(formats)
         if missing:
-            raise utils.talosError("Output format(s) unknown: %s" % ','.join(missing))
+            raise utils.TalosError("Output format(s) unknown: %s" % ','.join(missing))
 
         # perform per-format check
         for format, urls in output_formats.items():
@@ -83,7 +83,7 @@ class TalosResults(object):
                 for url in urls:
                     _output.output(results, url, tbpl_output)
 
-        except utils.talosError, e:
+        except utils.TalosError, e:
             # print to results.out
             try:
                 _output = output.GraphserverOutput(self)
@@ -122,7 +122,7 @@ class TestResults(object):
         if isinstance(results, basestring):
             # ensure the browser log exists
             if not os.path.isfile(results):
-                raise talosError("no output from browser [%s]" % results)
+                raise TalosError("no output from browser [%s]" % results)
 
             # convert to a results class via parsing the browser log
             browserLog = BrowserLogResults(filename=results, counter_results=counter_results, global_counters=self.global_counters)
@@ -132,7 +132,7 @@ class TestResults(object):
         # ensure the results format matches previous results
         if self.results:
             if not results.format == self.results[0].format:
-                raise utils.talosError("Conflicting formats for results")
+                raise utils.TalosError("Conflicting formats for results")
         else:
             self.format = results.format
 
@@ -298,14 +298,14 @@ class BrowserLogResults(object):
         self.global_counters = global_counters
 
         if not (results_raw or filename):
-            raise utils.talosError("Must specify filename or results_raw")
+            raise utils.TalosError("Must specify filename or results_raw")
 
         self.filename = filename
         if results_raw is None:
             # read the file
 
             if not os.path.isfile(filename):
-                raise utils.talosError("File '%s' does not exist" % filename)
+                raise utils.TalosError("File '%s' does not exist" % filename)
 
             try:
                with open(filename, 'r') as f:
@@ -320,10 +320,10 @@ class BrowserLogResults(object):
             match = self.RESULTS_REGEX_FAIL.search(self.results_raw)
             if match:
                 self.error(match.group(1))
-                raise utils.talosError(match.group(1))
+                raise utils.TalosError(match.group(1))
 
             self.parse()
-        except utils.talosError:
+        except utils.TalosError:
             # TODO: consider investigating this further or adding additional information
             raise # reraise failing exception
 
@@ -331,10 +331,10 @@ class BrowserLogResults(object):
         self.counters(self.counter_results, self.global_counters)
 
     def error(self, message):
-        """raise a talosError for bad parsing of the browser log"""
+        """raise a TalosError for bad parsing of the browser log"""
         if self.filename:
             message += ' [%s]' % self.filename
-        raise utils.talosError(message)
+        raise utils.TalosError(message)
 
     def parse(self):
         position = -1
@@ -388,7 +388,7 @@ class BrowserLogResults(object):
         """return results instance appropriate to the format detected"""
 
         if self.format not in self.classes:
-            raise utils.talosError("Unable to find a results class for format: %s" % repr(self.format))
+            raise utils.TalosError("Unable to find a results class for format: %s" % repr(self.format))
 
         return self.classes[self.format](self.browser_results)
 

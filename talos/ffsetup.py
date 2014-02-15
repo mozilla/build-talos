@@ -53,11 +53,11 @@ import glob
 import zipfile
 from xml.dom import minidom
 
-from utils import talosError, zip_extractall,MakeDirectoryContentsWritable
+from utils import TalosError, zip_extractall,MakeDirectoryContentsWritable
 import utils
 import subprocess
 
-import talosProcess
+import TalosProcess
 
 
 class FFSetup(object):
@@ -176,7 +176,7 @@ class FFSetup(object):
           unpack = find_unpack(desc)
 
         if not addon_id: #bail out, we don't have an addon id
-            raise talosError("no addon_id found for extension")
+            raise TalosError("no addon_id found for extension")
 
         if tmpdir is None or unpack.lower() == 'true':  #install addon unpacked
             addon_path = os.path.join(profile_path, 'extensions', 'staged', addon_id)
@@ -275,7 +275,7 @@ class FFSetup(object):
                                                         browser_config["init_url"])
 
         if not browser_config['remote']:
-            browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
+            browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
             browser.run()
             browser.wait()
             browser = None
@@ -285,7 +285,7 @@ class FFSetup(object):
 
         res = 0
         if not os.path.isfile(browser_config['browser_log']):
-            raise talosError("initalization has no output from browser")
+            raise TalosError("initalization has no output from browser")
         results_file = open(browser_config['browser_log'], "r")
         results_raw = results_file.read()
         results_file.close()

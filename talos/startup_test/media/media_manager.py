@@ -9,7 +9,7 @@ import platform
 import optparse
 # Talos specific imports
 import talos.utils
-import talos.talosProcess
+import talos.TalosProcess
 import mozhttpd
 # media test utilities
 import media_utils
@@ -146,7 +146,7 @@ def open_browser(browser, profile):
     command = [ browser, '-profile', profile, '-no-remote', url]
     command = [str(s) for s in command]
     try:
-        browser_proc = talos.talosProcess.talosProcess(command,
+        browser_proc = talos.TalosProcess.TalosProcess(command,
                                                    env=os.environ.copy())
         browser_proc.run(timeout=__BROWSER_TIME_OUT__)
     except Exception, e:

@@ -9,7 +9,7 @@ import unittest
 
 from talos.results import BrowserLogResults
 from talos.results import PageloaderResults
-from talos.utils import talosError
+from talos.utils import TalosError
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -157,18 +157,18 @@ __startAfterTerminationTimestamp1333663596551__endAfterTerminationTimestamp
         error = None
         try:
             BrowserLogResults(results_raw=browser_log)
-        except talosError, e:
+        except TalosError, e:
             if substr not in str(e):
                 import pdb; pdb.set_trace()
             self.assertTrue(substr in str(e))
 class TestTalosError(unittest.TestCase):
     """
-    test talosError class
+    test TalosError class
     """
     def test_browser_log_results(self):
         #an example that should fail
         #passing invalid value for argument result_raw
-        with self.assertRaises(talosError):
+        with self.assertRaises(TalosError):
             BrowserLogResults(results_raw = "__FAIL<bad test>__FAIL")
 
 if __name__ == '__main__':

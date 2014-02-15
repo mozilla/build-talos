@@ -34,7 +34,7 @@ import os
 import time
 import tempfile
 import shutil
-from utils import talosError, testAgent
+from utils import TalosError, testAgent
 try:
     import mozdevice
 except:
@@ -243,7 +243,7 @@ class RemoteProcess(FFProcess):
             logfile.write("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % (firstTime * 1000))
             logfile.write("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % int(time.time() * 1000))
         if not retVal and data == '':
-            raise talosError("missing data from remote log file")
+            raise TalosError("missing data from remote log file")
 
         # Wait out the browser closing
         time.sleep(browser_config['browser_wait'])

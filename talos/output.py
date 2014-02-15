@@ -201,7 +201,7 @@ class GraphserverOutput(Output):
                         try:
                             _filters = filter.filters_args(test.test_config['filters'])
                         except AssertionError, e:
-                            raise utils.talosError(str(e))
+                            raise utils.TalosError(str(e))
 
                     vals.extend(result.values(_filters))
                 result_strings.append(self.construct_results(vals, testname=testname, **info_dict))
@@ -216,7 +216,7 @@ class GraphserverOutput(Output):
                         # failed to collect any data for this counter
                         utils.stamped_msg("No results collected for: " + counterName, "Error")
 # NOTE: we are not going to enforce this warning for now as this happens too frequently: bugs 803413, 802475, 805925
-#                        raise utils.talosError("Unable to proceed with missing counter '%s'" % counterName)
+#                        raise utils.TalosError("Unable to proceed with missing counter '%s'" % counterName)
 # (jhammel: we probably should do this in e.g. results.py vs in graphserver-specific code anyway)
 
                     # exclude counters whose values are tuples (bad for graphserver)
@@ -276,7 +276,7 @@ class GraphserverOutput(Output):
         # ensure that we have all of the info data available
         missing = [i for i in info_format if i not in info]
         if missing:
-            raise utils.talosError("Missing keys: %s" % missing)
+            raise utils.TalosError("Missing keys: %s" % missing)
         info = ','.join([str(info[key]) for key in info_format])
 
         # write the data
@@ -302,7 +302,7 @@ class GraphserverOutput(Output):
                 links += line + '\n'
             utils.debug("process_Request line: %s", line)
         if not links:
-            raise utils.talosError("send failed, graph server says:\n%s" % post)
+            raise utils.TalosError("send failed, graph server says:\n%s" % post)
         return links
 
     def post(self, results, server, path, scheme, tbpl_output):
@@ -320,7 +320,7 @@ class GraphserverOutput(Output):
                 try:
                     links.append(self.process_Request(post_file.post_multipart(server, path, files=[("filename", "data_string", data_string)])))
                     break
-                except utils.talosError, e:
+                except utils.TalosError, e:
                     msg = str(e)
                 except Exception, e:
                     msg = str(e)
@@ -328,7 +328,7 @@ class GraphserverOutput(Output):
                 time.sleep(wait_time)
                 wait_time *= 2
             else:
-                raise utils.talosError("Graph server unreachable (%d attempts)\n%s" % (self.retries, msg))
+                raise utils.TalosError("Graph server unreachable (%d attempts)\n%s" % (self.retries, msg))
 
         # add TBPL output
         self.add_tbpl_output(links, tbpl_output, server, scheme)
@@ -399,7 +399,7 @@ class DatazillaOutput(Output):
                     os.write(fd, contents)
                     os.close(fd)
                 except Exception, e:
-                    raise utils.talosError(str(e))
+                    raise utils.TalosError(str(e))
 
             assert os.path.exists(authfile), "Auth file not found: %s" % authfile
             module_name = 'passwords'

@@ -35,12 +35,12 @@ except:
     # still support
     pass
 
-from utils import talosError, talosCrash, talosRegression
+from utils import TalosError, TalosCrash, TalosRegression
 from ffprocess_linux import LinuxProcess
 from ffprocess_win32 import Win32Process
 from ffprocess_mac import MacProcess
 from ffsetup import FFSetup
-import talosProcess
+import TalosProcess
 
 class TTest(object):
 
@@ -78,7 +78,7 @@ class TTest(object):
             elif '6.2' in platform.version(): #w8
                 platform_type = 'w8_'
             else:
-                raise talosError('unsupported windows version')
+                raise TalosError('unsupported windows version')
             import cmanager_win32
             CounterManager = cmanager_win32.WinCounterManager
             _ffprocess = Win32Process()
@@ -112,10 +112,10 @@ class TTest(object):
 
     def initializeProfile(self, profile_dir, browser_config):
         if not self._ffsetup.InitializeNewProfile(profile_dir, browser_config):
-            raise talosError("failed to initialize browser")
+            raise TalosError("failed to initialize browser")
         processes = self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process'])
         if processes:
-            raise talosError("browser failed to close after being initialized")
+            raise TalosError("browser failed to close after being initialized")
 
     def cleanupProfile(self, dir):
         # Delete the temp profile directory  Make it writeable first,
@@ -183,7 +183,7 @@ class TTest(object):
             self._hostproc.removeDirectory(minidumpdir)
 
         if found:
-            raise talosCrash("Found crashes after test run, terminating test")
+            raise TalosCrash("Found crashes after test run, terminating test")
 
     def setupRobocopTests(self, browser_config, profile_dir):
         try:
@@ -233,13 +233,13 @@ class TTest(object):
             if profile_dir:
                 try:
                     self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
-                except talosError:
+                except TalosError:
                     # ignore this error since we have already checked for crashes earlier
                     pass
 
             if temp_dir:
                 self.cleanupProfile(temp_dir)
-        except talosError, te:
+        except TalosError, te:
             utils.debug("cleanup error: %s", te)
         except Exception:
             utils.debug("unknown error during cleanup: %s" % (traceback.format_exc(),))
@@ -291,7 +291,7 @@ class TTest(object):
                 msg = " already running before testing started (unclean system)"
                 utils.debug("%s%s", browser_config['process'], msg)
                 running_processes_str = ", ".join([('[%s] %s' % (pid, process_name)) for pid, process_name in running_processes])
-                raise talosError("Found processes still running: %s. Please close them before running talos." % running_processes_str)
+                raise TalosError("Found processes still running: %s. Please close them before running talos." % running_processes_str)
 
             # add any provided directories to the installed browser
             for dir in browser_config['dirs']:
@@ -356,7 +356,7 @@ class TTest(object):
 
                 # check to see if the previous cycle is still hanging around
                 if (i > 0) and self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
-                    raise talosError("previous cycle still running")
+                    raise TalosError("previous cycle still running")
 
                 # Run the test
                 timeout = test_config.get('timeout', 7200) # 2 hours default
@@ -373,12 +373,12 @@ class TTest(object):
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
                         talosconfig.generateTalosConfig(command_args, browser_config, test_config)
-                        setup = talosProcess.talosProcess(['python'] + test_config['setup'].split(), env=os.environ.copy())
+                        setup = TalosProcess.TalosProcess(['python'] + test_config['setup'].split(), env=os.environ.copy())
                         setup.run()
                         setup.wait()
 
                     self.isFinished = False
-                    browser = talosProcess.talosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
+                    browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
                     browser.run(timeout=timeout)
                     self.pid = browser.pid
 
@@ -397,7 +397,7 @@ class TTest(object):
                     if test_config['cleanup']:
                         #HACK: add the pid to support xperf where we require the pid in post processing
                         talosconfig.generateTalosConfig(command_args, browser_config, test_config, pid=self.pid)
-                        cleanup = talosProcess.talosProcess(['python'] + test_config['cleanup'].split(), env=os.environ.copy())
+                        cleanup = TalosProcess.TalosProcess(['python'] + test_config['cleanup'].split(), env=os.environ.copy())
                         cleanup.run()
                         cleanup.wait()
 
@@ -413,11 +413,11 @@ class TTest(object):
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']
                 if not os.path.isfile(browser_log_filename):
-                    raise talosError("no output from browser [%s]" % browser_log_filename)
+                    raise TalosError("no output from browser [%s]" % browser_log_filename)
 
                 # ensure the browser log exists
                 if os.path.exists(browser_config['error_filename']):
-                    raise talosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
+                    raise TalosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
 
                 # add the results from the browser output
                 test_results.add(browser_log_filename, counter_results=self.counter_results)
