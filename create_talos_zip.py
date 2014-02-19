@@ -32,7 +32,7 @@ mozcrash = [(mozcrash_src, 'mozcrash.py')]
 mozfile_src = 'https://raw.github.com/mozilla/mozbase/mozfile-1.1/mozfile/mozfile/mozfile.py'
 mozfiles = [(mozfile_src, 'mozfile.py')]
 
-mozlog_src = 'https://raw.github.com/mozilla/mozbase/master/mozlog/mozlog/logger.py'
+mozlog_src = 'https://raw.github.com/mozilla/mozbase/mozlog-1.5/mozlog/mozlog/logger.py'
 mozlog = [(mozlog_src, 'mozlog.py')]
 
 mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.26/'
