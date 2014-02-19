@@ -285,7 +285,8 @@ the highest value.
         'media.navigator.enabled': True,
         'media.peerconnection.enabled': True,
         'media.navigator.permission.disabled': True,
-        'media.capturestream_hints.enabled': True
+        'media.capturestream_hints.enabled': True,
+        'browser.cache.use_new_backend_temp': False
     }
 
     # keys to generated self.config that are global overrides to tests
