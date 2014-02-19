@@ -43,6 +43,7 @@
 __author__ = 'annie.sullivan@gmail.com (Annie Sullivan)'
 
 
+import mozfile
 import os
 import os.path
 import re
@@ -182,7 +183,7 @@ class FFSetup(object):
             addon_path = os.path.join(profile_path, 'extensions', 'staged', addon_id)
             #if an old copy is already installed, remove it
             if os.path.isdir(addon_path):
-                shutil.rmtree(addon_path, ignore_errors=True)
+                mozfile.rmtree(addon_path)
             shutil.copytree(addonSrcPath, addon_path)
         else: #do not unpack addon
             addon_file = os.path.join(profile_path, 'extensions', 'staged', addon_id + '.xpi')
@@ -192,7 +193,7 @@ class FFSetup(object):
 
         if tmpdir:
             # cleanup
-            shutil.rmtree(tmpdir, ignore_errors=True)
+            mozfile.rmtree(tmpdir)
 
         return addon_id
 

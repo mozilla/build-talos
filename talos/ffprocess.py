@@ -4,6 +4,7 @@
 
 """Firefox process management for Talos"""
 
+import mozfile
 import os
 import shutil
 import sys
@@ -140,7 +141,7 @@ user_pref("capability.principal.codebase.p2.subjectName", "");
 
     def removeDirectory(self, dir):
         MakeDirectoryContentsWritable(dir)
-        shutil.rmtree(dir)
+        mozfile.rmtree(dir)
 
 
     def getFile(self, handle, localFile=""):

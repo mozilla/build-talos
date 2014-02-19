@@ -7,6 +7,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=709881
 requires network access
 """
 
+import mozfile
 import os
 import shutil
 import subprocess
@@ -46,7 +47,7 @@ class TalosInstallation(unittest.TestCase):
 
         finally:
             # cleanup
-            shutil.rmtree(tempdir)
+            mozfile.rmtree(tempdir)
 
     def assertCall(self, command, success=True, **kw):
         """
