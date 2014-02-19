@@ -31,7 +31,76 @@ function Tart() {
 }
 
 Tart.prototype = {
+  // Detector methods expect 'this' to be the detector object.
+  // Detectors must support measureNow(e) which indicates to collect the intervals and stop the recording.
+  // Detectors may support keepListening(e) to indicate to keep waiting before continuing to the next animation.
+
+  tabDetector: {
+    arm: function(handler, win) {
+      win.gBrowser.tabContainer.addEventListener("transitionend", handler);
+    },
+
+    measureNow: function(e) {
+      return (e.type == "transitionend" && e.propertyName == "max-width");
+    },
+
+    cleanup: function (handler, win) {
+      win.gBrowser.tabContainer.removeEventListener("transitionend", handler);
+    }
+  },
+
+  customizeEnterDetector: {
+    arm: function(handler, win) {
+      win.gNavToolbox.addEventListener("customizationready", handler);
+    },
+
+    measureNow: function(e) {
+      return (e.type == "customizationready");
+    },
+
+    cleanup: function (handler, win) {
+      win.gNavToolbox.removeEventListener("customizationready", handler);
+    }
+  },
+
+  // Same as customizeEnterDetector, but stops recording when the CSS animation ends
+  // The detector then waits until customizationready
+  customizeEnterCssDetector: {
+    arm: function(handler, win) {
+      win.gNavToolbox.addEventListener("customizationready", handler);
+      win.gNavToolbox.addEventListener("customization-transitionend", handler);
+    },
+
+    measureNow: function(e) {
+      return (e.type == "customization-transitionend");
+    },
+
+    keepListening: function (e) {
+      return (e.type != "customizationready");
+    },
+
+    cleanup: function (handler, win) {
+      win.gNavToolbox.removeEventListener("customization-transitionend", handler);
+      win.gNavToolbox.removeEventListener("customizationready", handler);
+    }
+  },
+
+  customizeExitDetector: {
+    arm: function(handler, win) {
+      win.gNavToolbox.addEventListener("aftercustomization", handler);
+    },
+
+    measureNow: function(e) {
+      return (e.type == "aftercustomization");
+    },
+
+    cleanup: function (handler, win) {
+      win.gNavToolbox.removeEventListener("aftercustomization", handler);
+    }
+  },
+
   clickNewTab: function() {
+    this._endDetection = this.tabDetector;
     this._win.BrowserOpenTab();
     // Modifying the style for each tab right after opening seems like it could regress performance,
     // However, overlaying a global style over browser.xul actually ends up having greater ovrehead,
@@ -50,29 +119,41 @@ Tart.prototype = {
     return this._win.gBrowser.selectedTab;
   },
 
+
   clickCloseCurrentTab: function() {
+    this._endDetection = this.tabDetector;
     this._win.BrowserCloseTabOrWindow();
     return this._win.gBrowser.selectedTab;
   },
 
   fadeOutCurrentTab: function() {
+    this._endDetection = this.tabDetector;
     this._win.gBrowser.selectedTab.removeAttribute("fadein");
   },
 
   fadeInCurrentTab: function() {
+    this._endDetection = this.tabDetector;
     this._win.gBrowser.selectedTab.setAttribute("fadein", "true");
   },
 
 
   addSomeChromeUriTab: function() {
+    this._endDetection = this.tabDetector;
     this._win.gBrowser.selectedTab = this._win.gBrowser.addTab("chrome://tart/content/blank.icon.html");
   },
 
   triggerCustomizeEnter: function() {
+    this._endDetection = this.customizeEnterDetector;
+    this._win.gCustomizeMode.enter();
+  },
+
+  triggerCustomizeEnterCss: function() {
+    this._endDetection = this.customizeEnterCssDetector;
     this._win.gCustomizeMode.enter();
   },
 
   triggerCustomizeExit: function() {
+    this._endDetection = this.customizeExitDetector;
     this._win.gCustomizeMode.exit();
   },
 
@@ -97,7 +178,7 @@ Tart.prototype = {
     var self = this;
     var recordingHandle;
     var timeoutId = 0;
-    var listnerObjects;
+    var detector; //will be assigned after calling trigger.
     var rAF = window.requestAnimationFrame || window.mozRequestAnimationFrame;
     const Ci = Components.interfaces;
     const Cc = Components.classes;
@@ -108,8 +189,10 @@ Tart.prototype = {
 
     var _recording = [];
     var _abortRecording = false;
+    var startRecordTimestamp;
     function startRecord() {
       addMarker("start:" + (isReportResult ? name : "[warmup]"));
+      startRecordTimestamp = window.performance.now();
       if (self.USE_RECORDING_API) {
         return window.QueryInterface(Ci.nsIInterfaceRequestor)
                      .getInterface(Ci.nsIDOMWindowUtils)
@@ -135,7 +218,9 @@ Tart.prototype = {
       return 1; // dummy
     }
 
+    var recordingAbsoluteDuration;
     function stopRecord(Handle) {
+      recordingAbsoluteDuration =  window.performance.now() - startRecordTimestamp;
       addMarker("done:" + (isReportResult ? name : "[warmup]"));
       if (self.USE_RECORDING_API) {
         var paints = {};
@@ -174,37 +259,43 @@ Tart.prototype = {
           countMost++;
         }
       }
+      dump("overall: " + sum + "\n");
 
       var averageLastHalf = countLastHalf ? sumLastHalf / countLastHalf : 0;
       var averageMost    = countMost ? sumMost / countMost : 0;
       var averageOverall = intervals.length ? sum / intervals.length : 0;
-      var durationDiff = Math.abs(sum - referenceDuration);
+      var durationDiff = Math.abs(recordingAbsoluteDuration - referenceDuration);
 
       self._results.push({name: name + ".raw.TART",   value: intervals}); // Just for display if running manually - Not collected for talos.
       self._results.push({name: name + ".half.TART",  value: averageLastHalf});
- //     self._results.push({name: name + ".most.TART",  value: averageMost});
       self._results.push({name: name + ".all.TART",   value: averageOverall});
- //     self._results.push({name: name + ".sum.TART",   value: sum});
       self._results.push({name: name + ".error.TART", value: durationDiff});
     }
 
     function transEnd(e) {
-      // If it's an event (and not a timeout) then make sure it's either tab animation end (has max-width), or detect customize animation.
-      if (e && (e.type!="customization-transitionend" && e.propertyName!="max-width")) {
-        return;
-      }
-      // First cancel any further end-events for this animation.
-      clearTimeout(timeoutId);
-      for (let i in listnerObjects) {
-        let e = listnerObjects[i];
-        e.listener.removeEventListener(e.eventType, e.handler);
+      if (e) {
+        let isMeasureNow = detector.measureNow(e);
+
+        if (isMeasureNow) {
+          // Get the recorded frame intervals and append result if required
+          let intervals = stopRecord(recordingHandle);
+          if (isReportResult) {
+            addResult(intervals);
+          }
+        }
+
+        // If detector supports keepListening, use it, otherwise - measurement indicates the end.
+        if (detector.keepListening ? detector.keepListening(e) : !isMeasureNow){
+          return;
+        }
+      } else {
+        // No event == timeout
+        dump("TART: TIMEOUT\n");
       }
 
-      // Get the recorded frame intervals and append result if required
-      let intervals = stopRecord(recordingHandle);
-      if (isReportResult) {
-        addResult(intervals);
-      }
+      // Cleanup
+      detector.cleanup(transEnd, self._win);
+      clearTimeout(timeoutId);
 
       onDoneCallback();
     }
@@ -236,29 +327,13 @@ Tart.prototype = {
 
     }
 
-
     setTimeout(function() {
       trigger(function() {
-        timeoutId = setTimeout(transEnd, 1000);
+        timeoutId = setTimeout(transEnd, 3000);
         recordingHandle = startRecord();
-        triggerFunc();
-        // Listen to tabstrip instead of tab because when closing a tab, the listener ends up on an inactive tab,
-        // thus throttled timers -> inaccurate (possibly late) finish event timing
-        listnerObjects = [];
-        listnerObjects.push ({
-          listener: self._win.gBrowser.tabContainer,
-          eventType: "transitionend",
-          handler: transEnd
-        });
-        listnerObjects.push ({
-          listener: self._win.gNavToolbox,
-          eventType: "customization-transitionend",
-          handler: transEnd
-        });
-        for (let i in listnerObjects) {
-          let e = listnerObjects[i];
-          e.listener.addEventListener(e.eventType, e.handler);
-        }
+        triggerFunc(); // also chooses detector
+        detector = self._endDetection;
+        detector.arm(transEnd, self._win);
       });
     }, preWaitMs);
 
@@ -349,8 +424,9 @@ Tart.prototype = {
     var fadeout = this.fadeOutCurrentTab.bind(this);
 
     var addSomeTab = this.addSomeChromeUriTab.bind(this);
-    var cutsomizeEnter = this.triggerCustomizeEnter.bind(this);
-    var cutsomizeExit = this.triggerCustomizeExit.bind(this);
+    var customizeEnter = this.triggerCustomizeEnter.bind(this);
+    var customizeEnterCss = this.triggerCustomizeEnterCss.bind(this);
+    var customizeExit = this.triggerCustomizeExit.bind(this);
 
     var next = this._nextCommand.bind(this);
     var rest = 500; //500ms default rest before measuring an animation
@@ -371,8 +447,8 @@ Tart.prototype = {
     function getReferenceCustomizationDuration() {
       // Code by jaws.
       try {
-        let tabViewDeck = document.getElementById("tab-view-deck");
-        let cstyle = window.getComputedStyle(tabViewDeck);
+        let deck = document.getElementById("content-deck");
+        let cstyle = window.getComputedStyle(deck);
         return 1000 * parseFloat(cstyle.transitionDuration, 10);
       } catch (e) {
         return 150; // Value at the time of writing
@@ -544,17 +620,20 @@ Tart.prototype = {
       ],
 
       customize: [
-        // Test australis customize mode animation.
+        // Test australis customize mode animation with default DPI.
+        function(){Services.prefs.setCharPref("layout.css.devPixelsPerPx", "-1"); next();},
         // Adding a non-newtab since the behavior of exiting customize mode which was entered on newtab may change. See bug 957202.
         function(){animate(0, addSomeTab, next);},
 
-        // Hacky: After entering and exiting customize mode (even after the event indicating that the animation is over),
-        // should wait a bit before continuing, or else customize mode can be left in unstable state.
         // The prefixes 1- and 2- were added because talos cuts common prefixes on all "pages", which ends up as "customize-e" prefix.
-        function(){animate(rest, cutsomizeEnter, next, true, "1-customize-enter", custRefDuration);},
-        function(){animate(rest, cutsomizeExit, next, true, "2-customize-exit", custRefDuration);},
+        function(){animate(rest, customizeEnter, next, true, "1-customize-enter", custRefDuration);},
+        function(){animate(rest, customizeExit, next, true, "2-customize-exit", custRefDuration);},
 
-        function(){animate(rest, closeCurrentTab, next);}
+        // Measures the CSS-animation-only part of entering into customize mode
+        function(){animate(rest, customizeEnterCss, next, true, "3-customize-enter-css", custRefDuration);},
+        function(){animate(0, customizeExit, next);},
+
+        function(){animate(0, closeCurrentTab, next);}
       ]
     };
 

@@ -244,9 +244,13 @@ class tart(PageloaderTest):
 class cart(PageloaderTest):
     """
     Customize Animation Regression Test
-    Tests Australis customize animation. Uses the TART addon but with a different URL.
+    Tests Australis customize animations (default DPI scaling). Uses the TART addon but with a different URL.
     Reports the same animation values as TART (.half/.all/.error).
     All comments for TART also apply here (e.g. for ASAP+OMTC, etc)
+    Subtests are:
+    1-customize-enter - from triggering customize mode until it's ready for the user
+    2-customize-exit  - exiting customize
+    3-customize-enter-css - only the CSS animation part of entering customize
     """
     tpmanifest = '${talos}/page_load_test/tart/cart.manifest'
     extensions = '${talos}/page_load_test/tart/addon'
