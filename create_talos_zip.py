@@ -23,7 +23,7 @@ mozhttpd_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
                   ('mozhttpd/mozhttpd/iface.py', 'iface.py')]
 mozhttpd = [(mozhttpd_src + src, destination) for src, destination in mozhttpd_files]
 
-mozinfo_src = 'https://raw.github.com/mozilla/mozbase/mozinfo-0.4/mozinfo/mozinfo/mozinfo.py'
+mozinfo_src = 'https://raw.github.com/mozilla/mozbase/mozinfo-0.7/mozinfo/mozinfo/mozinfo.py'
 mozinfo = [(mozinfo_src, 'mozinfo.py')]
 
 mozcrash_src = 'https://raw.github.com/mozilla/mozbase/mozcrash-0.9/mozcrash/mozcrash/mozcrash.py'

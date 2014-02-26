@@ -11,12 +11,12 @@ except IOError, OSError:
 version = "0.0"
 
 dependencies = ['PyYAML',
-                'mozlog',
+                'mozlog == 1.5',
                 'mozcrash == 0.9',
                 'mozdevice == 0.26',
                 'mozfile == 1.1',
                 'mozhttpd == 0.5',
-                'mozinfo == 0.4',
+                'mozinfo == 0.7',
                 'datazilla == 1.4',
                 'mozprocess == 0.13',
                 'httplib2',
