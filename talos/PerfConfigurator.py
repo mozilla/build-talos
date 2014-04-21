@@ -12,6 +12,8 @@ import filter
 import os
 import sys
 import copy
+import moznetwork
+import socket
 import test
 import utils
 from configuration import Configuration
@@ -386,7 +388,7 @@ the highest value.
             if self.config.get('develop'):
                 webserver = self.config.get('webserver')
                 if (not webserver) or (webserver == 'localhost'):
-                    self.config['webserver'] = utils.getLanIp()
+                    self.config['webserver'] = moznetwork.get_ip()
 
             # webServer can be used without remoteDevice, but is required when using remoteDevice
             if self.config.get('deviceip') or self.config.get('deviceroot'):
@@ -433,7 +435,9 @@ the highest value.
         # fix options for --develop
         if self.config.get('develop'):
             if not self.config.get('webserver'):
-                self.config['webserver'] = 'localhost:%s' % utils.findOpenPort('127.0.0.1')
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.bind(("127.0.0.1",0))
+                self.config['webserver'] = 'localhost:%s' % s.getsockname()[1]
 
         extraPrefs = self.config.pop('extraPrefs', {})
         extraPrefs = dict([(i, utils.parsePref(j)) for i, j in extraPrefs.items()])

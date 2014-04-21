@@ -44,6 +44,9 @@ mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                    ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py')]
 mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
 
+moznetwork_src = 'https://raw.github.com/mozilla/mozbase/moznetwork-0.24/'
+moznetwork = [(moznetwork_src, 'moznetwork.py')]
+
 mozprocess_src = 'https://raw.github.com/mozilla/mozbase/mozprocess-0.13/'
 mozprocess_files = [('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
                     ('mozprocess/mozprocess/pid.py', 'mozprocess/pid.py'),
@@ -116,7 +119,7 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = mozhttpd + mozinfo + mozcrash + mozfiles + mozlog + mozdevice + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2 + mozprocess
+manifest = mozhttpd + mozinfo + mozcrash + mozfiles + mozlog + mozdevice + moznetwork + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2 + mozprocess
 manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
 def download(*resources):
