@@ -52,15 +52,43 @@ class Test(object):
 
 
 
-### ts-style tests (ts, twinopen, ts_cold, etc)
+### ts-style startup tests (ts, twinopen, ts_cold, etc)
 ### The overall test number is calculated by excluding the max opening time
 ### and taking an average of the remaining numbers. 
 
 class TsBase(Test):
     """abstract base class for ts-style tests"""
-    keys = ['url', 'url_timestamp', 'timeout', 'cycles', 'shutdown', 'profile_path', 'xperf_counters',
-            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'tpmozafterpaint', 'setup', 'cleanup','fennecIDs']
+    keys = [
+        'url',
+        'url_timestamp',
+        'timeout',
+        'cycles',
+        'shutdown',      # If True, collect data on shutdown (using the value
+                         # provided by __startTimestamp/__endTimestamp).
+                         # Otherwise, ignore shutdown data
+                         # (__startTimestamp/__endTimestamp is still
+                         # required but ignored).
+        'profile_path',  # The path containing the template profile. This directory
+                         # is copied to the temporary profile during initialization of
+                         # the test. If some of the files may be overwritten by Firefox
+                         # and need to be reinstalled before each pass, use key |reinstall|
+        'preferences',
+        'xperf_counters',
+        'xperf_providers',
+        'xperf_user_providers',
+        'xperf_stackwalk',
+        'tpmozafterpaint',
+        'setup',
+        'cleanup',
+        'fennecIDs',
+        'reinstall',     # A list of files from the profile directory that should be copied to
+                         # the temporary profile prior to running each cycle, to avoid one cycle
+                         # overwriting the data used by the next another cycle (may be used e.g. for
+                         # sessionstore.js to ensure that all cycles use the exact same sessionstore.js,
+                         # rather than a more recent copy).
+    ]
 
+        
 class ts(TsBase):
     """
     A basic start up test (ts = test start up)
@@ -176,6 +204,34 @@ class tcheck2(TsBase):
     desktop = False
     tpchrome = False
     fennecIDs = True
+
+class sessionrestore(ts):
+    """
+    A start up test measuring the time it takes to load a sessionstore.js file.
+
+    1. Set up Firefox to restore from a given sessionstore.js file.
+    2. Launch Firefox.
+    3. Measure the delta between firstPaint and sessionRestored.
+    """
+    cycles = 10
+    timeout = 1000000
+    profile_path = '${talos}/startup_test/sessionrestore/profile'
+    url = 'startup_test/sessionrestore/index.html'
+    shutdown = False
+    reinstall = ['sessionstore.js']
+    # Restore the session
+    preferences = { 'browser.startup.page': 3 }
+
+class sessionrestore_no_auto_restore(sessionrestore):
+    """
+    A start up test measuring the time it takes to load a sessionstore.js file.
+
+    1. Set up Firefox to *not* restore automatically from sessionstore.js file.
+    2. Launch Firefox.
+    3. Measure the delta between firstPaint and sessionRestored.
+    """
+    # Restore about:home
+    preferences = { 'browser.startup.page': 3 }
 
 ### Media Test
 class media_tests(TsBase):
@@ -510,6 +566,7 @@ tests = [ts_paint, ts, tsvg, tdhtml,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
-         tsvgx, tscrollx, tart, cart
+         tsvgx, tscrollx, tart, cart,
+         sessionrestore, sessionrestore_no_auto_restore
          ]
 test_dict = dict([(i.name(), i) for i in tests])

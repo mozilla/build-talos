@@ -354,6 +354,15 @@ class TTest(object):
                     os.chmod(browser_config['error_filename'], 0777)
                     os.remove(browser_config['error_filename'])
 
+                # reinstall any file whose stability we need to ensure across
+                # the cycles
+                if test_config.get('reinstall', ''):
+                    for keep in test_config['reinstall']:
+                        origin = os.path.join(test_config['profile_path'], keep)
+                        dest = os.path.join(profile_dir, keep)
+                        utils.debug("Reinstalling %s on top of %s", origin, dest)
+                        shutil.copy(origin, dest)
+
                 # check to see if the previous cycle is still hanging around
                 if (i > 0) and self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
                     raise TalosError("previous cycle still running")
