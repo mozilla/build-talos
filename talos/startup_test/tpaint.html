@@ -1,6 +1,7 @@
 <html>
 <meta charset='utf-8'>
 <script language="JavaScript" type="text/javascript" src="../scripts/MozillaFileLogger.js"></script>
+<script language="JavaScript" type="text/javascript" src="../scripts/Profiler.js"></script>
 <script language="JavaScript" type="text/javascript" src="../page_load_test/quit.js"></script>
 <script>
 var OPENER_DELAY = 1000; // ms delay between tests
@@ -79,6 +80,7 @@ function reportTimes() {
 
 function childIsOpen() {
   kidEndTime = window.performance.now();
+  Profiler.pause('tpaint ' + windowIndex);
   openTimes[windowIndex] = kidEndTime - kidStartTime;
   scheduleNextWindow();
 }
@@ -95,6 +97,7 @@ var kidHTML = "<html><meta charset='utf-8'><script>" +
 var kidURI = "data:text/html," + encodeURI(kidHTML);
 
 function openWindow() {
+  Profiler.resume('tpaint ' + windowIndex);
   kidStartTime = window.performance.now();
   kid = window.open(kidURI);
 }

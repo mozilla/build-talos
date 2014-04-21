@@ -342,6 +342,10 @@ function plLoadPage() {
   if (timeout > 0) {
     timeoutEvent = setTimeout(function () {loadFail(); }, timeout);
   }
+
+  // record which page we are about to open
+  Profiler.mark("Opening " + pages[pageIndex].url.path);
+
   if (reportRSS) {
     collectMemory(startAndLoadURI, pageName);
   } else {

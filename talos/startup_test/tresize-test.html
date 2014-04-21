@@ -3,6 +3,7 @@
    - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
 <html>
 <script language="Javascript" type="text/javascript" src="../scripts/MozillaFileLogger.js"></script>
+<script language="Javascript" type="text/javascript" src="../scripts/Profiler.js"></script>
 <script language="JavaScript" type="text/javascript" src="../page_load_test/quit.js"></script>
 <script language="javascript" type="text/javascript">
 
@@ -26,6 +27,7 @@ var closeOnFinished = true;
 function painted() {
   window.removeEventListener("MozAfterPaint", painted, true);
   var paintTime = window.performance.now();
+  Profiler.pause("resize " + count);
   dataSet[count].end = paintTime;
   setTimeout(resizeCompleted, 20);
 }
@@ -34,6 +36,7 @@ function resizeTest() {
   try {
     netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
     dims += increment;
+    Profiler.resume("resize " + count);
     var startTime = window.performance.now();
     dataSet[count] = {};
     dataSet[count].start = startTime;

@@ -183,15 +183,11 @@ Tart.prototype = {
     const Ci = Components.interfaces;
     const Cc = Components.classes;
 
-    var addMarker = function dummyMarker(str){};
-    try { addMarker = Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler).AddMarker; }
-    catch (e) {};
-
     var _recording = [];
     var _abortRecording = false;
     var startRecordTimestamp;
     function startRecord() {
-      addMarker("start:" + (isReportResult ? name : "[warmup]"));
+      Profiler.resume(isReportResult ? name : "[warmup]");
       startRecordTimestamp = window.performance.now();
       if (self.USE_RECORDING_API) {
         return window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -221,7 +217,7 @@ Tart.prototype = {
     var recordingAbsoluteDuration;
     function stopRecord(Handle) {
       recordingAbsoluteDuration =  window.performance.now() - startRecordTimestamp;
-      addMarker("done:" + (isReportResult ? name : "[warmup]"));
+      Profiler.pause(isReportResult ? name : "[warmup]");
       if (self.USE_RECORDING_API) {
         var paints = {};
         return window.QueryInterface(Ci.nsIInterfaceRequestor)

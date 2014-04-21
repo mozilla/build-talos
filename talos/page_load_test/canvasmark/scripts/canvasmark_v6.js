@@ -376,6 +376,7 @@ window.requestAnimFrame = (function()
       _onInitScene: function _onInitScene()
       {
          this.sceneGlitchCount = this.testScore = this.testState = 0;
+         Profiler.resume(this.interval && this.interval.label);
          this.sceneStartTime = Date.now();
          this.sceneCompletedTime = null;
       },
@@ -414,6 +415,7 @@ window.requestAnimFrame = (function()
                   var name = this.interval.label.replace(/Test [0-9] - /g, "");
                   name = name.replace(/, /g, "- ");
                   GameHandler.benchmarkLabels.push(name);
+                  Profiler.pause(this.interval.label);
                   if (typeof console !== "undefined")
                   {
                      console.log(score + " [" + this.interval.label + "]");

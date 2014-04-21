@@ -26,6 +26,7 @@ import copy
 import mozcrash
 import talosconfig
 import shutil
+import zipfile
 from threading import Thread
 
 try:
@@ -301,6 +302,32 @@ class TTest(object):
             # make profile path work cross-platform
             test_config['profile_path'] = os.path.normpath(test_config['profile_path'])
 
+            # Turn on the profiler on startup and write its output to a temp file
+            sps_profile = test_config.get('sps_profile', False) and not browser_config['remote']
+            sps_profile_file = None
+            if sps_profile:
+                sps_profile_interval = test_config.get('sps_profile_interval', 1)
+                sps_profile_entries = test_config.get('sps_profile_entries', 1000000)
+                sps_profile_file = tempfile.mktemp();
+                utils.info("Activating Gecko Profiling. Temp. profile: {0}, interval: {1}, entries: {2}".format(sps_profile_file, sps_profile_interval, sps_profile_entries))
+                utils.setEnvironmentVars({'MOZ_PROFILER_STARTUP': '1'})
+                utils.setEnvironmentVars({'MOZ_PROFILER_ENTRIES': sps_profile_entries})
+                utils.setEnvironmentVars({'MOZ_PROFILER_INTERVAL': sps_profile_interval})
+                utils.setEnvironmentVars({'MOZ_PROFILER_THREADS': 'GeckoMain,Compositor'})
+                utils.setEnvironmentVars({'MOZ_PROFILER_SHUTDOWN': sps_profile_file})
+                utils.setEnvironmentVars({'MOZ_SHUTDOWN_CHECKS': 'nothing'})
+
+                # Make sure no archive already exists in the location where we plan to output
+                # our profiler archive
+                mud = os.environ.get('MOZ_UPLOAD_DIR', None)
+                if mud:
+                    arcname = os.path.join(mud, "profile_{0}.zip".format(test_config['name']))
+                    try:
+                        utils.info("Clearing archive {0}".format(arcname))
+                        os.remove(arcname)
+                    except OSError:
+                        pass
+
             preferences = copy.deepcopy(browser_config['preferences'])
             if 'preferences' in test_config and test_config['preferences']:
                 testPrefs = dict([(i, utils.parsePref(j)) for i, j in test_config['preferences'].items()])
@@ -399,7 +426,8 @@ class TTest(object):
                         cmthread.start()
 
                     # todo: ctrl+c doesn't close the browser windows
-                    browser.wait()
+                    code = browser.wait()
+                    utils.info("Browser exited with error code: {0}".format(code))
                     browser = None
                     self.isFinished = True
  
@@ -430,6 +458,26 @@ class TTest(object):
 
                 # add the results from the browser output
                 test_results.add(browser_log_filename, counter_results=self.counter_results)
+
+                if sps_profile:
+                  try:
+                      import zlib
+                      mode = zipfile.ZIP_DEFLATED
+                  except:
+                      mode = zipfile.ZIP_STORED
+                  mud = os.environ.get('MOZ_UPLOAD_DIR', None)
+                  if mud:
+                      profile_name = "profile_{0}".format(test_config['name'])
+                      cycle_name = "cycle_{0}.sps".format(i)
+                      arcname = os.path.join(mud, "{0}.zip".format(profile_name))
+                      profile_filename = os.path.join(profile_name, cycle_name)
+                      utils.info("Adding profile {0} to archive {1}".format(profile_filename, arcname))
+                      with zipfile.ZipFile(arcname, 'a', mode) as arc:
+                          try:
+                              arc.write(sps_profile_file, profile_filename)
+                          except Exception as e:
+                              utils.info(e)
+                              utils.info("Failed to copy profile {0} as {1} to archive {2}".format(sps_profile_file, profile_filename, arcname))
 
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])

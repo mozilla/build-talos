@@ -7,6 +7,7 @@
 <html><!-- call this with an arg, e.g. file://foo/startup-test.html?begin=12345678 --><!-- In-line this to avoid compilation. --><head>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <script language="Javascript" type="text/javascript" src="/scripts/MozillaFileLogger.js"></script>
+<script language="Javascript" type="text/javascript" src="/scripts/Profiler.js"></script>
 <script language="JavaScript" type="text/javascript" src="/page_load_test/quit.js"></script>
 
 </head><body onload="
@@ -33,6 +34,7 @@
       if (window.dump) {
         dumpLog('__startTimestamp' + Date.now() + '__endTimestamp\n');
       }
+      Profiler.pause();
       goQuitApplication();
       window.close();
     }, 0);

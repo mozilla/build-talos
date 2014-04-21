@@ -72,6 +72,9 @@ class TsBase(Test):
                          # is copied to the temporary profile during initialization of
                          # the test. If some of the files may be overwritten by Firefox
                          # and need to be reinstalled before each pass, use key |reinstall|
+        'sps_profile',
+        'sps_profile_interval',
+        'sps_profile_entries',
         'preferences',
         'xperf_counters',
         'xperf_providers',
@@ -145,6 +148,7 @@ class tpaint(TsBase):
     url = 'file://${talos}/startup_test/tpaint.html?auto=1'
     timeout = 300
     mobile = False # XUL based tests with local files.
+    sps_profile_interval = 3
     tpmozafterpaint = True
     filters = [["ignore_first", [5]], ['median', []]]
 
@@ -155,6 +159,7 @@ class tresize(TsBase):
     cycles = 20
     url = 'startup_test/tresize-test.html'
     timeout = 150
+    sps_profile_interval = 10
     tpmozafterpaint = True
     filters = [["ignore_first", [5]], ['median', []]]
 
@@ -260,11 +265,11 @@ class PageloaderTest(Test):
     timeout = None
     filters = None
     keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadnocache',
-            'rss', 'resolution', 'cycles', 'tptimeout',
-            'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'remote_counters', 'xperf_counters',
-            'timeout', 'shutdown', 'responsiveness', 'profile_path',
-            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences', 'extensions',
-            'setup', 'cleanup','fennecIDs'
+            'rss', 'resolution', 'cycles', 'sps_profile', 'sps_profile_interval', 'sps_profile_entries',
+            'tptimeout', 'win_counters', 'w7_counters', 'linux_counters', 'mac_counters',
+            'remote_counters', 'xperf_counters', 'timeout', 'shutdown', 'responsiveness', 'profile_path',
+            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences',
+            'extensions', 'setup', 'cleanup','fennecIDs'
             ]
 
 class tart(PageloaderTest):
@@ -289,6 +294,8 @@ class tart(PageloaderTest):
     tpcycles = 1
     tppagecycles = 25
     tploadnocache = True
+    sps_profile_interval = 10
+    sps_profile_entries = 5000000
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
     """ ASAP mode """
     """ The recording API is broken with OMTC before ~2013-11-27 """
@@ -313,6 +320,7 @@ class cart(PageloaderTest):
     tpcycles = 1
     tppagecycles = 25
     tploadnocache = True
+    sps_profile_interval = 10
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
     """ ASAP mode """
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
@@ -380,6 +388,8 @@ class tp5o(tp5n):
     """
     tpmanifest = '${talos}/page_load_test/tp5n/tp5o.manifest'
     responsiveness = True
+    sps_profile_interval = 10
+    sps_profile_entries = 2000000
 
 class tdhtml(PageloaderTest):
     """
@@ -415,6 +425,8 @@ class v8_7(PageloaderTest):
     selective branches and operating systems. 
     """
     tpmanifest = '${talos}/page_load_test/v8_7/v8.manifest'
+    sps_profile_interval = 10
+    sps_profile_entries = 200000
     tpcycles = 1
     resolution = 20
 
@@ -426,6 +438,8 @@ class kraken(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/kraken/kraken.manifest'
     tpcycles = 1
     tppagecycles = 1
+    sps_profile_interval = 10
+    sps_profile_entries = 1000000
     filters = [['mean', []]]
 
 class tcanvasmark(PageloaderTest):
@@ -438,6 +452,8 @@ class tcanvasmark(PageloaderTest):
     tpcycles = 5
     tppagecycles = 1
     timeout = 900
+    sps_profile_interval = 10
+    sps_profile_entries = 2500000
     tpmozafterpaint = False
     filters = [["ignore_first", [1]], ['median', []]]
 
@@ -460,6 +476,8 @@ class dromaeo_css(dromaeo):
     
     Each page in the manifest is part of the dromaemo css benchmark. 
     """
+    sps_profile_samples = 10
+    sps_profile_entries = 5000000
     tpmanifest = '${talos}/page_load_test/dromaeo/css.manifest'
 
 class dromaeo_dom(dromaeo):
@@ -470,6 +488,8 @@ class dromaeo_dom(dromaeo):
     
     Each page in the manifest is part of the dromaemo dom benchmark. 
     """
+    sps_profile_interval = 10
+    sps_profile_entries = 5000000
     tpmanifest = '${talos}/page_load_test/dromaeo/dom.manifest'
 
 class a11y(PageloaderTest):
@@ -480,6 +500,8 @@ class a11y(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpmozafterpaint = True
     tpcycles = 5
+    sps_profile_interval = 10
+    sps_profile_entries = 300000
     mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
     filters = [["ignore_first", [1]], ['median', []]]
 
@@ -512,6 +534,8 @@ class tsvgx(tsvg):
     tpmanifest = '${talos}/page_load_test/svgx/svgx.manifest'
     tpcycles = 1
     tppagecycles = 25
+    sps_profile_interval = 10
+    sps_profile_entries = 1000000
     """ASAP mode"""
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
     filters = [["ignore_first", [5]], ['median', []]]
@@ -524,6 +548,8 @@ class tsvgr_opacity(tsvg_opacity):
     """
     tpcycles = 1
     tppagecycles = 25
+    sps_profile_interval = 10
+    sps_profile_entries = 1000000
     filters = [["ignore_first", [5]], ['median', []]]
 
 class tscrollr(PageloaderTest):
@@ -543,6 +569,8 @@ class tscrollx(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 1
     tppagecycles = 25
+    sps_profile_interval = 10
+    sps_profile_entries = 1000000
     """ ASAP mode """
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
     filters = [["ignore_first", [5]], ['median', []]]

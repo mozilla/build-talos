@@ -66,6 +66,8 @@ function testScroll(target, stepSize)
 
       /* stop scrolling if we're at the end */
       if (getPos() == lastScrollPos) {
+        Profiler.pause();
+
         // Note: The first (1-5) intervals WILL be longer than the rest.
         // First interval might include initial rendering and be extra slow.
         // Also requestAnimationFrame needs to sync (optimally in 1 frame) after long frames.
@@ -92,6 +94,7 @@ function testScroll(target, stepSize)
       rAF(tick);
     }
 
+    Profiler.resume();
     rAF(tick);
   }
 
