@@ -462,6 +462,12 @@ function plLoadHandlerCapturing(evt) {
     setTimeout(plWaitForPaintingCapturing, 0);
   }
 
+  content.contentWindow.wrappedJSObject.plGarbageCollect = function () {
+    window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
+          .getInterface(Components.interfaces.nsIDOMWindowUtils)
+          .garbageCollect();
+  }
+
   content.removeEventListener('load', plLoadHandlerCapturing, true);
   removeLastAddedListener = null;
 

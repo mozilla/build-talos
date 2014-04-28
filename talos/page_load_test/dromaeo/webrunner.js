@@ -352,6 +352,9 @@
 	// Remove the next test from the queue and execute it
 	function dequeue(){
 		if ( interval && queue.length ) {
+            if (typeof plGarbageCollect !== "undefined") {
+                plGarbageCollect();
+            }
 			queue.shift()();
 			
 		} else if ( queue.length == 0 ) {
