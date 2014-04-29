@@ -26,6 +26,5 @@ remoteapp\.ini
 ^local$
 ^Scripts$
 ^talos\.egg-info$
-^talos/page_load_test/tp4
 ^talos/page_load_test/tp5/.*
 ^talos/page_load_test/tp5n/.*
