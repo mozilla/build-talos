@@ -44,8 +44,9 @@ mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
                    ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py')]
 mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
 
-moznetwork_src = 'https://raw.github.com/mozilla/mozbase/moznetwork-0.24/'
-moznetwork = [(moznetwork_src, 'moznetwork.py')]
+moznetwork_src = 'http://hg.mozilla.org/mozilla-central/raw-file/e350a1923f0e/testing/mozbase/moznetwork/'
+moznetwork = [(moznetwork_src + 'moznetwork/moznetwork.py', 'moznetwork/moznetwork.py'),
+              (moznetwork_src + 'moznetwork/__init__.py', 'moznetwork/__init__.py')]
 
 mozprocess_src = 'https://raw.github.com/mozilla/mozbase/mozprocess-0.13/'
 mozprocess_files = [('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
