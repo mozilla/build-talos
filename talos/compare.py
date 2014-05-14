@@ -30,8 +30,6 @@ branches = ['Try', 'Firefox', 'Inbound', 'Cedar', 'UX']
 test_map = {}
 test_map['ts_places_med'] = {'id': 53, 'tbplname': 'ts_places_generated_med'}
 test_map['ts_places_max'] = {'id': 54, 'tbplname': 'ts_places_generated_max'}
-test_map['tspaint_places_med'] = {'id': 226, 'tbplname': 'tspaint_places_generated_med'}
-test_map['tspaint_places_max'] = {'id': 227, 'tbplname': 'tspaint_places_generated_max'}
 test_map['dromaeo_css'] = {'id': 72, 'tbplname': 'dromaeo_css'}
 test_map['dromaeo_dom'] = {'id': 73, 'tbplname': 'dromaeo_dom'}
 test_map['kraken'] = {'id': 232, 'tbplname': 'kraken'}
@@ -46,10 +44,12 @@ test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
 test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
 test_map['tp5o'] = {'id': 255, 'tbplname': 'tp5o_paint'}
 test_map['tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
-test_map['tscrollx'] = {'id': 279, 'tbplname': 'tscrollx_paint'}
+test_map['tscrollx'] = {'id': 287, 'tbplname': 'tscrollx_paint'}
+test_map['sessionrestore'] = {'id': 313, 'tbplname':'sessionrestore'}
+test_map['sessionrestore_no_auto_restore'] = {'id': 315, 'tbplname':'sessionrestore_no_auto_restore'}
 test_map['tart'] = {'id': 293, 'tbplname': 'tart'}
 test_map['tcanvasmark'] = {'id': 297, 'tbplname': 'tcanvasmark_paint'}
-tests = ['tresize', 'tspaint_places_med', 'tspaint_places_max', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx']
+tests = ['tresize', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore' ]
 
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8']
 
@@ -60,11 +60,10 @@ platform_map['Win'] = 25 # 12 is for non-ix
 platform_map['Win8'] = 31
 platform_map['WinXP'] = 37 # 1 is for non-ix
 platform_map['Win64'] = 19
-platform_map['OSX10.7'] = 22
 platform_map['OSX64'] = 21 #10.6
 platform_map['OSX'] = 13 #10.5.8
 platform_map['OSX10.8'] = 24
-platforms = ['Linux', 'Linux64', 'Win', 'WinXP', 'Win8', 'OSX10.7', 'OSX64', 'OSX10.8'] #'Win64' doesn't have talos results
+platforms = ['Linux', 'Linux64', 'Win', 'WinXP', 'Win8', 'OSX64', 'OSX10.8'] #'Win64' doesn't have talos results
 
 def getGraphData(testid, branchid, platformid):
     body = {"id": testid, "branchid": branchid, "platformid": platformid}
@@ -111,8 +110,6 @@ def getDatazillaPlatform(os, platform, osversion, product):
     elif os == 'mac':
         if osversion.startswith('OS X 10.6'):
             platform = 'OSX64'
-        elif osversion.startswith('OS X 10.7'):
-            platform = 'OSX10.7'
         elif osversion.startswith('OS X 10.8'):
             platform = 'OSX10.8'
     return platform
@@ -410,7 +407,6 @@ def shorten(url):
         shortened = json.loads(data)
         if 'id' in shortened:
             return shortened['id']
-
     return url
 
 if __name__ == "__main__":
