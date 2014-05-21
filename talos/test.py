@@ -246,7 +246,7 @@ class PageloaderTest(Test):
     filters = None
     keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadnocache',
             'rss', 'resolution', 'cycles', 'sps_profile', 'sps_profile_interval', 'sps_profile_entries',
-            'tptimeout', 'win_counters', 'w7_counters', 'linux_counters', 'mac_counters',
+            'tptimeout', 'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'tpscrolltest',
             'remote_counters', 'xperf_counters', 'timeout', 'shutdown', 'responsiveness', 'profile_path',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences',
             'extensions', 'setup', 'cleanup','fennecIDs'
@@ -370,6 +370,22 @@ class tp5o(tp5n):
     responsiveness = True
     sps_profile_interval = 10
     sps_profile_entries = 2000000
+
+class tp5o_scroll(PageloaderTest):
+    """
+    Tests scroll (like tscrollx does, including ASAP) but on the tp5o pageset.
+    """
+    tpmanifest = '${talos}/page_load_test/tp5n/tp5o.manifest'
+    tpcycles = 1
+    tppagecycles = 12
+    sps_profile_interval = 10
+    sps_profile_entries = 1000000
+
+    tpscrolltest = True
+    """ASAP mode"""
+    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    filters = [["ignore_first", [1]], ['median', []]]
+
 
 class tdhtml(PageloaderTest):
     """
@@ -569,7 +585,7 @@ class a11yr(PageloaderTest):
 
 # global test data
 tests = [ts_paint, ts, tsvg, tdhtml,
-         tp4m, tp5n, tp5o, tpaint, tresize,
+         tp4m, tp5n, tp5o, tpaint, tresize, tp5o_scroll,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,

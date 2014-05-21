@@ -108,6 +108,7 @@ PageLoaderCmdLineHandler.prototype =
       args.noForceCC = cmdLine.handleFlag("tpnoforcecc", false);
       args.mozafterpaint = cmdLine.handleFlag("tpmozafterpaint", false);
       args.loadnocache = cmdLine.handleFlag("tploadnocache", false);
+      args.scrolltest = cmdLine.handleFlag("tpscrolltest", false);
       args.rss = cmdLine.handleFlag("rss", false);
     }
     catch (e) {

@@ -165,6 +165,7 @@ the highest value.
                                   'tpnoisy': True,
                                   'tppagecycles': 1,
                                   'tploadnocache': False,
+                                  'tpscrolltest': False,
                                   'tprender': False,
                                   'win_counters': [],
                                   'w7_counters': [],

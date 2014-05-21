@@ -101,7 +101,7 @@ def buildCommandLine(test):
 
   # build pageloader command from options
   url = ['-tp', test['tpmanifest']]
-  CLI_bool_options = ['tpchrome', 'tpmozafterpaint', 'tpnoisy', 'rss', 'tprender', 'tploadnocache']
+  CLI_bool_options = ['tpchrome', 'tpmozafterpaint', 'tpnoisy', 'rss', 'tprender', 'tploadnocache', 'tpscrolltest']
   CLI_options = ['tpcycles', 'tppagecycles', 'tpdelay', 'tptimeout']
   for key in CLI_bool_options:
       if test.get(key):

@@ -1,4 +1,11 @@
-function testScroll(target, stepSize)
+// Note: The content from here upto '// End scroll test' is duplicated at:
+//       - talos/page_load_test/scroll/scroll-test.js
+//       - inside talos/pageloader/chrome/pageloader.js
+//
+// - Please keep these copies in sync.
+// - Pleace make sure that any changes apply cleanly to all use cases.
+
+function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
 {
   function myNow() {
     return (window.performance && window.performance.now) ?
@@ -55,6 +62,7 @@ function testScroll(target, stepSize)
     var lastScrollPos = getPos();
     var lastScrollTime = start;
     var durations = [];
+    var report = opt_reportFunc || tpRecordTime;
 
     function tick() {
       var now = myNow();
@@ -64,8 +72,8 @@ function testScroll(target, stepSize)
       durations.push(duration);
       doScrollTick();
 
-      /* stop scrolling if we're at the end */
-      if (getPos() == lastScrollPos) {
+      /* stop scrolling if we can't scroll more, or if we've reached requested number of steps */
+      if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
         Profiler.pause();
 
         // Note: The first (1-5) intervals WILL be longer than the rest.
@@ -85,7 +93,7 @@ function testScroll(target, stepSize)
         for (var i = 0; i < durations.length; i++)
           sum += Number(durations[i]);
         // Report average interval or (failsafe) 0 if no intervls were recorded
-        tpRecordTime(durations.length ? sum / durations.length : 0);
+        report(durations.length ? sum / durations.length : 0);
 
         return;
       }
@@ -101,7 +109,8 @@ function testScroll(target, stepSize)
 
   // Not part of the test and does nothing if we're within talos,
   // But provides an alternative tpRecordTime (with some stats display) if running in a browser
-  if(document.head) {
+  // If a callback is provided, then we don't need this debug reporting.
+  if(!opt_reportFunc && document.head) {
     var imported = document.createElement('script');
     imported.src = '../../scripts/talos-debug.js?dummy=' + Date.now(); // For some browsers to re-read
     document.head.appendChild(imported);
@@ -112,3 +121,4 @@ function testScroll(target, stepSize)
     rAF(startTest);
   }, 260);
 }
+// End scroll test
