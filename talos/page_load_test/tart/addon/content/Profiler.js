@@ -14,18 +14,21 @@
 //
 // Use this object to pause and resume the profiler so that it only profiles the
 // relevant parts of our tests.
-var Profiler = { // Initialize as placeholder, replace with actual if available.
-  resume: function() {},
-  pause:  function() {},
-  mark:   function() {}
-};
+var Profiler;
 
 (function(){
   var _profiler;
   var test_name = document.location.pathname;
 
   try {
+    // Outside of talos, this throws a security exception which no-op this file.
+    // (It's not required nor allowed for addons since Firefox 17)
+    // It's used inside talos from non-privileged pages (like during tscroll),
+    // and it works because talos disables all/most security measures.
     netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+  } catch (e) {}
+
+  try {
     _profiler = Components.classes["@mozilla.org/tools/profiler;1"].getService(Components.interfaces.nsIProfiler);
   } catch (ex) { (typeof(dumpLog) == "undefined" ? dump : dumpLog)(ex + "\n"); }
 
