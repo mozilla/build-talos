@@ -30,6 +30,7 @@
  "{profile}\\prefs.js": {"mincount": 4, "maxcount": 4, "minbytes": 19612, "maxbytes": 20136},
  "{profile}\\compatibility.ini": {"mincount": 2, "maxcount": 34, "minbytes": 734, "maxbytes": 8192},
  "{profile}\\places.sqlite-shm": {"mincount": 2, "maxcount": 2, "minbytes": 65536, "maxbytes": 65536},
+ "{profile}\\places.sqlite-wal": {"mincount": 0, "maxcount": 32, "minbytes": 0, "maxbytes": 131072},
  "{profile}\\user.js": {"mincount": 4, "maxcount": 4, "minbytes": 6000, "maxbytes": 6000},
  "{profile}\\permissions.sqlite": {"mincount": 14, "maxcount": 14, "minbytes": 4424, "maxbytes": 4424},
  "{firefox}\\crash reports\\lastcrash": {"mincount": 2, "maxcount": 2, "minbytes": 20, "maxbytes": 20},
