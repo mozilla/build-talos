@@ -172,7 +172,7 @@ Tart.prototype = {
   _win: undefined,
   _tartTab: undefined,
   _results: [],
-  _config: {subtests: [], repeat: 1, rest: 500, tickle: true},
+  _config: {subtests: [], repeat: 1, rest: 500, tickle: true, controlProfiler: true},
 
   _animate: function(preWaitMs, triggerFunc, onDoneCallback, isReportResult, name, referenceDuration) {
     var self = this;
@@ -187,7 +187,12 @@ Tart.prototype = {
     var _abortRecording = false;
     var startRecordTimestamp;
     function startRecord() {
-      Profiler.resume(isReportResult ? name : "[warmup]");
+      if (self._config.controlProfiler) {
+        if (isReportResult)
+          Profiler.resume(name);
+      } else {
+        Profiler.mark("Start: " + (isReportResult ? name : "[warmup]"), true);
+      }
       startRecordTimestamp = window.performance.now();
       if (self.USE_RECORDING_API) {
         return window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -217,7 +222,12 @@ Tart.prototype = {
     var recordingAbsoluteDuration;
     function stopRecord(Handle) {
       recordingAbsoluteDuration =  window.performance.now() - startRecordTimestamp;
-      Profiler.pause(isReportResult ? name : "[warmup]");
+      if (self._config.controlProfiler) {
+        if (isReportResult)
+          Profiler.pause(name);
+      } else {
+        Profiler.mark("End: " + (isReportResult ? name : "[warmup]"), true);
+      }
       if (self.USE_RECORDING_API) {
         var paints = {};
         return window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -377,7 +387,7 @@ Tart.prototype = {
       var disp = [].concat(res.value).map(function(a){return (isNaN(a) ? -1 : a.toFixed(1));}).join(" ");
       out += res.name + ": " + disp + "\n";
 
-      if (!Array.isArray(res.value)) { // raw intervals array is not reported to talos
+      if (!Array.isArray(res.value)) { // Waw intervals array is not reported to talos
         testNames.push(res.name);
         testResults.push(res.value);
       }
@@ -399,7 +409,7 @@ Tart.prototype = {
     this._win.gBrowser.selectedTab = this._tartTab;
 
     if (this._onTestComplete) {
-      this._onTestComplete(JSON.parse(JSON.stringify(this._results))); // clone results
+      this._onTestComplete(JSON.parse(JSON.stringify(this._results))); // Clone results
     }
   },
 
@@ -454,7 +464,7 @@ Tart.prototype = {
     this.unpinTart();
     var tabRefDuration = getMaxTabTransitionTimeMs(this._tartTab);
     if (tabRefDuration < 20 || tabRefDuration > 2000) {
-      // hardcoded fallback in case the value doesn't make sense as tab animation duration.
+      // Hardcoded fallback in case the value doesn't make sense as tab animation duration.
       tabRefDuration = 250;
     }
 
@@ -648,7 +658,14 @@ Tart.prototype = {
   },
 
   startTest: function(doneCallback, config) {
-    this._onTestComplete = doneCallback;
+    this._onTestComplete = function (results) {
+        if (config.controlProfiler)
+          Profiler.resume("TART - end", true);
+        else
+          Profiler.mark("TART - end", true);
+
+        doneCallback(results);
+    };
     this._config = config;
 
     const Ci = Components.interfaces;
@@ -656,6 +673,11 @@ Tart.prototype = {
     this._win = wm.getMostRecentWindow("navigator:browser");
     this._tartTab = this._win.gBrowser.selectedTab;
     this._win.gBrowser.selectedBrowser.focus(); // Unfocus the URL bar to avoid caret blink
+
+    if (config.controlProfiler)
+      Profiler.pause("TART - start", true);
+    else
+      Profiler.mark("TART - start", true);
 
     return this._startTest();
   }

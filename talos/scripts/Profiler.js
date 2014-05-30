@@ -33,25 +33,25 @@ var Profiler;
   } catch (ex) { (typeof(dumpLog) == "undefined" ? dump : dumpLog)(ex + "\n"); }
 
   Profiler = {
-    resume: function Profiler__resume (name) {
+    resume: function Profiler__resume (name, explicit) {
       if (_profiler) {
         if (_profiler.ResumeSampling) {
           _profiler.ResumeSampling();
         }
-        _profiler.AddMarker('Start of test "' + (name || test_name) + '"');
+        _profiler.AddMarker(explicit ? name : 'Start of test "' + (name || test_name) + '"');
       }
     },
-    pause: function Profiler__pause (name) {
+    pause: function Profiler__pause (name, explicit) {
       if (_profiler) {
         if (_profiler.PauseSampling) {
           _profiler.PauseSampling();
         }
-        _profiler.AddMarker('End of test "' + (name || test_name) + '"');
+        _profiler.AddMarker(explicit ? name : 'End of test "' + (name || test_name) + '"');
       }
     },
-    mark: function Profiler__mark (marker) {
+    mark: function Profiler__mark (marker, explicit) {
       if (_profiler) {
-        _profiler.AddMarker('Profiler: "' + (marker || test_name) + '"');
+        _profiler.AddMarker(explicit ? marker : 'Profiler: "' + (marker || test_name) + '"');
       }
     }
   };
