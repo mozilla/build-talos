@@ -97,9 +97,6 @@ for datazilla auth.  Should have keys 'oauthSecret' and 'oauthKey'"""}),
         ('error_filename', {'help': 'Filename to store the errors found during the test.  Currently used for xperf only.',
                          'default': os.path.abspath('browser_failures.txt'),
                          'flags': ['--errorFile']}),
-        ('results_log', {'help': 'Filename to store to results collected from mozhttpd internal webserver.',
-                         'default': os.path.abspath('results_log.txt'),
-                         'flags': ['--resultsLog']}),
         ('shutdown', {'help': 'Record time browser takes to shutdown after testing',
                       'type': bool,
                       'flags': ['--noShutdown']}),
@@ -450,7 +447,8 @@ the highest value.
         if self.config.get('develop'):
             if not self.config.get('webserver'):
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.bind(("127.0.0.1",0))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind(("127.0.0.1",15707))
                 self.config['webserver'] = 'localhost:%s' % s.getsockname()[1]
 
         extraPrefs = self.config.pop('extraPrefs', {})
@@ -841,9 +839,7 @@ the highest value.
 
         required = ['preferences', 'extensions',
                     'browser_path', 'browser_log', 'browser_wait',
-                    'extra_args', 'buildid', 'env', 'init_url',
-                    'results_log'
-                    ]
+                    'extra_args', 'buildid', 'env', 'init_url']
         optional = {'bcontroller_config': 'bcontroller.yml',
                     'branch_name': '',
                     'child_process': 'plugin-container',

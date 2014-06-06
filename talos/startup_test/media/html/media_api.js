@@ -5,12 +5,11 @@
  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-/* This file hosts the logic for performing Media Operations
- * on our test server and handling responses.
- * Media Operations are in the form of GET requests
- */
+// This file hosts the logic for performing Media Operations
+// on our test server and handling responses.
+// Media Operations are in the form of GET requests/
 
-// Global callback for all the HTTP Requests.
+// Global call back for all the HTTP Requests.
 // Since we use synchronous Ajax requests, we should
 // be good with this design.
 var httpRequestCb = function(test, req_status, response) {
@@ -33,14 +32,6 @@ var sendGetRequest = function(test, async) {
   };
   request.send();
 };
-
-// Dump the results of all the tests to Talos
-var sendTalosResults = function(talos_url, result_obj) {
-  var request = new XMLHttpRequest();
-  request.open('GET', talos_url, true);
-  request.send(result_obj);
-};
-
 
 // Stop our server and exit the browser
 var cleanupTests = function() {
@@ -67,11 +58,10 @@ var cleanupAudioRecording = function(test) {
   sendGetRequest(test, false);
 };
 
-// Perform audio/pesq/compute command
-var getPESQScores = function(test) {
-  var url = baseUrl + '/audio/pesq/compute';
+// Perform audio/snr/compute command
+var getSNRAndDelay = function(test) {
+  var url = baseUrl + '/audio/snr/compute';
   test.url = url;
   test.failed = false;
   sendGetRequest(test, false);
 };
-

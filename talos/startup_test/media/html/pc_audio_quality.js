@@ -10,8 +10,8 @@
 // mozCaptureStreamUntilEnded() is used to replace GUM to feed
 // audio from an input file into the Peer Connection.
 // Once played out, the audio at the speaker is recorded to compute
-// PESQ scores
- 
+// SNR scores
+
 var pc1;
 var pc2;
 var pc1_offer;
@@ -88,20 +88,21 @@ var audioPCQuality = function() {
     // stop the recorder
     cleanupAudioRecording(test);
     if (!test.failed) {
-      getPESQScores(test);
-      // PESQ scores are reported for MOS and LQO
-      // ex: PESQ_SCORE:1.325,1.890
+      // Compute SNR and Delay between the reference
+      // and the degraded files.
+      getSNRAndDelay(test);
+      // SNR_DELAY=5.4916,0
       // We update results as 2 separate results
       var res = JSON.parse(test.http_response);
-      if(res["PESQ-SCORE"]) {
+      if(res["SNR-DELAY"]) {
         // fix the test.name
         var testName = test.name;
-        var pesqScores = res["PESQ-SCORE"].split(",");
-        test.name = testName+"_pesq_mos";
-        test.results = pesqScores[0]
+        var snr_delay = res["SNR-DELAY"].split(",");
+        test.name = testName+"_snr_in_db";
+        test.results = snr_delay[0];
         updateResults(test);
-        test.name = testName+"_pesq_lqo";
-        test.results = pesqScores[1]
+        test.name = testName+"_delay_in_ms";
+        test.results = snr_delay[1];
         updateResults(test);
         // restore test.name
         test.name = testName;

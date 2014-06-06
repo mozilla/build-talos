@@ -222,9 +222,6 @@ class TTest(object):
 
     def testCleanup(self, browser_config, profile_dir, test_config, cm, temp_dir):
         try:
-            if os.path.isfile(browser_config['results_log']):
-                shutil.move(browser_config['results_log'], browser_config['browser_log'])
-
             if os.path.isfile(browser_config['browser_log']):
                 results_file = open(browser_config['browser_log'], "r")
                 results_raw = results_file.read()
@@ -414,6 +411,12 @@ class TTest(object):
                         setup.wait()
 
                     self.isFinished = False
+                    mm_httpd = None
+
+                    if test_config['name'] == 'media_tests':
+                        from startup_test.media import media_manager
+                        mm_httpd = media_manager.run_server(os.path.dirname(os.path.realpath(__file__)))
+
                     browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
                     browser.run(timeout=timeout)
                     self.pid = browser.pid
@@ -431,6 +434,9 @@ class TTest(object):
                     browser = None
                     self.isFinished = True
  
+                    if mm_httpd:
+                        mm_httpd.stop()
+
                     if test_config['cleanup']:
                         #HACK: add the pid to support xperf where we require the pid in post processing
                         talosconfig.generateTalosConfig(command_args, browser_config, test_config, pid=self.pid)
@@ -443,9 +449,19 @@ class TTest(object):
                 else:
                     self._ffprocess.runProgram(browser_config, command_args, timeout=timeout)
 
-                # check if we found results from our webserver
-                if os.path.isfile(browser_config['results_log']):
-                    shutil.move(browser_config['results_log'], browser_config['browser_log'])
+                # For startup tests, we launch the browser multiple times with the same profile
+                try:
+                    os.remove(os.path.join(profile_dir, 'sessionstore.js'))
+                except:
+                    pass
+                try:
+                    os.remove(os.path.join(profile_dir, '.parentlock'))
+                except:
+                    pass
+                try:
+                    os.remove(os.path.join(profile_dir, 'sessionstore.bak'))
+                except:
+                    pass
 
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']

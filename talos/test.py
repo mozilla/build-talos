@@ -117,26 +117,6 @@ class ts_paint(ts):
     filters = [["ignore_first", [1]], ['median', []]]
     tpmozafterpaint = True
 
-class tspaint_places_generated_max(ts_paint):
-    """
-    Runs the same test as ts_paint, but uses a generated profile to
-    simulate what a power user would have. This profile is very outdated
-    and needs to be updated. 
-    """
-    profile_path = '${talos}/places_generated_max'
-    timeout = None
-    mobile = False # This depends on a custom profile and mobile requires it's own profile
-
-class tspaint_places_generated_med(ts_paint):
-    """
-    Runs the same test as ts_paint, but uses a generated profile to
-    simulate what an average user would have. This profile is very
-    outdated and needs to be updated. 
-    """
-    profile_path = '${talos}/places_generated_med'
-    timeout = None
-    mobile = False # This depends on a custom profile and mobile requires it's own profile
-
 class tpaint(TsBase):
     """
     Tests the amount of time it takes the open a new window. This test does
@@ -246,7 +226,7 @@ class media_tests(TsBase):
     cycles = 5
     desktop = True
     mobile = False
-    url = 'python ${talos}/startup_test/media/media_manager.py -p ${profile} -b ${firefox}  -t ${talos} -r http://localhost/results'
+    url = 'http://localhost:16932/startup_test/media/html/media_tests.html'
     timeout = 360
 
 ### pageloader tests(tp5, tdhtml, etc)
@@ -589,7 +569,6 @@ class a11yr(PageloaderTest):
 
 # global test data
 tests = [ts_paint, ts, tsvg, tdhtml,
-         tspaint_places_generated_max, tspaint_places_generated_med,
          tp4m, tp5n, tp5o, tpaint, tresize,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,

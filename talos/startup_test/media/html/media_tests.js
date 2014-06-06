@@ -12,6 +12,7 @@
  * See audio_plyback.js for an example.
  */
 
+
 // Global variable to hold results of all the tests
 // Entry in this object will be of the form
 //   ==> results{'Test-Name'} : 'Results'
@@ -21,47 +22,6 @@ var baseUrl = 'http://localhost:16932';
 // Handy area to dump the results of the tests
 var testsTable = document.getElementById('tests');
 var dontLog = true;
-
-// Taken from :jmaher's latenct-benchmark patch
-parseQueryString = function(encodedString, useArrays) {
-  // strip a leading '?' from the encoded string
-  var qstr = (encodedString[0] == "?") ? encodedString.substring(1) :
-                                         encodedString;
-  var pairs = qstr.replace(/\+/g, "%20").split(/(\&amp\;|\&\#38\;|\&#x26;|\&)/);
-  var o = {};
-  var decode;
-  if (typeof(decodeURIComponent) != "undefined") {
-    decode = decodeURIComponent;
-  } else {
-    decode = unescape;
-  }
-  if (useArrays) {
-    for (var i = 0; i < pairs.length; i++) {
-      var pair = pairs[i].split("=");
-      if (pair.length !== 2) {
-        continue;
-      }
-      var name = decode(pair[0]);
-      var arr = o[name];
-      if (!(arr instanceof Array)) {
-        arr = [];
-        o[name] = arr;
-      }
-      arr.push(decode(pair[1]));
-    }
-  } else {
-    for (i = 0; i < pairs.length; i++) {
-      pair = pairs[i].split("=");
-      if (pair.length !== 2) {
-        continue;
-      }
-      o[decode(pair[0])] = decode(pair[1]);
-    }
-  }
-  return o;
-};
-
-var params = parseQueryString(location.search.substring(1), true);
 
 function log(msg) {
   if (!dontLog) {
@@ -113,23 +73,29 @@ var nextTestIndex = 0;
 var runNextTest = function() {
   var testIndex = nextTestIndex++;
   if (testIndex >= tests.length ) {
-    if (params.results) {
-      var obj = encodeURIComponent(JSON.stringify(results));
-      var url = params.results + "?" + obj;
-      sendTalosResults(url, obj);
-    }
+    //Ideally we would post to a server via xmlhttprequest, but that doesn't seem reliable
+    dump("__start_report\n");
+    dump("audio_playback_quality_snr_in_db," + results["audio_playback_quality_snr_in_db"] + "\n");
+    dump("audio_playback_quality_delay_in_ms," + results["audio_playback_quality_delay_in_ms"] + "\n");
+    dump("__end_report\n");
+    dump("__startTimestamp" + results["BEGIN_TIME_STAMP"] + "__endTimestamp\n");
+
     // let's clean up the test framework
     var request = new XMLHttpRequest();
-    var url = baseUrl + '/server/config/stop'
+    var url = baseUrl + '/server/config/stop';
     request.open('GET', url, false);
     request.send();
+
+    goQuitApplication();
+    window.close();
+  } else {
+    var test = tests[testIndex];
+    // Occasionally <audio> tag doesn't play media properly
+    // and this results in test case to hang. Since it
+    // never error's out, test.forceTimeout guards against this.
+    setTimeout(function() { checkTimeout(test); }, test.forceTimeout);
+    test.test();
   }
-  var test = tests[testIndex];
-  // Occasionally <audio> tag doesn't play media properly
-  // and this results in test case to hang. Since it
-  // never error's out, test.forceTimeout guards against this.
-  setTimeout(function() { checkTimeout(test); }, test.forceTimeout);
-  test.test();
 };
 
 // Test timed out, go through the next test.
@@ -140,7 +106,6 @@ var checkTimeout = function(test) {
     runNextTest();
   }
 };
-
 
 results['BEGIN_TIME_STAMP'] = new Date().getTime();
 setTimeout(runNextTest, 100);

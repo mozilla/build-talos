@@ -24,19 +24,23 @@ var audioPlayback = function() {
     // stop the recorder
     cleanupAudioRecording(test);
     if (!test.failed) {
-      getPESQScores(test);
+      // Compute SNR and Delay between the reference
+      // and the degreated files.
+      getSNRAndDelay(test);
+      // SNR_DELAY=5.4916,0
+      // We update results as 2 separate results
       var res = JSON.parse(test.http_response);
-      if(res["PESQ-SCORE"]) {
-        // fix the test nane
-        var pesqScores = res["PESQ-SCORE"].split(",");
+      if(res["SNR-DELAY"]) {
+        // fix the test.name
         var testName = test.name;
-        test.name = testName+"_pesq_mos";
-        test.results = pesqScores[0];
+        var snr_delay = res["SNR-DELAY"].split(",");
+        test.name = testName+"_snr_in_db";
+        test.results = snr_delay[0];
         updateResults(test);
-        test.name = testName+"_pesq_lqo";
-        test.results = pesqScores[1];
+        test.name = testName+"_delay_in_ms";
+        test.results = snr_delay[1];
         updateResults(test);
-        // restore the name of the test
+        // restore test.name
         test.name = testName;
       }
     }

@@ -29,6 +29,7 @@ installed.
 _TOOLS_PATH_             = os.path.join(here,'tools')
 _TEST_PATH_              = os.path.join(here,'html')
 _PESQ_                   = os.path.join(_TOOLS_PATH_, 'PESQ')
+_MEDIA_TOOLS_            = os.path.join(_TOOLS_PATH_, 'MediaUtils')
 _INPUT_FILE_             = os.path.join(_TEST_PATH_, 'input16.wav')
 # These files are created and removed as part of test run
 _RECORDED_FILE_          = os.path.join(_TEST_PATH_, 'record.wav')
@@ -36,7 +37,7 @@ _RECORDED_NO_SILENCE_    = os.path.join(_TEST_PATH_, 'record_no_silence.wav')
 
 # Constants used as parameters to Sox recorder and silence trimmer
 #TODO: Make these dynamically configurable
-_SAMPLE_RATE_             = '16000' # 16khz
+_SAMPLE_RATE_             = '48000' # 48khz - seems to work with pacat better than 16khz
 _NUM_CHANNELS_            = '1'     # mono channel
 _SOX_ABOVE_PERIODS_       = '1'     # One period of silence in the beginning
 _SOX_ABOVE_DURATION_      = '2'     # Duration to trim till proper audio
@@ -92,12 +93,12 @@ class AudioRecorder(threading.Thread):
       # PACAT command to record 16 bit singned little endian mono channel
       # audio from the sink self.rec_device
       pa_command = ['pacat', '-r', '-d', self.rec_device, '--format=s16le',
-                    '--rate=16000', '--channels=1']
+                    '--fix-rate', '--channels=1']
       pa_command =  [str(s) for s in pa_command]
 
       # Sox command to convert raw audio from PACAT output to .wav format"
       sox_command = ['sox', '-t', 'raw', '-r',_SAMPLE_RATE_,'--encoding=signed-integer',
-                     '-Lb', 16,'-c', _NUM_CHANNELS_, '-', self.output_file, 'trim', 0,
+                     '-Lb', 16,'-c', _NUM_CHANNELS_, '-', self.output_file, 'rate', '16000', 'trim', 0,
                      self.rec_duration]
 
       sox_command =  [str(s) for s in sox_command]
@@ -162,6 +163,36 @@ class AudioUtils(object):
             degraded audio quality.
             """
             return True, pesq_score
+
+    # Run SNR on the audio reference file and recorded file
+    def computeSNRAndDelay(self):
+        snr_delay = "-1.000,-1"
+
+        if not os.path.exists(_MEDIA_TOOLS_):
+            return False, "SNR Tool not found"
+
+        cmd = [_MEDIA_TOOLS_, '-c', 'snr', '-r', _INPUT_FILE_, '-t',
+               _RECORDED_NO_SILENCE_]
+        cmd =  [str(s) for s in cmd]
+
+        output = subprocess.check_output(cmd)
+        #SNR_Delay=1.063,5
+        result = re.search('SNR_DELAY=(\d+\.\d+),(\d+)', output)
+
+        # delete the recorded file with no silence
+        if os.path.exists(_RECORDED_NO_SILENCE_):
+            os.remove(_RECORDED_NO_SILENCE_)
+
+        if result:
+            snr_delay = str(result.group(1)) + ',' + str(result.group(2))
+            return True, snr_delay
+        else:
+            """
+            We return status as True since SNR computation went through
+            successfully but scores computation failed due to severly
+            degraded audio quality.
+            """
+            return True, snr_delay
 
     # Kick-off Audio Recording Thread
     def startRecording(self, duration):

@@ -9,7 +9,6 @@ import platform
 import optparse
 # Talos specific imports
 import talos.utils
-import talos.TalosProcess
 import mozhttpd
 # media test utilities
 import media_utils
@@ -31,14 +30,14 @@ It is responsible for the following
     The idea here is to allow easy specification of resources
     (audio, video, server) , components (tools such as PESQ, SOX)
     and the operations on them (start, stop, computue..)
+
+NOTE: Using PESQ seems to have licensing issues. Hence for time being
+usage of PESQ is replaced by the SNR computation.
 """
 
 # This path is based on the ${talos}
 # This page gets loaded as default home page for running the media tests.
 __TEST_HTML_PAGE__ = "http://localhost:16932/startup_test/media/html/media_tests.html"
-
-# Browser process timeout
-__BROWSER_TIME_OUT__ = 7200
 
 """
 ObjectDb serves as a global storage to hold object handles needed
@@ -46,7 +45,6 @@ during manager's operation. It holds browser process handle, httpd
 server handle and reference to the Audio Utils object.
 """
 class ObjectDb(object):
-    browser_proc = None
     httpd_server = None
     audio_utils  = None
 
@@ -71,8 +69,8 @@ def parseGETUrl(request):
 def handleServerConfigRequest(request):
     # Stopping server is the only operation supported
     if request.path == '/server/config/stop':
-        ObjectDb.browser_proc.kill()
         ObjectDb.httpd_server.stop()
+        return (200, {'ok': 'OK'})
     else:
         return errorMessage(request.path)
 
@@ -81,8 +79,8 @@ def handleAudioRequest(request):
     # is this a recorder API
     if request.path.find('recorder') != -1:
         return (parseAudioRecorderRequest(request))
-    elif request.path.find('pesq') != -1:
-        return(parsePESQRequest(request))
+    elif request.path.find('snr') != -1:
+        return(parseSNRRequest(request))
     else:
         return errorMessage(request.path)
 
@@ -106,54 +104,36 @@ def parseAudioRecorderRequest(request):
     else:
         return errorMessage(request.path)
 
-# Parse PESQ Get Request
-def parsePESQRequest(request):
+# Parse SNR Request
+def parseSNRRequest(request):
     if request.path.find('compute') != -1:
-        status,message = ObjectDb.audio_utils.computePESQScore();
+        status,message = ObjectDb.audio_utils.computeSNRAndDelay();
         if status == True:
-            return (200, {'PESQ-SCORE' : message})
+            return (200, {'SNR-DELAY' : message})
         else:
             return errorMessage(message)
     else:
         return errorMessage(request.path)
 
+
 # Run HTTPD server and setup URL path handlers
 # doc_root is set to ${talos} when invoked from the talos
 def run_server(doc_root):
+    ObjectDb.audio_utils = media_utils.AudioUtils()
+
     httpd_server = mozhttpd.MozHttpd(port=16932, docroot=doc_root,
                                      urlhandlers = [ { 'method'   : 'GET',
                                                        'path'     : '/audio/',
                                                        'function' : parseGETUrl },
                                                      { 'method'   : 'GET',
                                                        'path'     : '/server/?',
-                                                       'function' : parseGETUrl } ])
+                                                       'function' : parseGETUrl }])
+
     talos.utils.info("Server %s at %s:%s" ,
       httpd_server.docroot, httpd_server.host, httpd_server.port)
     ObjectDb.httpd_server = httpd_server
-    httpd_server.start(block=True)
-
-"""
-Kick-off the firefox process with passed in profile
-talos_results_url is appended to the URL loaded if passed in
-during invocation. This enables the test page to dump the
-results to Talos MozHttpdServer
-"""
-def open_browser(browser, profile):
-    url = __TEST_HTML_PAGE__
-    if ObjectDb.talos_results_url:
-        url =  url + "?" + "results="+ObjectDb.talos_results_url
-
-    command = [ browser, '-profile', profile, '-no-remote', url]
-    command = [str(s) for s in command]
-    try:
-        browser_proc = talos.TalosProcess.TalosProcess(command,
-                                                   env=os.environ.copy())
-        browser_proc.run(timeout=__BROWSER_TIME_OUT__)
-    except Exception, e:
-        if ObjectDb.httpd_server:
-            ObjectDb.httpd_server.stop()
-
-    ObjectDb.browser_proc = browser_proc
+    httpd_server.start()
+    return httpd_server
 
 if __name__ == "__main__":
     # Linux platform is supported
@@ -168,23 +148,16 @@ if __name__ == "__main__":
     TODO: provide validation once stand-alone usage
     is supported
     """
-    parser.add_option("-p","--profile", dest="profile",
-                      help="Firefox User Profile",)
-    parser.add_option("-b","--browser", dest="browser",
-                      help="Firefox Browser Exeuctable Path",)
     parser.add_option("-t","--talos", dest="talos_path",
-                      help="Talos Path to serves as docroot",)
-    parser.add_option("-r","--results_url", dest="talos_results",
-                      help="Talos Results Url",)
+                      help="Talos Path to serves as docroot")
     (options, args) = parser.parse_args()
 
-    ObjectDb.talos_results_url = options.talos_results
+    if options.stop:
+        httpd_server.stop()
 
     # 1. Create handle to the AudioUtils
     ObjectDb.audio_utils = media_utils.AudioUtils()
 
-    # 2. Kick off the browser
-    open_browser(options.browser, options.profile)
-
     # 3. Start the httpd server
     run_server(options.talos_path)
+
