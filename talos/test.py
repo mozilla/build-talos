@@ -306,6 +306,23 @@ class cart(PageloaderTest):
     preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
     filters = [["ignore_first", [1]], ['median', []]]
 
+class glterrain(PageloaderTest):
+    """
+    Simple rotating WebGL scene with moving light source over a textured terrain.
+    Measures average frame intervals.
+    The same sequence is measured 4 times for combinations of alpha and antialias as canvas properties.
+    Each of these 4 runs is reported as a different test name.
+    """
+    tpmanifest = '${talos}/page_load_test/webgl/glterrain.manifest'
+    tpcycles = 1
+    tppagecycles = 25
+    tploadnocache = True
+    sps_profile_interval = 10
+    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
+    """ ASAP mode """
+    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    filters = [["ignore_first", [1]], ['median', []]]
+
 class tp(PageloaderTest):
     """
     Base class for all tp based tests (tp = test pageload)
@@ -589,7 +606,7 @@ tests = [ts_paint, ts, tsvg, tdhtml,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
-         tsvgx, tscrollx, tart, cart,
+         tsvgx, tscrollx, tart, cart, glterrain,
          sessionrestore, sessionrestore_no_auto_restore
          ]
 test_dict = dict([(i.name(), i) for i in tests])
