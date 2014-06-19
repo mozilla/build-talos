@@ -216,7 +216,7 @@ class sessionrestore_no_auto_restore(sessionrestore):
     3. Measure the delta between firstPaint and sessionRestored.
     """
     # Restore about:home
-    preferences = { 'browser.startup.page': 3 }
+    preferences = { 'browser.startup.page': 1 }
 
 ### Media Test
 class media_tests(TsBase):
