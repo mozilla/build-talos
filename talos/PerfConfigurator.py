@@ -279,6 +279,8 @@ the highest value.
         'browser.safebrowsing.gethashURL': 'http://127.0.0.1/safebrowsing-dummy/gethash',
         'browser.safebrowsing.keyURL': 'http://127.0.0.1/safebrowsing-dummy/newkey',
         'browser.safebrowsing.updateURL': 'http://127.0.0.1/safebrowsing-dummy/update',
+        'browser.safebrowsing.enabled': False,
+        'browser.safebrowsing.malware.enabled': False,
         'extensions.update.url': 'http://127.0.0.1/extensions-dummy/updateURL',
         'extensions.update.background.url': 'http://127.0.0.1/extensions-dummy/updateBackgroundURL',
         'extensions.blocklist.enabled': False,
@@ -296,7 +298,22 @@ the highest value.
         'media.peerconnection.enabled': True,
         'media.navigator.permission.disabled': True,
         'media.capturestream_hints.enabled': True,
-        'browser.cache.use_new_backend_temp': False
+        'browser.cache.use_new_backend_temp': False,
+        'browser.contentHandlers.types.0.uri': 'http://127.0.0.1/rss?url=%s',
+        'browser.contentHandlers.types.1.uri': 'http://127.0.0.1/rss?url=%s',
+        'browser.contentHandlers.types.2.uri': 'http://127.0.0.1/rss?url=%s',
+        'browser.contentHandlers.types.3.uri': 'http://127.0.0.1/rss?url=%s',
+        'browser.contentHandlers.types.4.uri': 'http://127.0.0.1/rss?url=%s',
+        'browser.contentHandlers.types.5.uri': 'http://127.0.0.1/rss?url=%s',
+        'identity.fxaccounts.auth.uri': 'https://127.0.0.1/fxa-dummy/',
+        'datareporting.healthreport.about.reportUrl': 'http://127.0.0.1/abouthealthreport/',
+        'datareporting.healthreport.documentServerURI': 'http://127.0.0.1/healthreport/',
+        'general.useragent.updates.enabled': False,
+        'browser.webapps.checkForUpdates': 0,
+        'browser.snippets.enabled': False,
+        'browser.snippets.syncPromo.enabled': False,
+        'toolkit.telemetry.server': 'https://127.0.0.1/telemetry-dummy/',
+        'network.http.speculative-parallel-limit': 0,
     }
 
     # keys to generated self.config that are global overrides to tests
