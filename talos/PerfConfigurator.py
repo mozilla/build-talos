@@ -150,6 +150,7 @@ the highest value.
                  'flags': []}),
         ('basetest', {'help': 'base data for all tests',
                       'default': {'cycles': 1,
+                                  'test_name_extension': '',
                                   'profile_path': '${talos}/base_profile',
                                   'responsiveness': False,
                                   'sps_profile': False,
@@ -319,6 +320,7 @@ the highest value.
 
     # keys to generated self.config that are global overrides to tests
     global_overrides = ['cycles',
+                        'test_name_extension',
                         'responsiveness',
                         'sps_profile',
                         'sps_profile_interval',
@@ -682,14 +684,14 @@ the highest value.
             # add test_name_extension to config
             # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/PerfConfigurator.py#l107
             noChrome = self.config.get('noChrome')
-            if noChrome or mozAfterPaint and not self.config.get('test_name_extension'):
+            if noChrome or mozAfterPaint:
                 # (it would be nice to handle this more elegantly)
                 test_name_extension = ''
                 if noChrome:
                     test_name_extension += '_nochrome'
                 if mozAfterPaint:
                     test_name_extension += '_paint'
-                self.config['test_name_extension'] = test_name_extension
+                test_instance.test_name_extension = test_name_extension
 
 
             if self.config.get('deviceroot'):

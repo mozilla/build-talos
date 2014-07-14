@@ -29,10 +29,9 @@ __all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'Bro
 class TalosResults(object):
     """Container class for Talos results"""
 
-    def __init__(self, title, date, browser_config, filters, remote=False, test_name_extension=''):
+    def __init__(self, title, date, browser_config, filters, remote=False):
         self.results = []
         self.filters = filters
-        self.test_name_extension = test_name_extension
         self.remote = remote
 
         # info needed for graphserver
@@ -111,6 +110,9 @@ class TestResults(object):
 
     def name(self):
         return self.test_config['name']
+
+    def extension(self):
+        return self.test_config['test_name_extension']
 
     def add(self, results, counter_results=None):
         """

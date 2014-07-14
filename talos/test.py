@@ -81,6 +81,7 @@ class TsBase(Test):
         'xperf_user_providers',
         'xperf_stackwalk',
         'tpmozafterpaint',
+        'test_name_extension',
         'setup',
         'cleanup',
         'fennecIDs',
@@ -249,7 +250,7 @@ class PageloaderTest(Test):
             'tptimeout', 'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'tpscrolltest',
             'remote_counters', 'xperf_counters', 'timeout', 'shutdown', 'responsiveness', 'profile_path',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences',
-            'extensions', 'setup', 'cleanup','fennecIDs'
+            'extensions', 'setup', 'cleanup','fennecIDs', 'test_name_extension'
             ]
 
 class tart(PageloaderTest):
@@ -274,6 +275,7 @@ class tart(PageloaderTest):
     tpcycles = 1
     tppagecycles = 25
     tploadnocache = True
+    tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 5000000
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
@@ -281,7 +283,9 @@ class tart(PageloaderTest):
     """ The recording API is broken with OMTC before ~2013-11-27 """
     """ After ~2013-11-27, disabling OMTC will also implicitly disable OGL HW composition """
     """ to disable OMTC with older firefox builds, also set 'layers.offmainthreadcomposition.enabled': False """
-    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    preferences = {'layout.frame_rate': 0,
+                   'docshell.event_starvation_delay_hint': 1,
+                   'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
 class cart(PageloaderTest):
@@ -300,10 +304,13 @@ class cart(PageloaderTest):
     tpcycles = 1
     tppagecycles = 25
     tploadnocache = True
+    tpmozafterpaint = False
     sps_profile_interval = 10
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
     """ ASAP mode """
-    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    preferences = {'layout.frame_rate': 0,
+                   'docshell.event_starvation_delay_hint': 1,
+                   'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
 class glterrain(PageloaderTest):
@@ -317,10 +324,13 @@ class glterrain(PageloaderTest):
     tpcycles = 1
     tppagecycles = 25
     tploadnocache = True
+    tpmozafterpaint = False
     sps_profile_interval = 10
     win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
     """ ASAP mode """
-    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    preferences = {'layout.frame_rate': 0,
+                   'docshell.event_starvation_delay_hint': 1,
+                   'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
 class tp(PageloaderTest):
@@ -400,7 +410,10 @@ class tp5o_scroll(PageloaderTest):
 
     tpscrolltest = True
     """ASAP mode"""
-    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    tpmozafterpaint = False
+    preferences = {'layout.frame_rate': 0,
+                   'docshell.event_starvation_delay_hint': 1,
+                   'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
 
@@ -442,6 +455,8 @@ class v8_7(PageloaderTest):
     sps_profile_entries = 200000
     tpcycles = 1
     resolution = 20
+    tpmozafterpaint = False
+    preferences = {'dom.send_after_paint_to_content': False}
 
 class kraken(PageloaderTest):
     """
@@ -453,6 +468,8 @@ class kraken(PageloaderTest):
     tppagecycles = 1
     sps_profile_interval = 10
     sps_profile_entries = 1000000
+    tpmozafterpaint = False
+    preferences = {'dom.send_after_paint_to_content': False}
     filters = [['mean', []]]
 
 class tcanvasmark(PageloaderTest):
@@ -468,6 +485,7 @@ class tcanvasmark(PageloaderTest):
     sps_profile_interval = 10
     sps_profile_entries = 2500000
     tpmozafterpaint = False
+    preferences = {'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
 class tscroll(PageloaderTest):
@@ -547,10 +565,13 @@ class tsvgx(tsvg):
     tpmanifest = '${talos}/page_load_test/svgx/svgx.manifest'
     tpcycles = 1
     tppagecycles = 25
+    tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 1000000
     """ASAP mode"""
-    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    preferences = {'layout.frame_rate': 0,
+                   'docshell.event_starvation_delay_hint': 1,
+                   'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [5]], ['median', []]]
 
 class tsvgr_opacity(tsvg_opacity):
@@ -582,10 +603,13 @@ class tscrollx(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 1
     tppagecycles = 25
+    tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 1000000
     """ ASAP mode """
-    preferences = {'layout.frame_rate': 0, 'docshell.event_starvation_delay_hint': 1}
+    preferences = {'layout.frame_rate': 0,
+                   'docshell.event_starvation_delay_hint': 1,
+                   'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [5]], ['median', []]]
 
 class a11yr(PageloaderTest):

@@ -186,7 +186,7 @@ class GraphserverOutput(Output):
             if test.format == 'tpformat':
                 # for some reason, we append the test extension to tp results but not ts
                 # http://hg.mozilla.org/build/talos/file/170c100911b6/talos/run_tests.py#l176
-                testname += self.results.test_name_extension
+                testname += test.extension()
 
             utils.stamped_msg("Generating results file: %s" % test.name(), "Started")
 
@@ -228,7 +228,7 @@ class GraphserverOutput(Output):
 
                     # append test name extension but only for tpformat tests
                     if test.format == 'tpformat':
-                        counterName += self.results.test_name_extension
+                        counterName += test.extension()
 
                     info = info_dict.copy()
                     info['testname'] = counterName

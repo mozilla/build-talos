@@ -262,8 +262,7 @@ def run_tests(configurator):
                                date=date,
                                browser_config=browser_config,
                                filters=filters,
-                               remote=browser_config['remote'],
-                               test_name_extension=browser_config['test_name_extension'])
+                               remote=browser_config['remote'])
 
   # results links
   results_urls, results_options = configurator.output_options()
