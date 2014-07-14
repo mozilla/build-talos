@@ -81,6 +81,71 @@ Report.prototype.getReport = function() {
   return report;
 }
 
+Report.prototype.getReportSummary = function() {
+
+  function average(arr) {
+    var sum = 0;
+    for (var i in arr)
+      sum += arr[i];
+    return sum / (arr.length || 1);
+  }
+
+  function median(arr) {
+    if (!arr.length)
+      return 0; // As good indication for "not available" as any other value.
+
+    var sorted = arr.slice(0).sort();
+    var mid = Math.floor(arr.length / 2);
+
+    if (sorted.length % 2)
+      return sorted[mid];
+
+    return average(sorted.slice(mid, mid + 2));
+  }
+
+  // We use sample stddev and not population stddev because
+  // well.. it's a sample and we can't collect all/infinite number of values.
+  function stddev(arr) {
+    if (arr.length <= 1) {
+      return 0;
+    }
+    var avg = average(arr);
+
+    var squareDiffArr = arr.map( function(v) { return Math.pow(v - avg, 2); } );
+    var sum = squareDiffArr.reduce( function(a, b) { return a + b; } );
+    var rv = Math.sqrt(sum / (arr.length - 1));
+    return rv;
+  }
+
+  var report = "";
+  var pages = this.pageNames();
+  var prefixLen = findCommonPrefixLength(pages);
+
+  report += "------- Summary: start -------\n";
+  report += "Number of tests: " + pages.length + "\n";
+
+  for (var i=0; i < pages.length; i++) {
+    var results = this.timeVals[pages[i]].map(function(v) {
+                                                return Number(v);
+                                              });
+
+    report += '\n[#'+ i + '] ' + pages[i].substr(prefixLen)
+            + '  Cycles:'  + results.length
+            + '  Average:' + average(results).toFixed(2)
+            + '  Median:'  + median(results).toFixed(2)
+            + '  stddev:'  + stddev(results).toFixed(2)
+            +     ' (' + (100 * stddev(results) / median(results)).toFixed(1) + '%)'
+            + (results.length < 5 ? '' : ('  stddev-sans-first:' + stddev(results.slice(1)).toFixed(2)))
+            + '\nValues: ' + results.map(function(v) {
+                                           return v.toFixed(1);
+                                         }).join("  ")
+            + "\n";
+  }
+  report += "-------- Summary: end --------\n";
+
+  return report;
+}
+
 Report.prototype.recordTime = function(pageName, ms) {
   if (this.timeVals[pageName] == undefined) {
     this.timeVals[pageName] = new Array();

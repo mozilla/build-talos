@@ -700,6 +700,7 @@ function plStopAll(force) {
 
       /* output report */
       dumpLine(report.getReport());
+      dumpLine(report.getReportSummary());
     }
   } catch (e) {
     dumpLine(e);
