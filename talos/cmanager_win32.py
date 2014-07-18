@@ -137,8 +137,14 @@ class WinCounterManager(CounterManager):
     # self.registeredCounters[counter][1] is a list of tuples, the first
     # member of which is a counter handle, the second a counter path
     for counter in counters:
+      # Main_RSS is collected inside of pageloader
       if counter.strip() == 'Main_RSS':
         continue
+
+      # mainthread_io is collected from the browser via environment variables
+      if counter.strip() == 'mainthread_io':
+        continue
+
       self.registeredCounters[counter] = []
 
   def _updateCounterPathsForChildProcesses(self, counter):

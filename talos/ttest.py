@@ -299,6 +299,13 @@ class TTest(object):
             # make profile path work cross-platform
             test_config['profile_path'] = os.path.normpath(test_config['profile_path'])
 
+            # add the mainthread_io to the environment variable, as defined in test.py configs
+            here = os.path.dirname(os.path.realpath(__file__))
+            if test_config['mainthread']:
+                mainthread_io = os.path.join(here, "mainthread_io.log")
+                utils.setEnvironmentVars({'MOZ_MAIN_THREAD_IO_LOG': mainthread_io})
+
+
             # Turn on the profiler on startup and write its output to a temp file
             sps_profile = test_config.get('sps_profile', False) and not browser_config['remote']
             sps_profile_file = None
@@ -406,9 +413,14 @@ class TTest(object):
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
                         talosconfig.generateTalosConfig(command_args, browser_config, test_config)
-                        setup = TalosProcess.TalosProcess(['python'] + test_config['setup'].split(), env=os.environ.copy())
-                        setup.run()
-                        setup.wait()
+                        setup = subprocess.Popen(['python'] + test_config['setup'].split(), env=os.environ.copy(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        stdout, stderr = setup.communicate()
+                        print "-----------------------------------------------------------------------------"
+                        print "output of setup command:"
+                        print stdout
+                        print stderr
+                        print "end of setup command output"
+                        print "-----------------------------------------------------------------------------"
 
                     self.isFinished = False
                     mm_httpd = None
@@ -436,6 +448,18 @@ class TTest(object):
  
                     if mm_httpd:
                         mm_httpd.stop()
+
+                    if test_config['mainthread']:
+                        rawlog = os.path.join(here, "mainthread_io.log")
+                        if os.path.exists(rawlog):
+                            processedlog = os.path.join(here, 'mainthread_io.json')
+                            xre_path = os.path.dirname(browser_config['browser_path'])
+                            mtio_py = os.path.join(here, 'mainthreadio.py')
+                            command = ['python', mtio_py, rawlog, processedlog, xre_path]
+                            mtio = TalosProcess.TalosProcess(command, env=os.environ.copy())
+                            mtio.run()
+                            mtio.wait()
+                            os.remove(rawlog)
 
                     if test_config['cleanup']:
                         #HACK: add the pid to support xperf where we require the pid in post processing
@@ -468,7 +492,7 @@ class TTest(object):
                 if not os.path.isfile(browser_log_filename):
                     raise TalosError("no output from browser [%s]" % browser_log_filename)
 
-                # ensure the browser log exists
+                # check for xperf errors
                 if os.path.exists(browser_config['error_filename']):
                     raise TalosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
 

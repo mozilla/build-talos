@@ -114,6 +114,9 @@ class TestResults(object):
     def extension(self):
         return self.test_config['test_name_extension']
 
+    def mainthread(self):
+        return self.test_config['mainthread']
+
     def add(self, results, counter_results=None):
         """
         accumulate one cycle of results
@@ -425,6 +428,8 @@ class BrowserLogResults(object):
         mainthread_counters = ['_'.join(['mainthread', counter_key])
                                for counter_key in mainthread_counter_keys]
 
+        self.mainthread_io(counter_results)
+
         if not set(counters).union(set(mainthread_counters)).intersection(counter_results.keys()):
             # no xperf counters to accumulate
             return
@@ -496,6 +501,21 @@ class BrowserLogResults(object):
                 counter_name = '%s_RSS' % type
                 if counter_name in counter_results:
                     counter_results[counter_name].append(value)
+
+    def mainthread_io(self, counter_results):
+        """record mainthread IO counters in counter_results dictionary"""
+
+        # we want to measure mtio on xperf runs.
+        # this will be shoved into the xperf results as we ignore those
+        SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
+        filename = os.path.join(SCRIPT_DIR, 'mainthread_io.json')
+        try:
+            contents = file(filename).read()
+            counter_results.setdefault('mainthreadio', []).append(contents)
+            self.using_xperf = True
+        except:
+            # silent failure is fine here as we will only see this on tp5n runs
+            pass
 
     def shutdown(self, counter_results):
         """record shutdown time in counter_results dictionary"""

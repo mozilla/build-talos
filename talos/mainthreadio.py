@@ -12,6 +12,8 @@ import os
 import pprint
 import whitelist
 
+SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
+
 STAGE_STARTUP = 0
 STAGE_NORMAL = 1
 STAGE_SHUTDOWN = 2
@@ -39,7 +41,7 @@ PATH_SUBSTITUTIONS = {'profile': '{profile}', 'firefox': '{xre}',
 NAME_SUBSTITUTIONS = {'installtime': '{time}', 'prefetch': '{prefetch}'}
 
 TUPLE_FILENAME_INDEX = 2
-WHITELIST_FILENAME = 'mtio-whitelist.json'
+WHITELIST_FILENAME = os.path.join(SCRIPT_DIR, 'mtio-whitelist.json')
 
 def parse(logfilename, data):
     try:

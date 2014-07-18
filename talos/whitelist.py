@@ -45,16 +45,16 @@ class whitelist:
         filename.replace(' (x86)', '')
 
         for path, subst in self.path_substitutions.iteritems():
-            pathname = "%s\\" % path
+            pathname = "%s%s" % (path, os.path.sep)
             parts = filename.split(pathname)
             if len(parts) >= 2:
-                filename = "%s\\%s" % (subst, pathname.join(parts[1:]))
+                filename = "%s%s%s" % (subst, os.path.sep, pathname.join(parts[1:]))
 
         for old_name, new_name in self.name_substitutions.iteritems():
-            pathname = "\\%s" % old_name
+            pathname = "%s%s" % (os.path.sep, old_name)
             parts = filename.split(pathname)
             if len(parts) >= 2:
-                filename = "%s\\%s" % (parts[0], new_name)
+                filename = "%s%s%s" % (parts[0], os.path.sep, new_name)
 
         return filename
 
@@ -102,11 +102,11 @@ class whitelist:
     # the dependent_libs, we would need to filter them out if everything was
     # stored in the same dict.
     def load_dependent_libs(self):
-        filename = "%s\\dependentlibs.list" % self.paths[KEY_XRE]
+        filename = "%s%sdependentlibs.list" % (self.paths[KEY_XRE], os.path.sep)
         try:
             with open(filename, 'r') as f:
                 libs = f.readlines()
-            self.dependent_libs = {"%s\\%s" % (KEY_XRE, lib.strip()): {'ignore': True} for lib in libs}
+            self.dependent_libs = {"%s%s%s" % (KEY_XRE, os.path.sep, lib.strip()): {'ignore': True} for lib in libs}
             return True
         except IOError as e:
             print "%s: %s" % (e.filename, e.strerror)

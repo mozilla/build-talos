@@ -69,6 +69,8 @@ for datazilla auth.  Should have keys 'oauthSecret' and 'oauthKey'"""}),
                        'type': bool}),
         ('rss', {'help': "Collect RSS counters from pageloader instead of the operating system",
                  'type': bool}),
+        ('mainthread', {'help': "Collect mainthread IO data from the browser by setting an environment variable",
+                 'type': bool}),
         ('tpmozafterpaint', {'help': 'wait for MozAfterPaint event before recording the time',
                              'type': bool,
                              'flags': ['--mozAfterPaint']}),
@@ -158,6 +160,7 @@ the highest value.
                                   'sps_profile_entries': 100000,
                                   'resolution': 1,
                                   'rss': False,
+                                  'mainthread': False,
                                   'shutdown': False,
                                   'timeout': 3600,
                                   'tpchrome': True,
@@ -326,6 +329,7 @@ the highest value.
                         'sps_profile_interval',
                         'sps_profile_entries',
                         'rss',
+                        'mainthread',
                         'shutdown',
                         'tpcycles',
                         'tpdelay',
@@ -339,7 +343,8 @@ the highest value.
     filters = ['ignore_max', 'median']
 
     # counters turned on by CLI options
-    counters = {'rss': ['Main_RSS']}
+    counters = {'rss': ['Main_RSS'],
+                'mainthreadio': ['mainthread_io']}
 
     # config items to extend vs overwrite
     extend = set(['basetest', 'extraPrefs'])

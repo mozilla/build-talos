@@ -177,9 +177,7 @@ class GraphserverOutput(Output):
                          )
 
         for test in self.results.results:
-
             utils.debug("Working with test: %s", test.name())
-
 
             # get full name of test
             testname = test.name()
@@ -221,6 +219,9 @@ class GraphserverOutput(Output):
 
                     # exclude counters whose values are tuples (bad for graphserver)
                     if len(values) > 0 and isinstance(values[0], list):
+                        continue
+
+                    if test.mainthread() and 'mainthreadio' in counterName:
                         continue
 
                     # counter values
@@ -289,7 +290,12 @@ class GraphserverOutput(Output):
             buffer.write("%s\n" % average)
         else:
             for i, (val, page) in enumerate(vals):
-                buffer.write("%d,%.2f,%s\n" % (i,float(val), page))
+                try:
+                    buffer.write("%d,%.2f,%s\n" % (i,float(val), page))
+                except ValueError, e:
+                    utils.info("We expected a numeric value and recieved '%s' instead" % val)
+                    pass
+
         buffer.write("END")
         return buffer.getvalue()
 
