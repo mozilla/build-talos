@@ -298,6 +298,7 @@ the highest value.
         'extensions.getAddons.search.browseURL': 'http://127.0.0.1/extensions-dummy/repositoryBrowseURL',
         'extensions.getAddons.search.url': 'http://127.0.0.1/extensions-dummy/repositorySearchURL',
         'plugins.update.url': 'http://127.0.0.1/plugins-dummy/updateCheckURL',
+        'media.gmp-manager.url': 'https://127.0.0.1/gmpmanager-dummy/update.xml',
         'media.navigator.enabled': True,
         'media.peerconnection.enabled': True,
         'media.navigator.permission.disabled': True,
