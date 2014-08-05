@@ -278,6 +278,12 @@ class TTest(object):
         else:
             utils.setEnvironmentVars({'MOZ_CRASHREPORTER_DISABLE': '1'})
 
+        # Crash on non-local network connections.
+        # Not enabled for Android tprovider due to yet to be diagnosed connections
+        # to safebrowsing.google.com.
+        if test_config['name'] != 'tprovider':
+            utils.setEnvironmentVars({'MOZ_DISABLE_NONLOCAL_CONNECTIONS': '1'})
+
         utils.setEnvironmentVars({"LD_LIBRARY_PATH" : os.path.dirname(browser_config['browser_path'])})
 
         profile_dir = None
