@@ -246,7 +246,7 @@ class PageloaderTest(Test):
     timeout = None
     filters = None
     keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadnocache',
-            'rss', 'resolution', 'cycles', 'sps_profile', 'sps_profile_interval', 'sps_profile_entries',
+            'rss', 'mainthread', 'resolution', 'cycles', 'sps_profile', 'sps_profile_interval', 'sps_profile_entries',
             'tptimeout', 'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'tpscrolltest',
             'remote_counters', 'xperf_counters', 'timeout', 'shutdown', 'responsiveness', 'profile_path',
             'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences',
@@ -376,27 +376,53 @@ class tp5n(tp):
     """
     tpmanifest = '${talos}/page_load_test/tp5n/tp5n.manifest'
     tpcycles = 1
-    tppagecycles = 25
+    tppagecycles = 1
+    cycles = 1
     tpmozafterpaint = True
     tptimeout = 5000
     rss = True
+    mainthread = True
+    w7_counters = []
+    win_counters = []
+    linux_counters = []
+    remote_counters = []
+    mac_counters = []
+    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'mainthread_readcount', 'mainthread_readbytes', 'mainthread_writecount', 'mainthread_writebytes']
+    xperf_providers = ['PROC_THREAD', 'LOADER', 'HARD_FAULTS', 'FILENAME', 'FILE_IO', 'FILE_IO_INIT']
+    xperf_user_providers = ['Mozilla Generic Provider', 'Microsoft-Windows-TCPIP']
+    xperf_stackwalk = ['FileCreate', 'FileRead', 'FileWrite', 'FileFlush', 'FileClose']
+    mobile = False # too many files to run, we will hit OOM
+    filters = [["ignore_first", [1]], ['median', []]]
+    timeout = 1800
+    setup = '${talos}/xtalos/start_xperf.py ${talos}/bcontroller.yml'
+    cleanup = '${talos}/xtalos/parse_xperf.py ${talos}/bcontroller.yml'
+    preferences = {'extensions.autoDisableScopes': '',
+                   'extensions.enabledScopes': '',
+                   'talos.logfile': 'browser_output.txt'}
+
+
+class tp5o(PageloaderTest):
+    """
+    Derived from the tp5n pageset, this is the 49 most reliable webpages.
+    """
+    tpcycles = 1
+    tppagecycles = 25
+    cycles = 1
+    tpmozafterpaint = True
+    tptimeout = 5000
+    rss = True
+    mainthread = False
+    tpmanifest = '${talos}/page_load_test/tp5n/tp5o.manifest'
     win_counters = ['Main_RSS', 'Private Bytes', '% Processor Time']
     w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS']
     mac_counters = ['Private Bytes', 'Main_RSS']
-    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'mainthread_readcount', 'mainthread_readbytes', 'mainthread_writecount', 'mainthread_writebytes']
-    mobile = False # too many files to run, we will hit OOM
-    filters = [["ignore_first", [5]], ['median', []]]
-    timeout = 1800
-
-class tp5o(tp5n):
-    """
-    Derived from the tp5n pageset, this is the 49 most reliable webpages.
-    """
-    tpmanifest = '${talos}/page_load_test/tp5n/tp5o.manifest'
     responsiveness = True
     sps_profile_interval = 10
     sps_profile_entries = 2000000
+    mobile = False # too many files to run, we will hit OOM
+    filters = [["ignore_first", [5]], ['median', []]]
+    timeout = 1800
 
 class tp5o_scroll(PageloaderTest):
     """
@@ -622,6 +648,7 @@ class a11yr(PageloaderTest):
     tpcycles = 1
     tppagecycles = 25
     tpmozafterpaint = True
+    preferences = {'dom.send_after_paint_to_content': False}
     mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
 
 # global test data
