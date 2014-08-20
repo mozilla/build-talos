@@ -303,7 +303,6 @@ the highest value.
         'media.peerconnection.enabled': True,
         'media.navigator.permission.disabled': True,
         'media.capturestream_hints.enabled': True,
-        'browser.cache.use_new_backend_temp': False,
         'browser.contentHandlers.types.0.uri': 'http://127.0.0.1/rss?url=%s',
         'browser.contentHandlers.types.1.uri': 'http://127.0.0.1/rss?url=%s',
         'browser.contentHandlers.types.2.uri': 'http://127.0.0.1/rss?url=%s',
