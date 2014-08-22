@@ -223,7 +223,10 @@ class FFSetup(object):
         user_js_filename = os.path.join(profile_dir, 'user.js')
         user_js_file = open(user_js_filename, 'w')
         for pref in prefs:
-            user_js_file.write(self.PrefString(pref, prefs[pref], '\n'))
+            value = prefs[pref]
+            if (type(value) is str):
+                value = utils.interpolatePath(value, webserver=webserver)
+            user_js_file.write(self.PrefString(pref, value, '\n'))
 
         user_js_file.close()
 
