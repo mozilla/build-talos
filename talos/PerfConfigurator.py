@@ -315,6 +315,7 @@ the highest value.
         'identity.fxaccounts.auth.uri': 'https://127.0.0.1/fxa-dummy/',
         'datareporting.healthreport.about.reportUrl': 'http://127.0.0.1/abouthealthreport/',
         'datareporting.healthreport.documentServerURI': 'http://127.0.0.1/healthreport/',
+        'datareporting.policy.dataSubmissionPolicyBypassNotification': True,
         'general.useragent.updates.enabled': False,
         'browser.webapps.checkForUpdates': 0,
         'browser.snippets.enabled': False,
