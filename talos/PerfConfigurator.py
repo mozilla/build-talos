@@ -323,6 +323,7 @@ the highest value.
         'toolkit.telemetry.server': 'https://127.0.0.1/telemetry-dummy/',
         'experiments.manifest.uri': 'https://127.0.0.1/experiments-dummy/manifest',
         'network.http.speculative-parallel-limit': 0,
+        'browser.displayedE10SPrompt': 9999,
     }
 
     # keys to generated self.config that are global overrides to tests
