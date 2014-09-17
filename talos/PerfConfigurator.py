@@ -12,6 +12,7 @@ import filter
 import os
 import sys
 import copy
+import mozdevice
 import moznetwork
 import socket
 import test
@@ -20,12 +21,6 @@ from configuration import Configuration
 from configuration import YAML
 from datetime import datetime
 
-try:
-    import mozdevice
-except:
-    # mozdevice is known not to import correctly with python 2.4, which we
-    # still support
-    mozdevice = None
 
 __all__ = ['ConfigurationError', 'PerfConfigurator', 'main']
 

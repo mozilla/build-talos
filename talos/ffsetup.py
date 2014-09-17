@@ -18,9 +18,8 @@ import glob
 import zipfile
 from xml.dom import minidom
 
-from utils import TalosError, zip_extractall,MakeDirectoryContentsWritable
+from utils import TalosError, MakeDirectoryContentsWritable
 import utils
-import subprocess
 
 import TalosProcess
 
@@ -125,7 +124,7 @@ class FFSetup(object):
             addonSrcPath = addon
         else:
             tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
-            zip_extractall(zipfile.ZipFile(addon), tmpdir)
+            zipfile.ZipFile(addon).extractall(tmpdir)
             addonSrcPath = tmpdir
 
         doc = minidom.parse(os.path.join(addonSrcPath, 'install.rdf'))

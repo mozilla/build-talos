@@ -10,6 +10,7 @@ see https://wiki.mozilla.org/Buildbot/Talos/DataFormat
 """
 
 import filter
+import json
 import optparse
 import os
 import output
@@ -18,11 +19,6 @@ import sys
 import time
 import utils
 import csv
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 __all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'BrowserLogResults', 'main']
 

@@ -2,11 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import subprocess
-#HACK - http://www.gossamer-threads.com/lists/python/bugs/593800
-#To stop non-threadsafe popen nonsense, should be removed when we upgrade to
-#python 2.5 or later
-subprocess._cleanup = lambda: None
 import signal
 import os
 import time

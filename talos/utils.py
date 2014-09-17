@@ -94,23 +94,6 @@ def readConfigFile(filename):
     config_file.close()
     return yaml_config
 
-def zip_extractall(zipfile, rootdir):
-    #moved from ffsetup.py only required for python versions lower than 2.6
-    """Python 2.4 compatibility instead of ZipFile.extractall."""
-    for name in zipfile.namelist():
-        if name.endswith('/'):
-            if not os.path.exists(os.path.join(rootdir, name)):
-                os.makedirs(os.path.join(rootdir, name))
-        else:
-            destfile = os.path.join(rootdir, name)
-            destdir = os.path.dirname(destfile)
-            if not os.path.isdir(destdir):
-                os.makedirs(destdir)
-            data = zipfile.read(name)
-            f = open(destfile, 'wb')
-            f.write(data)
-            f.close()
-
 def is_running(pid, psarg='axwww'):
     """returns if a pid is running"""
     return bool([i for i in mozpid.ps(psarg) if pid == int(i['PID'])])

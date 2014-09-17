@@ -22,17 +22,11 @@ import time
 import utils
 import copy
 import mozcrash
+import mozdevice
 import talosconfig
 import shutil
 import zipfile
 from threading import Thread
-
-try:
-    import mozdevice
-except:
-    # mozdevice is known not to import correctly with python 2.4, which we
-    # still support
-    pass
 
 from utils import TalosError, TalosCrash, TalosRegression
 from ffprocess_linux import LinuxProcess

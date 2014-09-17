@@ -7,6 +7,7 @@
 import datetime
 import filter
 import imp
+import json
 import mozinfo
 import os
 import post_file
@@ -16,11 +17,6 @@ import urllib
 import utils
 from StringIO import StringIO
 from dzclient import DatazillaRequest, DatazillaResult, DatazillaResultsCollection
-
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 def filesizeformat(bytes):
     """

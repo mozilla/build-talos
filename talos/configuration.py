@@ -18,13 +18,7 @@ import os
 import optparse
 
 # imports for configuration providers
-try:
-    import json
-except ImportError:
-    try:
-        import simplejson as json
-    except ImportError:
-        json = None
+import json
 try:
     import yaml
 except ImportError:
