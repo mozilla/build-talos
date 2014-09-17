@@ -14,13 +14,13 @@ selector = '/api/test/runs'
 debug = 1
 
 branch_map = {}
-branch_map['Try']     = {'pgo':    {'id': 23, 'name': 'Try'}, 
+branch_map['Try']     = {'pgo':    {'id': 23, 'name': 'Try'},
                          'nonpgo': {'id': 113, 'name': 'Try'}}
-branch_map['Firefox'] = {'pgo':    {'id': 1,  'name': 'Firefox'}, 
+branch_map['Firefox'] = {'pgo':    {'id': 1,  'name': 'Firefox'},
                          'nonpgo': {'id': 94, 'name': 'Firefox-Non-PGO'}}
-branch_map['Inbound'] = {'pgo':    {'id': 63, 'name': 'Mozilla-Inbound'}, 
+branch_map['Inbound'] = {'pgo':    {'id': 63, 'name': 'Mozilla-Inbound'},
                          'nonpgo': {'id': 131, 'name': 'Mozilla-Inbound-Non-PGO'}}
-branch_map['Cedar']   = {'pgo':    {'id': 26, 'name': 'Cedar'}, 
+branch_map['Cedar']   = {'pgo':    {'id': 26, 'name': 'Cedar'},
                          'nonpgo': {'id': 26, 'name': 'Cedar'}}
 branch_map['UX']      = {'pgo':    {'id': 59, 'name': 'UX'},
                          'nonpgo': {'id': 137, 'name': 'UX-Non-PGO'}}
@@ -136,8 +136,8 @@ def getDatazillaCSET(revision, branchid):
 
     for testrun in cdata:
         values = []
-        platform = getDatazillaPlatform(testrun['test_machine']['os'], 
-                                        testrun['test_machine']['platform'], 
+        platform = getDatazillaPlatform(testrun['test_machine']['os'],
+                                        testrun['test_machine']['platform'],
                                         testrun['test_machine']['osversion'],
                                         testrun['test_build']['name'])
 
@@ -179,7 +179,7 @@ def getDatazillaCSET(revision, branchid):
                 index = 0
 
             vals = sorted(testrun['results'][page][index:])[:-1]
-            
+
             if len(vals) == 0:
                 vals = [0]
             values.append(float(sum(vals))/len(vals))
@@ -203,7 +203,7 @@ def getDatazillaCSET(revision, branchid):
     return testdata, pgodata, xperfdata
 
 def getDatazillaData(branchid):
-    # TODO: resolve date, currently days_ago=7, 
+    # TODO: resolve date, currently days_ago=7,
 
     # https://datazilla.mozilla.org/refdata/pushlog/list/?days_ago=7&branches=Mozilla-Inbound
     conn = httplib.HTTPSConnection('datazilla.mozilla.org')
@@ -275,7 +275,7 @@ def compareResults(revision, branch, masterbranch, startdate, enddate, platforms
             bid = branch_map[masterbranch]['nonpgo']['id']
             if p.startswith('OSX') or pgo:
                 bid = branch_map[masterbranch]['pgo']['id']
-        
+
             data = getGraphData(test_map[t]['id'], bid, platform_map[p])
             testdata = getGraphData(test_map[t]['id'], test_bid, platform_map[p])
             if data and testdata:
@@ -305,53 +305,53 @@ def compareResults(revision, branch, masterbranch, startdate, enddate, platforms
 
 class CompareOptions(OptionParser):
 
-  def __init__(self):
-    OptionParser.__init__(self)
+    def __init__(self):
+        OptionParser.__init__(self)
 
-    self.add_option("--revision",
-                    action = "store", type = "string", dest = "revision",
-                    default = None,
-                    help = "revision of the source you are testing")
+        self.add_option("--revision",
+                        action = "store", type = "string", dest = "revision",
+                        default = None,
+                        help = "revision of the source you are testing")
 
-    self.add_option("--branch",
-                    action = "store", type = "string", dest = "branch",
-                    default = "Try",
-                    help = "branch that your revision landed on which you are testing, default 'Try'.  Options are: %s" % (branches))
+        self.add_option("--branch",
+                        action = "store", type = "string", dest = "branch",
+                        default = "Try",
+                        help = "branch that your revision landed on which you are testing, default 'Try'.  Options are: %s" % (branches))
 
-    self.add_option("--masterbranch",
-                    action = "store", type = "string", dest = "masterbranch",
-                    default = "Firefox",
-                    help = "master branch that you will be comparing against, default 'Firefox'.  Options are: %s" % (branches))
+        self.add_option("--masterbranch",
+                        action = "store", type = "string", dest = "masterbranch",
+                        default = "Firefox",
+                        help = "master branch that you will be comparing against, default 'Firefox'.  Options are: %s" % (branches))
 
-    self.add_option("--skipdays",
-                    action = "store", type = "int", dest = "skipdays",
-                    default = 0,
-                    help = "Specify the number of days to ignore results, default '0'.  Note: If a regression landed 4 days ago, use --skipdays=5")
+        self.add_option("--skipdays",
+                        action = "store", type = "int", dest = "skipdays",
+                        default = 0,
+                        help = "Specify the number of days to ignore results, default '0'.  Note: If a regression landed 4 days ago, use --skipdays=5")
 
-    self.add_option("--platform",
-                    action = "append", type = "choice", dest = "platforms",
-                    default = None, choices = platforms,
-                    help = "Specify a single platform to compare. This option can be specified multiple times and defaults to 'All' if not specified.  Options are: %s" % (platforms))
+        self.add_option("--platform",
+                        action = "append", type = "choice", dest = "platforms",
+                        default = None, choices = platforms,
+                        help = "Specify a single platform to compare. This option can be specified multiple times and defaults to 'All' if not specified.  Options are: %s" % (platforms))
 
-    self.add_option("--testname",
-                    action = "append", type = "choice", dest = "testnames",
-                    default = None, choices = tests,
-                    help = "Specify a single test to compare. This option can be specified multiple times and defaults to 'All' if not specified. Options are: %s" % (tests))
+        self.add_option("--testname",
+                        action = "append", type = "choice", dest = "testnames",
+                        default = None, choices = tests,
+                        help = "Specify a single test to compare. This option can be specified multiple times and defaults to 'All' if not specified. Options are: %s" % (tests))
 
-    self.add_option("--print-graph-url",
-                    action = "store_true", dest = "printurl",
-                    default = False,
-                    help = "Print a url that can link to the data in graph server")
+        self.add_option("--print-graph-url",
+                        action = "store_true", dest = "printurl",
+                        default = False,
+                        help = "Print a url that can link to the data in graph server")
 
-    self.add_option("--pgo",
-                    action = "store_true", dest = "pgo",
-                    default = False,
-                    help = "Use PGO Branch if available")
+        self.add_option("--pgo",
+                        action = "store_true", dest = "pgo",
+                        default = False,
+                        help = "Use PGO Branch if available")
 
-    self.add_option("--xperf",
-                    action = "store_true", dest = "xperf",
-                    default = False,
-                    help = "Print xperf information")
+        self.add_option("--xperf",
+                        action = "store_true", dest = "xperf",
+                        default = False,
+                        help = "Print xperf information")
 
 def main():
     global platforms, tests
@@ -385,7 +385,7 @@ def main():
     startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(options.skipdays+14))).timetuple()))
     enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=options.skipdays)).timetuple()))
 
-    #TODO: We need to ensure we have full coverage of the pushlog before we can do this.  
+    #TODO: We need to ensure we have full coverage of the pushlog before we can do this.
 #    alldata = getDatazillaData(options.branch)
 #    datazilla, pgodatazilla, xperfdata = alldata[options.revision]
     datazilla, pgodatazilla, xperfdata = getDatazillaCSET(options.revision, branch)
@@ -412,5 +412,3 @@ def shorten(url):
 
 if __name__ == "__main__":
     main()
-
-

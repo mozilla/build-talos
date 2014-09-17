@@ -54,62 +54,62 @@ _DEFAULT_REC_DURATION_    = 10      # Defaults to 10 seconds worth of recording
 """
 class AudioRecorder(threading.Thread):
 
-  def __init__(self, parent, output_file):
-      self.output_file = output_file
-      threading.Thread.__init__(self)
+    def __init__(self, parent, output_file):
+        self.output_file = output_file
+        threading.Thread.__init__(self)
 
-  # Set record duration, typically set to length
-  # of the audio test being run.
-  def setDuration(self, duration):
-      self.rec_duration = duration
+    # Set record duration, typically set to length
+    # of the audio test being run.
+    def setDuration(self, duration):
+        self.rec_duration = duration
 
-  # Set source monitor for recording
-  # We pick the first monitor for the sink available
-  def setRecordingDevice(self, device):
-      self.rec_device = device
-      # Adjust volume of the sink to 100%, since quality was
-      # bit degraded when this was not done.
-      cmd = ['pacmd', 'set-source-volume', self.rec_device, _VOLUME_100_PERCENT_]
-      cmd = [str(s) for s in cmd]
-      try:
-          p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-          p.communicate()
-      except:
-          return False, "Audio Recorder : pacmd set-source-volume failed"
+    # Set source monitor for recording
+    # We pick the first monitor for the sink available
+    def setRecordingDevice(self, device):
+        self.rec_device = device
+        # Adjust volume of the sink to 100%, since quality was
+        # bit degraded when this was not done.
+        cmd = ['pacmd', 'set-source-volume', self.rec_device, _VOLUME_100_PERCENT_]
+        cmd = [str(s) for s in cmd]
+        try:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p.communicate()
+        except:
+            return False, "Audio Recorder : pacmd set-source-volume failed"
 
-      # no need to set the success message, since this function
-      # is used internally
-      return True
+        # no need to set the success message, since this function
+        # is used internally
+        return True
 
-  # Start recording.
-  def run(self):
+    # Start recording.
+    def run(self):
 
-      if not self.rec_device:
-          return
+        if not self.rec_device:
+            return
 
-      if not self.rec_duration:
-          self.rec_duration = _DEFAULT_REC_DURATION_
+        if not self.rec_duration:
+            self.rec_duration = _DEFAULT_REC_DURATION_
 
-      # PACAT command to record 16 bit singned little endian mono channel
-      # audio from the sink self.rec_device
-      pa_command = ['pacat', '-r', '-d', self.rec_device, '--format=s16le',
-                    '--fix-rate', '--channels=1']
-      pa_command =  [str(s) for s in pa_command]
+        # PACAT command to record 16 bit singned little endian mono channel
+        # audio from the sink self.rec_device
+        pa_command = ['pacat', '-r', '-d', self.rec_device, '--format=s16le',
+                      '--fix-rate', '--channels=1']
+        pa_command =  [str(s) for s in pa_command]
 
-      # Sox command to convert raw audio from PACAT output to .wav format"
-      sox_command = ['sox', '-t', 'raw', '-r',_SAMPLE_RATE_,'--encoding=signed-integer',
-                     '-Lb', 16,'-c', _NUM_CHANNELS_, '-', self.output_file, 'rate', '16000', 'trim', 0,
-                     self.rec_duration]
+        # Sox command to convert raw audio from PACAT output to .wav format"
+        sox_command = ['sox', '-t', 'raw', '-r',_SAMPLE_RATE_,'--encoding=signed-integer',
+                       '-Lb', 16,'-c', _NUM_CHANNELS_, '-', self.output_file, 'rate', '16000', 'trim', 0,
+                       self.rec_duration]
 
-      sox_command =  [str(s) for s in sox_command]
+        sox_command =  [str(s) for s in sox_command]
 
-      # Run the commands the PIPE them together
-      p1 = subprocess.Popen(pa_command, stdout=subprocess.PIPE)
-      p2 = subprocess.Popen(sox_command, stdin=p1.stdout, stdout=subprocess.PIPE)
-      retcode = p2.communicate()[0]
-      # No need to kill p2 since it is terminated as part of trim duration
-      if p1:
-          p1.kill()
+        # Run the commands the PIPE them together
+        p1 = subprocess.Popen(pa_command, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(sox_command, stdin=p1.stdout, stdout=subprocess.PIPE)
+        retcode = p2.communicate()[0]
+        # No need to kill p2 since it is terminated as part of trim duration
+        if p1:
+            p1.kill()
 
 '''
 Utility class for managing pre and post recording operations

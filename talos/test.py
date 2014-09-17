@@ -54,7 +54,7 @@ class Test(object):
 
 ### ts-style startup tests (ts, twinopen, ts_cold, etc)
 ### The overall test number is calculated by excluding the max opening time
-### and taking an average of the remaining numbers. 
+### and taking an average of the remaining numbers.
 
 class TsBase(Test):
     """abstract base class for ts-style tests"""
@@ -92,13 +92,13 @@ class TsBase(Test):
                          # rather than a more recent copy).
     ]
 
-        
+
 class ts(TsBase):
     """
     A basic start up test (ts = test start up)
-    
-    The overall test number is calculated by excluding the max opening time 
-    and taking an average of the remaining numbers. 
+
+    The overall test number is calculated by excluding the max opening time
+    and taking an average of the remaining numbers.
     Unlike ts_paint, ts test uses a blank profile.
     """
     cycles = 20
@@ -122,9 +122,9 @@ class tpaint(TsBase):
     """
     Tests the amount of time it takes the open a new window. This test does
     not include startup time. Multiple test windows are opened in succession,
-    results reported are the average amount of time required to create and 
-    display a window in the running instance of the browser. 
-    (Measures ctrl-n performance.) 
+    results reported are the average amount of time required to create and
+    display a window in the running instance of the browser.
+    (Measures ctrl-n performance.)
     """
     url = 'file://${talos}/startup_test/tpaint.html?auto=1'
     timeout = 300
@@ -233,7 +233,7 @@ class media_tests(TsBase):
 ### pageloader tests(tp5, tdhtml, etc)
 
 ### The overall test number is determined by first calculating the median
-### page load time for each page in the set (excluding the max page load 
+### page load time for each page in the set (excluding the max page load
 ### per individual page). The max median from that set is then excluded and
 ### the average is taken; that becomes the number reported to the tinderbox
 ### waterfall.
@@ -336,10 +336,10 @@ class glterrain(PageloaderTest):
 class tp(PageloaderTest):
     """
     Base class for all tp based tests (tp = test pageload)
-    
-    The original tp test created by Mozilla to test browser page load time. 
-    Cycled through 40 pages. The pages were copied from the live web during 
-    November, 2000. Pages were cycled by loading them within the main 
+
+    The original tp test created by Mozilla to test browser page load time.
+    Cycled through 40 pages. The pages were copied from the live web during
+    November, 2000. Pages were cycled by loading them within the main
     browser window from a script that lived in content.
     """
     tpmanifest = '${talos}/page_load_test/tp3.manifest'
@@ -353,8 +353,8 @@ class tp(PageloaderTest):
 
 class tp4m(tp):
     """
-    This is a smaller pageset (21 pages) of the updated web page test which 
-    was set to 100 pages from February 2009. It is designed for mobile 
+    This is a smaller pageset (21 pages) of the updated web page test which
+    was set to 100 pages from February 2009. It is designed for mobile
     Firefox and is a blend of regular and mobile friendly pages.
     """
     tpmanifest = '${talos}/page_load_test/tp4m.manifest'
@@ -368,11 +368,11 @@ class tp4m(tp):
 class tp5n(tp):
     """
     Tests the time it takes Firefox to load the tp5 web page test set.
-    
+
     The tp5 is an updated web page test set to 100 pages from April 8th, 2011.
-    Effort was made for the pages to no longer be splash screens/login 
-    pages/home pages but to be pages that better reflect the actual content 
-    of the site in question. 
+    Effort was made for the pages to no longer be splash screens/login
+    pages/home pages but to be pages that better reflect the actual content
+    of the site in question.
     """
     tpmanifest = '${talos}/page_load_test/tp5n/tp5n.manifest'
     tpcycles = 1
@@ -446,15 +446,15 @@ class tp5o_scroll(PageloaderTest):
 class tdhtml(PageloaderTest):
     """
     Tests which measure the time to cycle through a set of DHTML test pages.
-    This test will be updated in the near future. 
-    This test is also ran with the nochrome option. 
+    This test will be updated in the near future.
+    This test is also ran with the nochrome option.
     """
     tpmanifest = '${talos}/page_load_test/dhtml/dhtml.manifest'
     tpcycles = 5
 
 class tsvg(PageloaderTest):
     """
-    An svg-only number that measures SVG rendering performance. 
+    An svg-only number that measures SVG rendering performance.
     """
     tpmanifest = '${talos}/page_load_test/svg/svg.manifest'
     tpcycles = 5
@@ -463,7 +463,7 @@ class tsvg(PageloaderTest):
 
 class tsvg_opacity(PageloaderTest):
     """
-    An svg-only number that measures SVG rendering performance. 
+    An svg-only number that measures SVG rendering performance.
     """
     tpmanifest = '${talos}/page_load_test/svg_opacity/svg_opacity.manifest'
     tpcycles = 5
@@ -474,7 +474,7 @@ class v8_7(PageloaderTest):
     slightly modified to fit into our pageloader extension and talos harness.
 
     The previous version of this test is V8 version 5 which was run on
-    selective branches and operating systems. 
+    selective branches and operating systems.
     """
     tpmanifest = '${talos}/page_load_test/v8_7/v8.manifest'
     sps_profile_interval = 10
@@ -487,7 +487,7 @@ class v8_7(PageloaderTest):
 class kraken(PageloaderTest):
     """
     This is the Kraken javascript benchmark taken verbatim and slightly
-    modified to fit into our pageloader extension and talos harness.     
+    modified to fit into our pageloader extension and talos harness.
     """
     tpmanifest = '${talos}/page_load_test/kraken/kraken.manifest'
     tpcycles = 1
@@ -530,8 +530,8 @@ class dromaeo_css(dromaeo):
     Dromaeo suite of tests for JavaScript performance testing.
     See the Dromaeo wiki (https://wiki.mozilla.org/Dromaeo)
     for more information.
-    
-    Each page in the manifest is part of the dromaemo css benchmark. 
+
+    Each page in the manifest is part of the dromaemo css benchmark.
     """
     sps_profile_samples = 10
     sps_profile_entries = 5000000
@@ -542,8 +542,8 @@ class dromaeo_dom(dromaeo):
     Dromaeo suite of tests for JavaScript performance testing.
     See the Dromaeo wiki (https://wiki.mozilla.org/Dromaeo)
     for more information.
-    
-    Each page in the manifest is part of the dromaemo dom benchmark. 
+
+    Each page in the manifest is part of the dromaemo dom benchmark.
     """
     sps_profile_interval = 10
     sps_profile_entries = 5000000
@@ -552,7 +552,7 @@ class dromaeo_dom(dromaeo):
 class a11y(PageloaderTest):
     """
     This test ensures basic a11y tables and permutations do not cause
-    performance regressions. 
+    performance regressions.
     """
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpmozafterpaint = True
@@ -566,9 +566,9 @@ class a11y(PageloaderTest):
 class tdhtmlr(tdhtml):
     """
     Tests which measure the time to cycle through a set of DHTML test pages.
-    This test will be updated in the near future. Unlike tdhtml, this test 
+    This test will be updated in the near future. Unlike tdhtml, this test
     is row-based instead of column based.
-    This test is also ran with the nochrome option. 
+    This test is also ran with the nochrome option.
     """
     tpcycles = 1
     tppagecycles = 25
@@ -603,7 +603,7 @@ class tsvgx(tsvg):
 class tsvgr_opacity(tsvg_opacity):
     """
     Like the tsvg_opacity test this is an svg-only number that measures SVG
-    rendering performance. Unlike tsvg_opacity, this test is row-based 
+    rendering performance. Unlike tsvg_opacity, this test is row-based
     instead of column based.
     """
     tpcycles = 1

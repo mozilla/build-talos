@@ -73,7 +73,7 @@ class RemoteProcess(FFProcess):
             return self.testAgent.getProcessList()
         except mozdevice.DMError:
             print "Remote Device Error: Error getting list of processes on remote device"
-            raise  
+            raise
 
     def ProcessesWithNames(self, *process_names):
         """Returns a list of processes running with the given name(s).
@@ -180,7 +180,7 @@ class RemoteProcess(FFProcess):
             raise
 
         return remoteDir
-  
+
     def removeDirectory(self, dir):
         try:
             self.testAgent.removeDir(dir)
@@ -247,4 +247,3 @@ class RemoteProcess(FFProcess):
 
         # Wait out the browser closing
         time.sleep(browser_config['browser_wait'])
-

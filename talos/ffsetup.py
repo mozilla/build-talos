@@ -172,9 +172,9 @@ class FFSetup(object):
         addon_id = find_id(desc)
         unpack = find_unpack(desc)
         if not addon_id:
-          desc = doc.getElementsByTagName('RDF:Description')
-          addon_id = find_id(desc)
-          unpack = find_unpack(desc)
+            desc = doc.getElementsByTagName('RDF:Description')
+            addon_id = find_id(desc)
+            unpack = find_unpack(desc)
 
         if not addon_id: #bail out, we don't have an addon id
             raise TalosError("no addon_id found for extension")
@@ -231,7 +231,7 @@ class FFSetup(object):
         user_js_file.close()
 
         if (webserver and webserver <> 'localhost'):
-             self.ffprocess.addRemoteServerPref(profile_dir, webserver)
+            self.ffprocess.addRemoteServerPref(profile_dir, webserver)
 
         # Install the extensions.
         extension_dir = os.path.join(profile_dir, 'extensions', 'staged')
@@ -259,7 +259,7 @@ class FFSetup(object):
 
     def InitializeNewProfile(self, profile_dir, browser_config):
         """Runs browser with the new profile directory, to negate any performance
-            hit that could occur as a result of starting up with a new profile.  
+            hit that could occur as a result of starting up with a new profile.
             Also kills the "extra" browser that gets spawned the first time browser
             is run with a new profile.
             Returns 1 (success) if PROFILE_REGEX is found,
@@ -272,10 +272,10 @@ class FFSetup(object):
         INFO_REGEX = re.compile('__browserInfo(.*)__browserInfo', re.DOTALL|re.MULTILINE)
         PROFILE_REGEX = re.compile('__metrics(.*)__metrics', re.DOTALL|re.MULTILINE)
 
-        command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"], 
-                                                        browser_config["extra_args"], 
+        command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"],
+                                                        browser_config["extra_args"],
                                                         browser_config["deviceroot"],
-                                                        profile_dir, 
+                                                        profile_dir,
                                                         browser_config["init_url"])
 
         if not browser_config['remote']:
@@ -313,4 +313,3 @@ class FFSetup(object):
                     browser_config['buildid'] = line.split(':')[1]
 
         return res
-

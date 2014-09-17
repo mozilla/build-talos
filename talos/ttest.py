@@ -347,9 +347,9 @@ class TTest(object):
             if 'extensions' in test_config and test_config['extensions']:
                 extensions.append(test_config['extensions'])
 
-            profile_dir, temp_dir = self.createProfile(test_config['profile_path'], 
-                                                       preferences, 
-                                                       extensions, 
+            profile_dir, temp_dir = self.createProfile(test_config['profile_path'],
+                                                       preferences,
+                                                       extensions,
                                                        browser_config['webserver'])
             self.initializeProfile(profile_dir, browser_config)
             test_config['url'] = utils.interpolatePath(test_config['url'], profile_dir=profile_dir, firefox_path=browser_config['browser_path'])
@@ -371,10 +371,10 @@ class TTest(object):
                 global_counters['shutdown'] = []
             if test_config.get('responsiveness') and platform.system() != "Linux":
                 # ignore responsiveness tests on linux until we fix Bug 710296
-               utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
-               utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
-               utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL': '10'})
-               global_counters['responsiveness'] = []
+                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
+                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
+                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL': '10'})
+                global_counters['responsiveness'] = []
 
             # instantiate an object to hold test results
             test_results = results.TestResults(test_config, global_counters, extensions=self._ffsetup.extensions)
@@ -408,10 +408,10 @@ class TTest(object):
                 timeout = test_config.get('timeout', 7200) # 2 hours default
                 total_time = 0
 
-                command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"], 
-                                                                browser_config["extra_args"], 
+                command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"],
+                                                                browser_config["extra_args"],
                                                                 browser_config["deviceroot"],
-                                                                profile_dir, 
+                                                                profile_dir,
                                                                 test_config['url'])
 
                 self.counter_results = None
@@ -451,7 +451,7 @@ class TTest(object):
                     utils.info("Browser exited with error code: {0}".format(code))
                     browser = None
                     self.isFinished = True
- 
+
                     if mm_httpd:
                         mm_httpd.stop()
 
@@ -506,24 +506,24 @@ class TTest(object):
                 test_results.add(browser_log_filename, counter_results=self.counter_results)
 
                 if sps_profile:
-                  try:
-                      import zlib
-                      mode = zipfile.ZIP_DEFLATED
-                  except:
-                      mode = zipfile.ZIP_STORED
-                  mud = os.environ.get('MOZ_UPLOAD_DIR', None)
-                  if mud:
-                      profile_name = "profile_{0}".format(test_config['name'])
-                      cycle_name = "cycle_{0}.sps".format(i)
-                      arcname = os.path.join(mud, "{0}.zip".format(profile_name))
-                      profile_filename = os.path.join(profile_name, cycle_name)
-                      utils.info("Adding profile {0} to archive {1}".format(profile_filename, arcname))
-                      with zipfile.ZipFile(arcname, 'a', mode) as arc:
-                          try:
-                              arc.write(sps_profile_file, profile_filename)
-                          except Exception as e:
-                              utils.info(e)
-                              utils.info("Failed to copy profile {0} as {1} to archive {2}".format(sps_profile_file, profile_filename, arcname))
+                    try:
+                        import zlib
+                        mode = zipfile.ZIP_DEFLATED
+                    except:
+                        mode = zipfile.ZIP_STORED
+                    mud = os.environ.get('MOZ_UPLOAD_DIR', None)
+                    if mud:
+                        profile_name = "profile_{0}".format(test_config['name'])
+                        cycle_name = "cycle_{0}.sps".format(i)
+                        arcname = os.path.join(mud, "{0}.zip".format(profile_name))
+                        profile_filename = os.path.join(profile_name, cycle_name)
+                        utils.info("Adding profile {0} to archive {1}".format(profile_filename, arcname))
+                        with zipfile.ZipFile(arcname, 'a', mode) as arc:
+                            try:
+                                arc.write(sps_profile_file, profile_filename)
+                            except Exception as e:
+                                utils.info(e)
+                                utils.info("Failed to copy profile {0} as {1} to archive {2}".format(sps_profile_file, profile_filename, arcname))
 
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
@@ -544,4 +544,3 @@ class TTest(object):
             self.counters = vars().get('cm', self.counters)
             self.testCleanup(browser_config, profile_dir, test_config, self.counters, temp_dir)
             raise
-

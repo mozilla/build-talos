@@ -77,4 +77,3 @@ class TalosProcess(ProcessHandler):
             thread.start()
         print line
         self.logToFile(line + "\n")
-

@@ -30,4 +30,3 @@ class LinuxProcess(FFProcess):
         except OSError, (errno, strerror):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
-

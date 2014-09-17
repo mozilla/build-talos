@@ -19,4 +19,3 @@ class Win32Process(FFProcess):
     def _TerminateProcess(self, pid, timeout):
         wpk.kill_pid(pid)
         return "terminated with PROCESS_TERMINATE"
-

@@ -108,15 +108,15 @@ class FFProcess(object):
         if (server.startswith('http://') or
             server.startswith('chrome://') or
             server.startswith('file:///')):
-          scheme = ""
+            scheme = ""
         elif (server.find('://') >= 0):
-          raise TalosError("Unable to parse user defined webserver: '%s'" % (server))
+            raise TalosError("Unable to parse user defined webserver: '%s'" % (server))
 
         url = urlparse.urlparse('%s%s' % (scheme, server))
 
         port = url.port
         if not url.port or port < 0:
-          port = 80
+            port = 80
 
         #TODO: p2 is hardcoded, how do we determine what prefs.js has hardcoded?
         remoteCode = """

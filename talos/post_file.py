@@ -52,27 +52,27 @@ def post_multipart(host, selector, fields=(), files=()):
     Return the server's response page.
     """
     try:
-      host = host.replace('http://', '')
-      index = host.find('/')
-      if index > 0:
-          selector = '/'.join([host[index:], selector.lstrip('/')])
-          host = host[0:index]
+        host = host.replace('http://', '')
+        index = host.find('/')
+        if index > 0:
+            selector = '/'.join([host[index:], selector.lstrip('/')])
+            host = host[0:index]
 
-      # Summarized results to the official graph server
-      content_type, body = encode_multipart_formdata(fields, files)
+        # Summarized results to the official graph server
+        content_type, body = encode_multipart_formdata(fields, files)
 
-      headers = {"Content-Type": content_type, "Content-length": str(len(body)), "Host": host, "Accept": "text/plain"}
-      conn = httplib.HTTPConnection(host)
-      conn.request("POST", selector, body, headers)
-      response = conn.getresponse()
-      return response.read()
+        headers = {"Content-Type": content_type, "Content-length": str(len(body)), "Host": host, "Accept": "text/plain"}
+        conn = httplib.HTTPConnection(host)
+        conn.request("POST", selector, body, headers)
+        response = conn.getresponse()
+        return response.read()
     except (httplib.HTTPException, error, herror, gaierror, timeout), e:
-      print "WARNING: graph server unreachable"
-      print "WARNING: " + str(e)
-      raise
+        print "WARNING: graph server unreachable"
+        print "WARNING: " + str(e)
+        raise
     except:
-      print "WARNING: graph server unreachable"
-      raise
+        print "WARNING: graph server unreachable"
+        raise
 
 def encode_multipart_formdata(fields, files):
     """

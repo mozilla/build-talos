@@ -15,7 +15,7 @@ Classes:
         Tests if errors and exceptions are correctly raised.
         - assertError
         Asserts if a specific error is raised on specific incorrect input into Perfconfigurator.
-        
+
 """
 
 import os
@@ -141,7 +141,7 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
         """
         Tests if errors and exceptions are correctly raised.
         Excludes tests for remote machines.
-        
+
         """
         self.example = PerfConfigurator()
 
@@ -205,7 +205,7 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
                 pass
             else:
                 faults.append(result)
-        
+
         # in PerfConfigurator method 'tests(self, activeTests, overrides=None, global_overrides=None, counters=None)'
         # invalid test given
         try:
@@ -224,7 +224,7 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
             pass
         except:
             faults.append("example.tests(['ts'], overrides={'ts':'not a dict') raised an error that is not ConfigurationError")
-            
+
         # Test to see if all errors were raised correctly
         self.assertEqual(faults, [])
 
@@ -241,7 +241,7 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
             return None
         except:
             return error_test_dict['except_fault']
-        return error_test_dict['non_raises_fault']   
+        return error_test_dict['non_raises_fault']
 
 if __name__ == '__main__':
     unittest.main()

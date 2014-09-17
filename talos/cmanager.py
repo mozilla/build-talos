@@ -4,42 +4,41 @@
 
 class CounterManager(object):
 
-  counterDict = {}
+    counterDict = {}
 
-  def __init__(self):
-    self.allCounters = {}
-    self.registeredCounters = {}
+    def __init__(self):
+        self.allCounters = {}
+        self.registeredCounters = {}
 
-  def _loadCounters(self):
-    """Loads all of the counters defined in the counterDict"""
-    for counter in self.counterDict.keys():
-      self.allCounters[counter] = self.counterDict[counter]
-
-
-  def registerCounters(self, counters):
-    """Registers a list of counters that will be monitoring.
-    Only counters whose names are found in allCounters will be added
-    """
-    for counter in counters:
-      if counter in self.allCounters:
-        self.registeredCounters[counter] = [self.allCounters[counter], []]
+    def _loadCounters(self):
+        """Loads all of the counters defined in the counterDict"""
+        for counter in self.counterDict.keys():
+            self.allCounters[counter] = self.counterDict[counter]
 
 
-  def unregisterCounters(self, counters):
-    """Unregister a list of counters.
-       Only counters whose names are found in registeredCounters will be
-       paid attention to
-    """
-    for counter in counters:
-      if counter in self.registeredCounters:
-        del self.registeredCounters[counter]
+    def registerCounters(self, counters):
+        """Registers a list of counters that will be monitoring.
+        Only counters whose names are found in allCounters will be added
+        """
+        for counter in counters:
+            if counter in self.allCounters:
+                self.registeredCounters[counter] = [self.allCounters[counter], []]
 
-  def getCounterValue(self, counterName):
-    """Returns the last value of the counter 'counterName'"""
 
-  def updatePidList(self):
-    """Updates the list of PIDs we're interested in"""
+    def unregisterCounters(self, counters):
+        """Unregister a list of counters.
+           Only counters whose names are found in registeredCounters will be
+           paid attention to
+        """
+        for counter in counters:
+            if counter in self.registeredCounters:
+                del self.registeredCounters[counter]
 
-  def stopMonitor(self):
-    """any final cleanup"""
+    def getCounterValue(self, counterName):
+        """Returns the last value of the counter 'counterName'"""
 
+    def updatePidList(self):
+        """Updates the list of PIDs we're interested in"""
+
+    def stopMonitor(self):
+        """any final cleanup"""

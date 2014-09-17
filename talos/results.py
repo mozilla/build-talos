@@ -313,8 +313,8 @@ class BrowserLogResults(object):
                 raise utils.TalosError("File '%s' does not exist" % filename)
 
             try:
-               with open(filename, 'r') as f:
-                   results_raw = f.read()
+                with open(filename, 'r') as f:
+                    results_raw = f.read()
             except Exception, e:
                 raise exception
 
@@ -415,11 +415,11 @@ class BrowserLogResults(object):
     def xperf(self, counter_results):
         """record xperf counters in counter_results dictionary"""
 
-        counters = ['main_startup_fileio', 
+        counters = ['main_startup_fileio',
                     'main_startup_netio',
                     'main_normal_fileio',
                     'main_normal_netio',
-                    'nonmain_startup_fileio', 
+                    'nonmain_startup_fileio',
                     'nonmain_normal_fileio',
                     'nonmain_normal_netio']
 

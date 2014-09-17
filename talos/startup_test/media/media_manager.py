@@ -160,4 +160,3 @@ if __name__ == "__main__":
 
     # 3. Start the httpd server
     run_server(options.talos_path)
-

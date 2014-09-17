@@ -284,9 +284,9 @@ def etlparser(xperf_path, etl_filename, processID, approot=None, configFile=None
     outFile.write(header + "\n")
 
     # Filter out stages, threads, and whitelisted files that we're not interested in
-    filekeys = filter(lambda x: (all_stages or x[2] == stages[0]) and 
+    filekeys = filter(lambda x: (all_stages or x[2] == stages[0]) and
                                 (all_threads or x[1].endswith("(main)")) and
-                                (all_stages and x[2] != stages[0] or 
+                                (all_stages and x[2] != stages[0] or
                                  not checkWhitelist(x[0], whitelist)),
                       files.iterkeys())
 
@@ -342,7 +342,7 @@ def etlparser(xperf_path, etl_filename, processID, approot=None, configFile=None
         filename = filename.lower()
         # take care of 'program files (x86)' matching 'program files'
         filename = filename.replace(" (x86)", '')
-        
+
         paths = ['profile', 'firefox', 'desktop', 'talos']
         for path in paths:
             pathname = '%s\\' % path
@@ -366,7 +366,7 @@ def etlparser(xperf_path, etl_filename, processID, approot=None, configFile=None
 # too noisy
 #            if wl[filename]['minbytes'] > (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']):
 #                print "%s: read %s bytes, less than expected minimum: %s" % (filename, (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']), wl[filename]['minbytes'])
-                
+
 # don't report in first round
 #            elif wl[filename]['maxbytes'] < (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']):
 #                errors.append("%s: read %s bytes, more than expected maximum: %s" % (filename, (files[row]['DiskReadBytes'] + files[row]['DiskWriteBytes']), wl[filename]['maxbytes']))

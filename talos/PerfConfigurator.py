@@ -619,10 +619,10 @@ the highest value.
             else:
                 print 'Available tests:'
                 print '================\n'
-                test_class_names = [(test_class.name(), test_class.description()) 
+                test_class_names = [(test_class.name(), test_class.description())
                                     for test_class in test.tests]
                 test_class_names.sort()
-                for name, description in test_class_names:                    
+                for name, description in test_class_names:
                     print name
                     print '-'*len(name)
                     print description
