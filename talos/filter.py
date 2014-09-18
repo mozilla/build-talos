@@ -125,7 +125,6 @@ def parse(filter_name):
     """
 
     sep = ':'
-    argsep = ','
 
     def convert_to_number(string):
         """convert a string to an int or float"""

@@ -65,14 +65,9 @@ class Output(object):
         if results_scheme in ('http', 'https'):
             self.post(results, results_server, results_path, results_scheme, tbpl_output)
         elif results_scheme == 'file':
-            try:
-                f = file(results_path, 'w')
+            with open(results_path, 'w') as f:
                 for result in results:
                     f.write("%s\n" % result)
-                f.close()
-            except Exception, e:
-                print "Exception in writing file '%s' from results_url: %s" % (results_path, results_url)
-                raise
         else:
             raise NotImplementedError("%s: %s - only http://, https://, and file:// supported" % (self.__class__.__name__, results_url))
 
@@ -292,7 +287,7 @@ class GraphserverOutput(Output):
             for i, (val, page) in enumerate(vals):
                 try:
                     buffer.write("%d,%.2f,%s\n" % (i,float(val), page))
-                except ValueError, e:
+                except ValueError:
                     utils.info("We expected a numeric value and recieved '%s' instead" % val)
                     pass
 
@@ -545,7 +540,6 @@ class DatazillaOutput(Output):
             else:
                 params['x86'] = 'false'
 
-            revision = ""
             if results.revision and results.revision != 'NULL':
                 params['graph_search'] = results.revision
 

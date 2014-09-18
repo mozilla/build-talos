@@ -4,7 +4,6 @@
 
 import os
 import optparse
-import sys
 import yaml
 
 DEBUG_CRITICAL =0

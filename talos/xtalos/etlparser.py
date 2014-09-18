@@ -7,7 +7,6 @@
 import csv
 import re
 import os
-import optparse
 import sys
 import xtalos
 import subprocess

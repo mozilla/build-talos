@@ -8,13 +8,9 @@ installation script for talos. This script:
 """
 
 import os
-import re
-import shutil
 import subprocess
 import sys
 import urllib2
-import zipfile
-from StringIO import StringIO
 try:
     from subprocess import check_call as call
 except:

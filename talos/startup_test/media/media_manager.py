@@ -3,7 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import os
 import sys
 import platform
 import optparse
@@ -86,7 +85,6 @@ def handleAudioRequest(request):
 
 # Handle all the audio recorder operations
 def parseAudioRecorderRequest(request):
-    request_params = {}
     # check if there are params
     params = request.query.split(',')
     if request.path.find('start') != -1:
@@ -153,7 +151,7 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     if options.stop:
-        httpd_server.stop()
+        ObjectDb.httpd_server.stop()
 
     # 1. Create handle to the AudioUtils
     ObjectDb.audio_utils = media_utils.AudioUtils()

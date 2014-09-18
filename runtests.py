@@ -31,7 +31,6 @@ def unittests(path):
 
 def runtests():
     suite = unittest.TestSuite()
-    unittestlist = []
     for testfile in testfiles:
         test_path = os.path.join(tests_dir, testfile)
         tests = unittests(os.path.abspath(test_path))

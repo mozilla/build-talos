@@ -7,7 +7,6 @@ import datetime, time
 from optparse import OptionParser
 import sys
 import os
-import results
 
 SERVER = 'graphs.mozilla.org'
 selector = '/api/test/runs'
@@ -123,7 +122,7 @@ def getDatazillaCSET(revision, branchid):
     xperfdata = {}
     cached = "%s.json" % revision
     if os.path.exists(cached):
-        response = open(cahced, 'r')
+        response = open(cached, 'r')
     else:
         conn = httplib.HTTPSConnection('datazilla.mozilla.org')
         cset = "/talos/testdata/raw/%s/%s" % (branchid, revision)
@@ -166,7 +165,6 @@ def getDatazillaCSET(revision, branchid):
                 extension = "%s_paint" % extension
 
         suite = "%s%s" % (suite, extension)
-        isRemote = testrun['test_build']['name'] == 'Fennec'
 
         # This is a hack that means we are running xperf since tp5n was replaced by tp5o
         if platform == "Win" and suite == "tp5n_paint":

@@ -5,15 +5,13 @@
 """Utility functions for Talos"""
 
 import os
-import shlex
-import subprocess
 import sys
 import time
 import urlparse
 import yaml
 import string
 import mozlog
-from mozlog import debug,info
+from mozlog import debug, info # this is silly, but necessary
 import platform
 from mozprocess import pid as mozpid
 

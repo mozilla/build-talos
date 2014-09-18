@@ -6,18 +6,14 @@
 
 import ConfigParser
 import filter
-import optparse
 import os
 import PerfConfigurator
-import post_file
 import sys
 import time
 import traceback
 import urllib
 import urlparse
 import utils
-import json
-import socket
 
 from results import TalosResults
 from ttest import TTest
@@ -292,7 +288,7 @@ def run_tests(configurator):
                 talos_results.add(mytest.runTest(browser_config, test))
             else:
                 utils.stamped_msg("Error found while running %s" % testname, "Error")
-        except TalosRegression, tr:
+        except TalosRegression:
             utils.stamped_msg("Detected a regression for " + testname, "Stopped")
             print_logcat()
             if httpd:

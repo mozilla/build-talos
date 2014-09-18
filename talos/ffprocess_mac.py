@@ -12,9 +12,7 @@ import os
 import time
 from select import select
 from ffprocess import FFProcess
-import shutil
 import utils
-import platform
 
 
 class MacProcess(FFProcess):

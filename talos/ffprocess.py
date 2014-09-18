@@ -7,7 +7,6 @@
 import mozfile
 import os
 import shutil
-import sys
 import time
 import utils
 from utils import TalosError,MakeDirectoryContentsWritable

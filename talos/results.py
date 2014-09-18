@@ -127,7 +127,7 @@ class TestResults(object):
         if isinstance(results, basestring):
             # ensure the browser log exists
             if not os.path.isfile(results):
-                raise TalosError("no output from browser [%s]" % results)
+                raise utils.TalosError("no output from browser [%s]" % results)
 
             # convert to a results class via parsing the browser log
             browserLog = BrowserLogResults(filename=results, counter_results=counter_results, global_counters=self.global_counters)
@@ -312,11 +312,8 @@ class BrowserLogResults(object):
             if not os.path.isfile(filename):
                 raise utils.TalosError("File '%s' does not exist" % filename)
 
-            try:
-                with open(filename, 'r') as f:
-                    results_raw = f.read()
-            except Exception, e:
-                raise exception
+            with open(filename, 'r') as f:
+                results_raw = f.read()
 
         self.results_raw = results_raw
 

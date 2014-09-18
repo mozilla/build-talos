@@ -12,12 +12,10 @@
      - waits for a 'dump' from the browser
 """
 
-import mozinfo
 import os
 import platform
 import results
 import traceback
-import sys
 import subprocess
 import tempfile
 import time
@@ -406,7 +404,6 @@ class TTest(object):
 
                 # Run the test
                 timeout = test_config.get('timeout', 7200) # 2 hours default
-                total_time = 0
 
                 command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"],
                                                                 browser_config["extra_args"],
@@ -507,7 +504,6 @@ class TTest(object):
 
                 if sps_profile:
                     try:
-                        import zlib
                         mode = zipfile.ZIP_DEFLATED
                     except:
                         mode = zipfile.ZIP_STORED
@@ -528,7 +524,6 @@ class TTest(object):
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
                 #clean up the bcontroller process
-                timer = 0
 
             # cleanup
             self.cleanupProfile(temp_dir)

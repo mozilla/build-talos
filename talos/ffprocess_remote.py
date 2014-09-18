@@ -32,8 +32,6 @@
 from ffprocess import FFProcess
 import os
 import time
-import tempfile
-import shutil
 from utils import TalosError, testAgent
 try:
     import mozdevice
@@ -228,7 +226,6 @@ class RemoteProcess(FFProcess):
         env = ""
         for key, value in browser_config['env'].items():
             env = "%s %s=%s" % (env, key, value)
-        command_line = "%s %s" % (env, ' '.join(command_args))
 
         self.recordLogcat()
         firstTime = time.time()

@@ -15,8 +15,6 @@ import os
 import re
 import subprocess
 import threading
-import time
-import talos.utils
 
 here = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.abspath(os.path.join(here,os.pardir))
@@ -106,7 +104,7 @@ class AudioRecorder(threading.Thread):
         # Run the commands the PIPE them together
         p1 = subprocess.Popen(pa_command, stdout=subprocess.PIPE)
         p2 = subprocess.Popen(sox_command, stdin=p1.stdout, stdout=subprocess.PIPE)
-        retcode = p2.communicate()[0]
+        p2.communicate()[0]
         # No need to kill p2 since it is terminated as part of trim duration
         if p1:
             p1.kill()
@@ -230,8 +228,7 @@ class AudioUtils(object):
               'reverse', 'silence', _SOX_BELOW_PERIODS_, _SOX_BELOW_DURATION_,
               _SOX_BELOW_THRESHOLD_, 'reverse']
         cmd = [str(s) for s in cmd]
-        retCode = subprocess.call(cmd,stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
+        subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # Delete the recorded file
         if os.path.exists(_RECORDED_FILE_):
             os.remove(_RECORDED_FILE_)

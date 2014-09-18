@@ -3,9 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from ffprocess import FFProcess
-import os
-import shutil
-import utils
 try:
     import mozprocess.wpk as wpk
 except:

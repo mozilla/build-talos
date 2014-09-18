@@ -15,7 +15,6 @@ unified configuration with serialization/deserialization
 
 import copy
 import os
-import sys
 import optparse
 
 # imports for configuration providers

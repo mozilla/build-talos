@@ -573,12 +573,12 @@ the highest value.
         # XXX extending vs over-writing?
         self.config.setdefault('tests', []).extend(self.tests(activeTests, overrides, global_overrides, counters))
 
-        for test in self.config.get('tests', []):
+        for testdict in self.config.get('tests', []):
             # test for --fennecIDs
-            if self.config.get('fennecIDs','') and not test['fennecIDs']:
+            if self.config.get('fennecIDs','') and not testdict['fennecIDs']:
                 raise ConfigurationError("You passed in --fennecIDs and this is only supported for robocop based tests")
             # robopan is the only robocop based extension which uses roboextender
-            if self.config.get('fennecIDs', '') and test['name'] == 'trobopan':
+            if self.config.get('fennecIDs', '') and testdict['name'] == 'trobopan':
                 self.config['extensions'] = ['${talos}/mobile_extensions/roboextender@mozilla.org']
 
         if self.remote:

@@ -5,7 +5,6 @@
 import os
 import re
 import subprocess
-import sys
 from cmanager import CounterManager
 from mozprocess import pid as mozpid
 

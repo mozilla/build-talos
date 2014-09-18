@@ -6,9 +6,8 @@
 
 import subprocess
 from cmanager import CounterManager
-import utils
 from mozprocess import pid as mozpid
-
+import sys
 
 def GetProcessData(pid):
     """Runs a ps on the process identified by pid and returns the output line
@@ -20,7 +19,7 @@ def GetProcessData(pid):
         handle.wait()
         data = handle.stdout.readlines()
     except:
-        print "Unexpected error executing '%s': %s", (cmdline, sys.exc_info())
+        print "Unexpected error executing '%s': %s", (command, sys.exc_info())
         raise
 
     # First line is header output should look like:

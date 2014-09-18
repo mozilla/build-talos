@@ -1,5 +1,4 @@
 import os
-import sys
 from setuptools import setup, find_packages
 
 try:
@@ -25,12 +24,6 @@ dependencies = ['PyYAML',
                 'oauth2',
                 ]
 dependency_links = []
-
-try:
-    import json
-except ImportError:
-    # XXX you will need simplejson == 2.1.6 on python 2.4
-    dependencies.append('simplejson')
 
 setup(name='talos',
       version=version,

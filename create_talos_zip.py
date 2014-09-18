@@ -7,10 +7,8 @@ create a talos.zip appropriate for testing
 import mozfile
 import os
 import re
-import shutil
 import subprocess
 import sys
-import tarfile
 import urllib2
 import zipfile
 
