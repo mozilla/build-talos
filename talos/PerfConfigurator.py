@@ -33,6 +33,9 @@ class PerfConfigurator(Configuration):
         ('browser_path', {'help': "path to executable we are testing",
                           'flags': ['-e', '--executablePath']
                           }),
+        ('apk_path', {'help': "path to android apk we are using (for version info)",
+                          'flags': ['--apkPath']
+                          }),
         ('title', {'help': 'Title of the test run',
                    'default': 'qm-pxp01',
                    'flags': ['-t', '--title']}),
