@@ -4,11 +4,15 @@
 create a talos.zip appropriate for testing
 """
 
-import mozfile
+import StringIO
+import gzip
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tarfile
+import tempfile
 import urllib2
 import zipfile
 
@@ -16,44 +20,14 @@ import zipfile
 here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, 'talos')
 
-mozhttpd_src = 'https://raw.github.com/mozilla/mozbase/mozhttpd-0.5/'
-mozhttpd_files = [('mozhttpd/mozhttpd/mozhttpd.py', 'mozhttpd.py'),
-                  ('mozhttpd/mozhttpd/iface.py', 'iface.py')]
-mozhttpd = [(mozhttpd_src + src, destination) for src, destination in mozhttpd_files]
-
-mozinfo_src = 'https://raw.github.com/mozilla/mozbase/mozinfo-0.7/mozinfo/mozinfo/mozinfo.py'
-mozinfo = [(mozinfo_src, 'mozinfo.py')]
-
-mozcrash_src = 'https://raw.github.com/mozilla/mozbase/mozcrash-0.9/mozcrash/mozcrash/mozcrash.py'
-mozcrash = [(mozcrash_src, 'mozcrash.py')]
-
-mozfile_src = 'https://raw.github.com/mozilla/mozbase/mozfile-1.1/mozfile/mozfile/mozfile.py'
-mozfiles = [(mozfile_src, 'mozfile.py')]
-
-mozlog_src = 'https://raw.github.com/mozilla/mozbase/mozlog-1.5/mozlog/mozlog/logger.py'
-mozlog = [(mozlog_src, 'mozlog.py')]
-
-mozdevice_src = 'https://raw.github.com/mozilla/mozbase/mozdevice-0.26/'
-mozdevice_files = [('mozdevice/mozdevice/__init__.py', 'mozdevice/__init__.py'),
-                   ('mozdevice/mozdevice/Zeroconf.py', 'mozdevice/Zeroconf.py'),
-                   ('mozdevice/mozdevice/devicemanager.py', 'mozdevice/devicemanager.py'),
-                   ('mozdevice/mozdevice/devicemanagerADB.py', 'mozdevice/devicemanagerADB.py'),
-                   ('mozdevice/mozdevice/devicemanagerSUT.py', 'mozdevice/devicemanagerSUT.py'),
-                   ('mozdevice/mozdevice/droid.py', 'mozdevice/droid.py')]
-mozdevice = [(mozdevice_src + src, destination) for src, destination in mozdevice_files]
-
-moznetwork_src = 'http://hg.mozilla.org/mozilla-central/raw-file/e350a1923f0e/testing/mozbase/moznetwork/'
-moznetwork = [(moznetwork_src + 'moznetwork/moznetwork.py', 'moznetwork/moznetwork.py'),
-              (moznetwork_src + 'moznetwork/__init__.py', 'moznetwork/__init__.py')]
-
-mozprocess_src = 'https://raw.github.com/mozilla/mozbase/mozprocess-0.13/'
-mozprocess_files = [('mozprocess/mozprocess/__init__.py', 'mozprocess/__init__.py'),
-                    ('mozprocess/mozprocess/pid.py', 'mozprocess/pid.py'),
-                    ('mozprocess/mozprocess/processhandler.py', 'mozprocess/processhandler.py'),
-                    ('mozprocess/mozprocess/qijo.py', 'mozprocess/qijo.py'),
-                    ('mozprocess/mozprocess/winprocess.py', 'mozprocess/winprocess.py'),
-                    ('mozprocess/mozprocess/wpk.py', 'mozprocess/wpk.py')]
-mozprocess = [(mozprocess_src + src, destination) for src, destination in mozprocess_files]
+mozbase_packages = [ ('mozcrash', '0.13'),
+                     ('mozdevice', '0.26'),
+                     ('mozfile', '1.1'),
+                     ('mozhttpd', '0.5'),
+                     ('mozinfo', '0.7'),
+                     ('mozlog', '2.6'),
+                     ('moznetwork', '0.24'),
+                     ('mozprocess', '0.13') ]
 
 # datazilla client dependency
 datazilla_client = [('https://raw.github.com/mozilla/datazilla_client/master/dzclient/client.py',
@@ -79,18 +53,6 @@ yaml_files = ['composer.py',
               'serializer.py',
               'tokens.py']
 yaml = [(yaml_src + f, 'yaml/%s' % f) for f in yaml_files]
-
-# simplejson dependency:
-# https://bugzilla.mozilla.org/show_bug.cgi?id=744405
-simplejson_src = 'https://raw.github.com/simplejson/simplejson/ef460026417ab8cd9d8fae615d4e9b9cc784ccf1'
-simplejson_files = ['decoder.py',
-                    'encoder.py',
-                    '__init__.py',
-                    'ordered_dict.py',
-                    'scanner.py',
-                    'tool.py']
-simplejson = [('%s/simplejson/%s' % (simplejson_src, f), 'simplejson/%s' % f)
-              for f in simplejson_files]
 
 # oauth2 dependency:
 # https://bugzilla.mozilla.org/show_bug.cgi?id=774480
@@ -118,32 +80,50 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = mozhttpd + mozinfo + mozcrash + mozfiles + mozlog + mozdevice + moznetwork + datazilla_client + yaml + simplejson + oauth2 + httplib2_oauth2 + mozprocess
+manifest = datazilla_client + yaml + oauth2 + httplib2_oauth2
 manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
-def download(*resources):
+def unpack_pypi_module(modulename, version, destdir):
+    url = 'http://pypi.python.org/packages/source/%s/%s/%s-%s.tar.gz' % (
+        modulename[0], modulename, modulename, version)
+    print url
+    contents = urllib2.urlopen(url).read()
+    c = StringIO.StringIO(contents)
+    c.seek(0)
+    os.mkdir(os.path.join(destdir, modulename))
+    key = '%s-%s/%s/' % (modulename, version, modulename)
+    with tarfile.TarFile(fileobj=gzip.GzipFile(fileobj=c)) as tar:
+        for tar_member in tar.getmembers():
+            if tar_member.name.startswith(key):
+                if tar_member.isfile():
+                    destpath = tar_member.name[len(key):]
+                    module_destdir = os.path.join(destdir, modulename,
+                                                  os.path.dirname(destpath))
+                    if not os.path.exists(module_destdir):
+                        os.makedirs(module_destdir)
+                    destfilename = os.path.join(module_destdir, os.path.basename(destpath))
+                    print destfilename
+                    with open(destfilename, 'w') as f:
+                        f.write(tar.extractfile(tar_member).read())
+
+def download(destdir, *resources):
     """
     download resources: (url, destination)
     the destination is relative to the 'talos' subdirectory
     returns new directory names
     """
-
-    newdirs = []
     for url, destination in resources:
-        filename = os.path.join(dest, destination)
+        filename = os.path.join(destdir, destination)
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-            newdirs.append(dirname)
         try:
             contents = urllib2.urlopen(url).read()
         except:
             print url
             raise
-        f = file(filename, 'w')
-        f.write(contents)
-        f.close()
-    return newdirs
+        with open(filename, 'w') as f:
+            f.write(contents)
 
 def ignore(filename, patterns):
     """
@@ -163,6 +143,18 @@ def main(args=sys.argv[1:]):
                  "binaries when run on Windows (bug 829690), which causes failures when "
                  "processing crashes. For now please run on another platform.")
 
+    tempdir = tempfile.mkdtemp()
+
+    temp_talos_dir = os.path.join(tempdir, 'talos')
+    os.mkdir(temp_talos_dir)
+
+    # get mozbase packages
+    for (packagename, version) in mozbase_packages:
+        unpack_pypi_module(packagename, version, temp_talos_dir)
+
+    # get the other packages
+    download(temp_talos_dir, *manifest)
+
     # list of patterns to ignore
     hgignore = os.path.join(here, '.hgignore')
     assert os.path.exists(hgignore), '.hgignore not found in %s' % here
@@ -170,9 +162,26 @@ def main(args=sys.argv[1:]):
                        for i in file(hgignore).read().splitlines()
                        if not i.startswith('#') and i.strip()]
 
-    # get the files
-    newdirs = download(*manifest)
-    newfiles = [filename for _,filename in manifest]
+    # copy talos itself
+    talosdir = os.path.abspath(os.path.join(here, 'talos'))
+    for dirpath, dirnames, filenames in os.walk(talosdir):
+        filenames = [i for i in filenames if not i.endswith('.pyc')]
+        for f in filenames:
+            try:
+                fullname = os.path.join(dirpath, f)
+                truncname = fullname[len(talosdir):].strip(os.path.sep)
+                arcname = os.path.join('talos', truncname)
+                if not ignore(arcname, ignore_patterns):
+                    # do not package files that are in .hgignore
+                    destname = os.path.join(tempdir, arcname)
+                    destdirname = os.path.dirname(destname)
+                    if not os.path.exists(destdirname):
+                        os.makedirs(destdirname)
+                    shutil.copyfile(fullname, destname)
+                    shutil.copymode(fullname, destname)
+            except:
+                print fullname, truncname
+                raise
 
     # get the filename
     filename = 'talos.zip'
@@ -183,32 +192,15 @@ def main(args=sys.argv[1:]):
     filename = 'talos.%s.zip' % stdout.strip()
 
     # make the talos.zip file
-    zip = zipfile.ZipFile(filename, mode='w', compression=zipfile.ZIP_DEFLATED)
-    talosdir = os.path.abspath(os.path.join(here, 'talos'))
-    for dirpath, dirnames, filenames in os.walk(talosdir):
-        filenames = [i for i in filenames if not i.endswith('.pyc')]
-        for f in filenames:
-            try:
-                fullname = os.path.join(dirpath, f)
-                truncname = fullname[len(talosdir):].strip(os.path.sep)
-                arcname = os.path.join('talos', truncname)
-                if truncname in newfiles or not ignore(arcname, ignore_patterns):
-                    # do not package files that are in .hgignore
-                    # except the new files
-                    zip.write(fullname, arcname=arcname)
-            except:
-                print fullname, truncname
-                raise
-    zip.close()
-
-    # cleanup: remove downloaded files
-    for path in newfiles:
-        path = os.path.join(dest, path)
-        assert os.path.exists(path), "'%s' not found" % path
-        os.remove(path)
-    for newdir in newdirs:
-        if os.path.exists(newdir):
-            mozfile.rmtree(newdir)
+    with zipfile.ZipFile(filename, mode='w', compression=zipfile.ZIP_DEFLATED) as zip:
+        for dirpath, dirnames, filenames in os.walk(tempdir):
+            for f in filenames:
+                srcname = os.path.join(tempdir, dirpath, f)
+                print srcname
+                zip.write(srcname, arcname=os.path.join(dirpath, f)[len(tempdir):])
+                
+    # cleanup: remove temporary staging location
+    shutil.rmtree(tempdir)
 
     # output the path to the zipfile
     print os.path.abspath(filename)
