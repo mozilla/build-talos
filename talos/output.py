@@ -558,10 +558,8 @@ class DatazillaOutput(Output):
 
             # build TBPL output
             # XXX this will not work for multiple URLs :(
-            tbpl_output.setdefault('datazilla', {})
             for dataset in results.datasets():
                 url = "%s&test=%s" % (url, dataset['testrun']['suite'])
-                tbpl_output['datazilla'][dataset['testrun']['suite']] = {'url': url}
                 utils.info("Datazilla results at %s", url)
 
     def run_options(self, test):
