@@ -406,6 +406,7 @@ class TTest(object):
                                                                 test_config['url'])
 
                 self.counter_results = None
+                mainthread_error_count = 0
                 if not browser_config['remote']:
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
@@ -426,7 +427,10 @@ class TTest(object):
                         from startup_test.media import media_manager
                         mm_httpd = media_manager.run_server(os.path.dirname(os.path.realpath(__file__)))
 
-                    browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
+                    browser = TalosProcess.TalosProcess(command_args, 
+                                                        env=os.environ.copy(),
+                                                        logfile=browser_config['browser_log'],
+                                                        supress_javascript_errors=True)
                     browser.run(timeout=timeout)
                     self.pid = browser.pid
 
@@ -453,9 +457,14 @@ class TTest(object):
                             xre_path = os.path.dirname(browser_config['browser_path'])
                             mtio_py = os.path.join(here, 'mainthreadio.py')
                             command = ['python', mtio_py, rawlog, processedlog, xre_path]
-                            mtio = TalosProcess.TalosProcess(command, env=os.environ.copy())
-                            mtio.run()
-                            mtio.wait()
+                            mtio = subprocess.Popen(command, env=os.environ.copy(), stdout=subprocess.PIPE)
+                            output, stderr = mtio.communicate()
+                            for line in output.split('\n'):
+                                if line.strip() == "":
+                                    continue
+
+                                print line
+                                mainthread_error_count += 1
                             os.remove(rawlog)
 
                     if test_config['cleanup']:
@@ -490,7 +499,8 @@ class TTest(object):
                     raise TalosError("no output from browser [%s]" % browser_log_filename)
 
                 # check for xperf errors
-                if os.path.exists(browser_config['error_filename']):
+                if os.path.exists(browser_config['error_filename']) or \
+                   mainthread_error_count > 0:
                     raise TalosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
 
                 # add the results from the browser output

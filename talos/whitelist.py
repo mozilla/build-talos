@@ -9,7 +9,20 @@ import os
 
 KEY_XRE = '{xre}'
 
-class whitelist:
+# TODO: this is duplicated from mainthreadio.py
+# Generator that allows us to figure out which item is the last one so that we
+# can serialize this data properly
+def indexed_items(itr):
+    prev_i, prev_val = 0, itr.next()
+    for i, val in enumerate(itr, start = 1):
+        yield prev_i, prev_val
+        prev_i, prev_val = i, val
+    yield -1, prev_val
+
+class Whitelist:
+    # we need to find the root dir of the profile at runtime
+    PRE_PROFILE = ''
+
     def __init__(self, test_name, paths, path_substitutions, name_substitutions, init_with=None):
         self.test_name = test_name
         self.listmap = init_with if init_with else {}
@@ -21,9 +34,14 @@ class whitelist:
     def load(self, filename):
         if not self.load_dependent_libs():
             return False
+
         try:
-            with open(filename, 'r') as f:
-                self.listmap = json.load(f)
+            with open(filename, 'r') as fHandle:
+                temp = json.load(fHandle)
+
+            for whitelist_name in temp:
+                self.listmap[whitelist_name.lower()] = temp[whitelist_name]
+
         except IOError as e:
             print "%s: %s" % (e.filename, e.strerror)
             return False
@@ -42,18 +60,19 @@ class whitelist:
         filename.replace(' (x86)', '')
 
         for path, subst in self.path_substitutions.iteritems():
-            pathname = "%s%s" % (path, os.path.sep)
-            parts = filename.split(pathname)
+            parts = filename.split(path)
             if len(parts) >= 2:
-                filename = "%s%s%s" % (subst, os.path.sep, pathname.join(parts[1:]))
+                if self.PRE_PROFILE == '' and subst == '{profile}':
+                    self.PRE_PROFILE = self.sanitize_filename(parts[0])
+                    self.listmap[self.PRE_PROFILE] = {}
+                filename = "%s%s" % (subst, path.join(parts[1:]))
 
         for old_name, new_name in self.name_substitutions.iteritems():
-            pathname = "%s%s" % (os.path.sep, old_name)
-            parts = filename.split(pathname)
+            parts = filename.split(old_name)
             if len(parts) >= 2:
-                filename = "%s%s%s" % (parts[0], os.path.sep, new_name)
+                filename = "%s%s" % (parts[0], new_name)
 
-        return filename
+        return filename.strip('/\\\ \t')
 
     def check(self, test, file_name_index):
         errors = {}
@@ -69,6 +88,22 @@ class whitelist:
                 if filename not in errors:
                     errors[filename] = []
                 errors[filename].append(test[row_key])
+        return errors
+
+    def checkDuration(self, test, file_name_index, file_duration_index):
+        errors = {}
+        for idx, (row_key, row_value) in indexed_items(test.iteritems()):
+            if row_value[file_duration_index] > 1.0:
+                filename = self.sanitize_filename(row_key[file_name_index])
+                if filename in self.listmap and \
+                   'ignoreduration' in self.listmap[filename]:
+                    # we have defined in the json manifest max values (max found value * 2) and will ignore it
+                    if row_value[file_duration_index] <= self.listmap[filename]['ignoreduration']:
+                        continue
+
+                if filename not in errors:
+                    errors[filename] = []
+                errors[filename].append("Duration %s > 1.0" % row_value[file_duration_index])
         return errors
 
     def filter(self, test, file_name_index):

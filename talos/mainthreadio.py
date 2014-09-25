@@ -32,8 +32,11 @@ KEY_RUN_COUNT = 'RunCount'
 LEAKED_SYMLINK_PREFIX = "::\\{"
 
 PATH_SUBSTITUTIONS = {'profile': '{profile}', 'firefox': '{xre}',
-                      'desktop': '{desktop}', 'talos': '{talos}'}
-NAME_SUBSTITUTIONS = {'installtime': '{time}', 'prefetch': '{prefetch}'}
+                      'desktop': '{desktop}', 'talos': '{talos}',
+                      'fonts': '{fonts}', 'appdata':' {appdata}'}
+NAME_SUBSTITUTIONS = {'installtime': '{time}', 'prefetch': '{prefetch}',
+                      'thumbnails': '{thumbnails}',
+                      'windows media player': '{media_player}'}
 
 TUPLE_FILENAME_INDEX = 2
 WHITELIST_FILENAME = os.path.join(SCRIPT_DIR, 'mtio-whitelist.json')
@@ -119,7 +122,8 @@ def main(argv):
     if not parse(argv[1], data):
         print "Log parsing failed"
         return 1
-    wl = whitelist.whitelist(test_name = 'mainthreadio',
+
+    wl = whitelist.Whitelist(test_name = 'mainthreadio',
                              paths = {"{xre}": argv[3]},
                              path_substitutions = PATH_SUBSTITUTIONS,
                              name_substitutions = NAME_SUBSTITUTIONS)
@@ -133,10 +137,17 @@ def main(argv):
         return 1
 
     # Disabled until we enable TBPL oranges
-    # errors = wl.check(data, TUPLE_FILENAME_INDEX)
-    # if errors:
-    #     strs = wl.get_error_strings(errors)
-    #     wl.print_errors(strs)
+    # search for unknown filenames
+    errors = wl.check(data, TUPLE_FILENAME_INDEX)
+    if errors:
+        strs = wl.get_error_strings(errors)
+        wl.print_errors(strs)
+
+    # search for duration > 1.0
+    errors = wl.checkDuration(data, TUPLE_FILENAME_INDEX, 'Duration')
+    if errors:
+        strs = wl.get_error_strings(errors)
+        wl.print_errors(strs)
 
     return 0
 
