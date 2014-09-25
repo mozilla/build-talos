@@ -62,7 +62,9 @@ for datazilla auth.  Should have keys 'oauthSecret' and 'oauthKey'"""}),
         # the one-off ':' separation :/
         ('activeTests', {'help': "List of tests to run, separated by ':' (ex. ts:tp4:tsvg)",
                          'flags': ['-a', '--activeTests']}),
-
+        ('e10s', {'help': 'enable e10s',
+                  'type': bool,
+                  'flags': ['--e10s']}),
         ('noChrome',  {'help': 'do not run tests as chrome',
                        'type': bool}),
         ('rss', {'help': "Collect RSS counters from pageloader instead of the operating system",
@@ -153,6 +155,7 @@ the highest value.
                                   'test_name_extension': '',
                                   'profile_path': '${talos}/base_profile',
                                   'responsiveness': False,
+                                  'e10s': False,
                                   'sps_profile': False,
                                   'sps_profile_interval': 1,
                                   'sps_profile_entries': 100000,
@@ -258,6 +261,7 @@ the highest value.
         'browser.shell.checkDefaultBrowser': False,
         'browser.warnOnQuit': False,
         'browser.display.overlaynavbuttons': False, # metrofx specific
+        'browser.tabs.remote.autostart': False,
         'dom.allow_scripts_to_close_windows': True,
         'dom.disable_open_during_load': False,
         'dom.disable_window_flip': True,
@@ -478,6 +482,10 @@ the highest value.
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind(("127.0.0.1",15707))
                 self.config['webserver'] = 'localhost:%s' % s.getsockname()[1]
+
+        # if e10s is enabled, set prefs accordingly
+        if self.config.get('e10s'):
+            self.config['preferences']['browser.tabs.remote.autostart'] = True
 
         extraPrefs = self.config.pop('extraPrefs', {})
         extraPrefs = dict([(i, utils.parsePref(j)) for i, j in extraPrefs.items()])

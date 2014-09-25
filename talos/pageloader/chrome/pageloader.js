@@ -1,4 +1,3 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -226,7 +225,7 @@ function plInit() {
                      content = browserWindow.getBrowser();
 
                      // Load the frame script for e10s / IPC message support
-                     if (content.getAttribute("remote") == "true") {
+                     if (content.selectedBrowser.getAttribute("remote") == "true") {
                        let contentScript = "data:,function _contentLoadHandler(e) { " +
                          "  if (e.originalTarget.defaultView == content) { " +
                          "    content.wrappedJSObject.tpRecordTime = function(t, s) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s }); }; ";
@@ -251,7 +250,7 @@ function plInit() {
                          "  }" +
                          "} " +
                          "addEventListener('load', _contentLoadHandler, true); ";
-                       content.messageManager.loadFrameScript(contentScript, false);
+                       content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
                      }
                      if (reportRSS) {
                        initializeMemoryCollector(plLoadPage, 100);
@@ -284,6 +283,16 @@ function plInit() {
 function plPageFlags() {
   return pages[pageIndex].flags;
 }
+
+let ContentListener = {
+  receiveMessage: function(message) {
+    switch (message.name) {
+      case 'PageLoader:Load': return plLoadHandlerMessage(message);
+      case 'PageLoader:RecordTime': return plRecordTimeMessage(message);
+      case 'PageLoader:MozAfterPaint': return plPaintHandler(message);
+    }
+  },
+};
 
 // load the current page, start timing
 var removeLastAddedListener = null;
@@ -330,16 +339,17 @@ function plLoadPage() {
   }
 
   // If the test browser is remote (e10s / IPC) we need to use messages to watch for page load
-  if (content.getAttribute("remote") == "true") {
-    content.messageManager.addMessageListener('PageLoader:Load', plLoadHandlerMessage);
-    content.messageManager.addMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
+  if (content.selectedBrowser.getAttribute("remote") == "true") {
+    let mm = content.selectedBrowser.messageManager;
+    mm.addMessageListener('PageLoader:Load', ContentListener);
+    mm.addMessageListener('PageLoader:RecordTime', ContentListener);
     if (useMozAfterPaint)
-      content.messageManager.addMessageListener('PageLoader:MozAfterPaint', plPaintHandler);
+      mm.addMessageListener('PageLoader:MozAfterPaint', ContentListener);
     removeLastAddedMsgListener = function() {
-      content.messageManager.removeMessageListener('PageLoader:Load', plLoadHandlerMessage);
-      content.messageManager.removeMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
+      mm.removeMessageListener('PageLoader:Load', ContentListener);
+      mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
       if (useMozAfterPaint)
-        content.messageManager.removeMessageListener('PageLoader:MozAfterPaint', plPaintHandler);
+        mm.removeMessageListener('PageLoader:MozAfterPaint', ContentListener);
     };
   }
 
@@ -717,13 +727,14 @@ function plStopAll(force) {
       content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
       content.removeEventListener("MozAfterPaint", plPainted, true);
 
-    if (content.getAttribute("remote") == "true") {
-      content.messageManager.removeMessageListener('PageLoader:Load', plLoadHandlerMessage);
-      content.messageManager.removeMessageListener('PageLoader:RecordTime', plRecordTimeMessage);
+    if (content.selectedBrowser.getAttribute("remote") == "true") {
+      let mm = content.selectedBrowser.messageManager;
+      mm.removeMessageListener('PageLoader:Load', ContentListener);
+      mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
       if (useMozAfterPaint)
-        content.messageManager.removeMessageListener('PageLoader:MozAfterPaint', plPaintHandler);
+        mm.removeMessageListener('PageLoader:MozAfterPaint', ContentListener);
 
-      content.messageManager.loadFrameScript("data:,removeEventListener('load', _contentLoadHandler, true);", false);
+      mm.loadFrameScript("data:,removeEventListener('load', _contentLoadHandler, true);", false, true);
     }
   }
 

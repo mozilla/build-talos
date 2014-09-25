@@ -16,5 +16,6 @@
     <em:name>PageLoader extension</em:name>
     <em:description>Cycles through pages and measures load times</em:description>
     <em:creator>Vladimir Vukicevic</em:creator>
+    <em:multiprocessCompatible>true</em:multiprocessCompatible>
   </Description>
 </RDF>
