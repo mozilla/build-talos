@@ -339,7 +339,8 @@ function plLoadPage() {
   }
 
   // If the test browser is remote (e10s / IPC) we need to use messages to watch for page load
-  if (content.selectedBrowser.getAttribute("remote") == "true") {
+  if (content.selectedBrowser &&
+      content.selectedBrowser.getAttribute("remote") == "true") {
     let mm = content.selectedBrowser.messageManager;
     mm.addMessageListener('PageLoader:Load', ContentListener);
     mm.addMessageListener('PageLoader:RecordTime', ContentListener);
@@ -727,7 +728,8 @@ function plStopAll(force) {
       content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
       content.removeEventListener("MozAfterPaint", plPainted, true);
 
-    if (content.selectedBrowser.getAttribute("remote") == "true") {
+    if (content.selectedBrowser &&
+        content.selectedBrowser.getAttribute("remote") == "true") {
       let mm = content.selectedBrowser.messageManager;
       mm.removeMessageListener('PageLoader:Load', ContentListener);
       mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
