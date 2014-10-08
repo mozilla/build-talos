@@ -63,8 +63,18 @@ class Whitelist:
             parts = filename.split(path)
             if len(parts) >= 2:
                 if self.PRE_PROFILE == '' and subst == '{profile}':
-                    self.PRE_PROFILE = self.sanitize_filename(parts[0])
-                    self.listmap[self.PRE_PROFILE] = {}
+                    fname = self.sanitize_filename(parts[0])
+                    self.listmap[fname] = {}
+                    # Windows can have {appdata}\local\temp\longnamedfolder or {appdata}\local\temp\longna~1
+                    self.listmap[fname] = {}
+                    if not fname.endswith('~1'):
+                        # parse the longname into longna~1
+                        dirs = fname.split('\\')
+                        dirs[-1] = "%s~1" % (dirs[-1][:6])
+                        shortname = '\\'.join(dirs)
+                        self.listmap[shortname] = {}
+                        self.PRE_PROFILE = fname
+
                 filename = "%s%s" % (subst, path.join(parts[1:]))
 
         for old_name, new_name in self.name_substitutions.iteritems():
@@ -127,7 +137,7 @@ class Whitelist:
 
     def print_errors(self, error_strs):
         for error_msg in error_strs:
-            print "TEST-UNEXPECTED-FAIL : %s: %s" % (self.test_name, error_msg)
+            print "TEST-UNEXPECTED-FAIL | %s | %s" % (self.test_name, error_msg)
 
     # Note that we don't store dependent libs in listmap. This makes
     # save_baseline cleaner. Since a baseline whitelist should not include
