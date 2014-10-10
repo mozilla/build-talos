@@ -28,7 +28,12 @@ def browserInfo(browser_config, devicemanager=None):
 
     config = ConfigParser.RawConfigParser()
     appIniFileName = "application.ini"
-    appIniPath = os.path.join(os.path.dirname(browser_config['browser_path']), appIniFileName)
+    bpath = os.path.dirname(browser_config['browser_path'])
+    if bpath.endswith('MacOS'):
+        # OSX bundle structure changed in bug 1053820
+        if not os.path.exists(os.path.join(bpath, appIniFileName)):
+            bpath = os.path.join(os.path.dirname(bpath), 'Resources')
+    appIniPath = os.path.join(bpath, appIniFileName)
 
     # keys for various browser info
     keys = {'buildid': ('App', 'BuildID'),
