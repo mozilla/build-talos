@@ -181,7 +181,7 @@ class GraphserverOutput(Output):
 
             # HACK: when running xperf, we upload xperf counters to the graph server but we do not want to
             # upload the test results as they will confuse the graph server
-            if not test.using_xperf:
+            if not (test.format == 'tpformat' and test.using_xperf):
                 vals = []
                 for result in test.results:
                     # per test filters

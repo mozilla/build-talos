@@ -113,10 +113,21 @@ class ts_paint(ts):
     time and calculates the time to startup.
     """
     url = 'startup_test/tspaint_test.html'
-    shutdown = None
-    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_startup_netio', 'nonmain_normal_fileio', 'mainthread_readcount', 'mainthread_readbytes', 'mainthread_writecount', 'mainthread_writebytes']
+    shutdown = False
+    xperf_counters = []
+    win7_counters = []
     filters = [["ignore_first", [1]], ['median', []]]
     tpmozafterpaint = True
+    rss = False
+    mainthread = False
+    responsiveness = False
+
+class ts_paint_cold(ts_paint):
+    """
+    Clears the disk cache before running the ts_paint tests.
+    """
+    setup = "${talos}/startup_test/cold/setup.py"
+    mobile = False
 
 class tpaint(TsBase):
     """
@@ -652,7 +663,7 @@ class a11yr(PageloaderTest):
     mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
 
 # global test data
-tests = [ts_paint, ts, tsvg, tdhtml,
+tests = [ts_paint, ts, tsvg, tdhtml, ts_paint_cold,
          tp4m, tp5n, tp5o, tpaint, tresize, tp5o_scroll,
          trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
          dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
