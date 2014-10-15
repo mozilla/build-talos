@@ -76,6 +76,7 @@
  "{profile}\\localstore-1.rdf": {},
  "{profile}\\localstore.rdf": {},
  "{profile}\\pluginreg.dat": {},
+ "{profile}\\pluginreg.dat.tmp": {},
  "{profile}\\plugins": {},
  "{profile}\\places.sqlite": {},
  "{profile}\\places.sqlite-journal": {},

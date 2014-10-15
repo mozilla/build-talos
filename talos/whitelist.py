@@ -71,8 +71,11 @@ class Whitelist:
                         # parse the longname into longna~1
                         dirs = fname.split('\\')
                         dirs[-1] = "%s~1" % (dirs[-1][:6])
-                        shortname = '\\'.join(dirs)
-                        self.listmap[shortname] = {}
+                        # now we want to ensure that every parent dir is added since we seem to be accessing them sometimes
+                        diter = 2
+                        while (diter < len(dirs)):
+                            self.listmap['\\'.join(dirs[:diter])] = {}
+                            diter = diter + 1
                         self.PRE_PROFILE = fname
 
                 filename = "%s%s" % (subst, path.join(parts[1:]))
