@@ -538,7 +538,7 @@ def main(args=sys.argv[1:]):
     # make a browser_config dictionary with minimal information
     browser_config = {'branch_name': '',
                       'buildid': 'testbuildid',
-                      'sourcestamp': 'NULL',
+                      'sourcestamp': '62f0b771583c',
                       'browser_name': 'Firefox',
                       'browser_version': '3.14'
                       }

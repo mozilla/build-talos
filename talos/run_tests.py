@@ -42,10 +42,6 @@ def browserInfo(browser_config, devicemanager=None):
             'browser_name': ('App', 'Name'),
             'browser_version': ('App', 'Version')}
 
-    # defaults (of 'NULL') for browser_info keys
-    # XXX https://bugzilla.mozilla.org/show_bug.cgi?id=769082
-    defaults = {'repository': 'NULL', 'sourcestamp': 'NULL'}
-
     # fetch application.ini from remote
     if devicemanager:
         if not os.path.isfile('remoteapp.ini'):
@@ -56,25 +52,25 @@ def browserInfo(browser_config, devicemanager=None):
             devicemanager.getFile(remoteAppIni, 'remoteapp.ini')
         appIniPath = 'remoteapp.ini'
 
-    if os.path.isfile(appIniPath):
+    if not os.path.isfile(appIniPath):
+        raise TalosError("Could not read application information from file "
+                         "'%s'" % appIniPath)
 
-        # read from application.ini
-        config.read(appIniPath)
+    # read from application.ini
+    config.read(appIniPath)
 
-        # fill out browser_config data
-        for key in keys:
-            value = browser_config.get(key)
-            if ((key in defaults and value == defaults[key])
-                or (key not in defaults and not value)):
-                browser_config[key] = config.get(*keys[key])
-                utils.info("Reading '%s' from %s => %s", key, appIniPath, browser_config[key])
-    else:
-        utils.info("browserInfo: '%s' does not exist", appIniPath)
-
-    # ensure these values are set
-    # XXX https://bugzilla.mozilla.org/show_bug.cgi?id=769082
-    for key, default in defaults.items():
-        browser_config.setdefault(key, default)
+    # fill out browser_config data
+    for key in keys:
+        value = browser_config.get(key)
+        if not value:
+            browser_config[key] = config.get(*keys[key])
+            utils.info("Reading '%s' from %s => %s", key, appIniPath,
+                       browser_config[key])
+        # we should have a value that is not None or a blank string for
+        # the key at this point
+        if not browser_config[key]:
+            raise TalosError("Key '%s' should be specified in browser_config, "
+                             "was not" % browser_config[key])
 
     return browser_config
 
