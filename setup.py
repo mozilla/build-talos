@@ -22,6 +22,7 @@ dependencies = ['PyYAML',
                 'mozinstall == 1.6',
                 'httplib2',
                 'oauth2',
+                'cache_flusher == 1.0.4'
                 ]
 dependency_links = []
 
