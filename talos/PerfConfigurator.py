@@ -558,11 +558,16 @@ the highest value.
         # get tests
         # get user-selected tests
         activeTests = self.config.pop('activeTests', [])
-
+        if isinstance(activeTests, basestring):
+            activeTests = activeTests.strip()
+            activeTests = activeTests.split(':')
         # temporary hack for now until we have e10s running on all tests; please remove if you are running locally
         if self.config.get('e10s'):
-            for test in ['tresize', 'cart', 'tart', 'tp5o_scroll']:
-                activeTests.remove(test)
+            for testname in ['tresize', 'cart', 'tart', 'tp5o_scroll']:
+                if testname in activeTests:
+                    print "%s is unsupported on e10s, removing from list of " \
+                        "tests to run" % testname
+                    activeTests.remove(testname)
 
         overrides = self.config.pop('test_overrides', {}) # test overrides from yaml file
         global_overrides = {}
@@ -581,10 +586,6 @@ the highest value.
         # This is also hacked because "--noShutdown -> shutdown:True"
         if self.config.get('xperf_path', ''):
             global_overrides['shutdown'] = False
-
-        if isinstance(activeTests, basestring):
-            activeTests = activeTests.strip()
-            activeTests = activeTests.split(':')
 
         # add the tests to the configuration
         # XXX extending vs over-writing?
