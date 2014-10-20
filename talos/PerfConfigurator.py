@@ -563,7 +563,7 @@ the highest value.
             activeTests = activeTests.split(':')
         # temporary hack for now until we have e10s running on all tests; please remove if you are running locally
         if self.config.get('e10s'):
-            for testname in ['tresize', 'cart', 'tart', 'tp5o_scroll']:
+            for testname in ['tresize', 'tp5o_scroll']:
                 if testname in activeTests:
                     print "%s is unsupported on e10s, removing from list of " \
                         "tests to run" % testname
