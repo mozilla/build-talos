@@ -11,25 +11,44 @@ function $(id) {
   return document.getElementById(id);
 }
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-
-function getWin() {
-  var wm = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-  return wm.getMostRecentWindow("navigator:browser");
+// Executes command at the chrome process.
+// Limited to one argument (data), which is enough for TART.
+// doneCallback will be called once done and, if applicable, with the result as argument.
+// Execution might finish quickly (e.g. when setting prefs) or
+// take a while (e.g. when triggering the test run)
+function chromeExec(commandName, data, doneCallback) {
+  // dispatch an event to the framescript which will take it from there.
+  doneCallback = doneCallback || function dummy(){};
+  dispatchEvent(
+    new CustomEvent("tart@mozilla.org:chrome-exec-event", {
+      bubbles: true,
+      detail: {
+        command: {
+          name: commandName,
+          data: data,
+        },
+        doneCallback: doneCallback
+      }
+    })
+  );
 }
 
-var prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
-
 function setASAP() {
-  prefs.setIntPref("layout.frame_rate", 0);
-  prefs.setIntPref("docshell.event_starvation_delay_hint", 1);
+  chromeExec("setASAP");
 }
 
 function unsetASAP() {
-  prefs.clearUserPref("layout.frame_rate");
-  prefs.clearUserPref("docshell.event_starvation_delay_hint");
+  chromeExec("unsetASAP");
 }
+
+function toClipboard(text) {
+  chromeExec("toClipboard", text);
+}
+
+function runTest(config, doneCallback) {
+  chromeExec("runTest", config, doneCallback);
+}
+
 
 function sum(values) {
   return values.reduce(function(a, b){return a + b;});
@@ -49,12 +68,6 @@ function stddev(values, avg) {
 }
 
 var lastResults = '["[no results collected]"]';
-
-function resultsToClipboard() {
-  const gClipboardHelper = Components.classes["@mozilla.org/widget/clipboardhelper;1"]
-                                     .getService(Components.interfaces.nsIClipboardHelper);
-  gClipboardHelper.copyString(lastResults);
-}
 
 function doneTest(dispResult) {
   $("hide-during-run").style.display = "block";
@@ -100,7 +113,7 @@ function doneTest(dispResult) {
 
       dispStats +="<hr/><b>Individual animations</b>:<br/>";
     }
-    $("run-results").innerHTML = "<hr/><br/>Results <button onclick='resultsToClipboard()'>[ Copy to clipboard as JSON ]</button>:<br/>" + dispStats + dispResult.join("<br/>");
+    $("run-results").innerHTML = "<hr/><br/>Results <button onclick='toClipboard(lastResults)'>[ Copy to clipboard as JSON ]</button>:<br/>" + dispStats + dispResult.join("<br/>");
   }
 }
 
@@ -112,10 +125,7 @@ function triggerStart() {
   $("show-during-run").style.display = "block";
   $("run-results").innerHTML = "";
 
-  var e = new Event("tartstart");
-  e.doneCallback = doneTest;
-  e.config = config;
-  getWin().dispatchEvent(e);
+  runTest(config, doneTest);
 }
 
 var defaultConfig = {
