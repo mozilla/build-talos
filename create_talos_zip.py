@@ -21,13 +21,14 @@ here = os.path.dirname(os.path.abspath(__file__))
 dest = os.path.join(here, 'talos')
 
 mozbase_packages = [ ('mozcrash', '0.13'),
-                     ('mozdevice', '0.26'),
+                     ('mozdevice', '0.40'),
                      ('mozfile', '1.1'),
                      ('mozhttpd', '0.5'),
                      ('mozinfo', '0.7'),
                      ('mozlog', '2.6'),
                      ('moznetwork', '0.24'),
-                     ('mozprocess', '0.13') ]
+                     ('mozprocess', '0.21'),
+                     ('mozversion', '0.8') ]
 
 # datazilla client dependency
 datazilla_client = [('https://raw.github.com/mozilla/datazilla_client/master/dzclient/client.py',

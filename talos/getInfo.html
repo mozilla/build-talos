@@ -7,59 +7,10 @@
   <head>
     <script language="Javascript" type="text/javascript" src="scripts/MozillaFileLogger.js"></script>
     <script language="Javascript" type="text/javascript" src="page_load_test/quit.js"></script>
-    <script>
-
-  function setup() {
-    var id;
-    var version;
-    var buildid;
-
-    if (!useSpecialPowers) {
-      try {
-        netscape.security.PrivilegeManager.enablePrivilege('UniversalPreferencesRead UniversalPreferencesWrite UniversalXPConnect');
-        var appInfo = Components.classes['@mozilla.org/xre/app-info;1']
-                                .getService(Components.interfaces.nsIXULAppInfo);
-
-        //NOTE: version and buildid work fine, but appInfo.ID throws an exception on XUL Fennec, so we need to do that last.
-        version = appInfo.version;
-        buildid = appInfo.appBuildID;
-        id = appInfo.ID;
-      } catch(err) {
-          dumpLog('exception getting privileged access, defaulting to XUL_FENNEC');
-          id = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
-      }
-    } else {
-      id = SpecialPowers.ID;
-      if (id == null) {
-          id = '{a23983c0-fd0e-11dc-95ff-0800200c9a66}';
-      }
-      version = SpecialPowers.Version;
-      buildid = SpecialPowers.BuildID;
-    }
-    return [id, version, buildid]
-  }
-    </script>
     <title>shutdown script</title>
   </head>
 
   <body onload="
-    var appinfo = setup();
-    var id = appinfo[0];
-    var version = appinfo[1];
-    var buildid = appinfo[2];
-
-    var productid = [];
-    productid['{ec8030f7-c20a-464f-9b0e-13a3a9e97384}'] = 'Firefox';
-    productid['{99bceaaa-e3c6-48c1-b981-ef9b46b67d60}'] = 'Firefox';
-    productid['{3550f703-e582-4d05-9a08-453d09bdfdc6}'] = 'Thunderbird';
-    productid['{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}'] = 'SeaMonkey';
-    productid['{aa3c5121-dab2-40e2-81ca-7ea25febc110}'] = 'Fennec';
-    productid['{a23983c0-fd0e-11dc-95ff-0800200c9a66}'] = 'Fennec';
-
-    var product = productid[id];
-
-    dumpLog('__browserInfo\nbrowser_name:' + product + '\nbrowser_version:' + version + '\nbuildID:' + buildid + '\n__browserInfo');
-
     dumpLog('__metrics\tScreen width/height:' + screen.width + '/' + screen.height + '\n\tcolorDepth:' + screen.colorDepth + '\n');
     dumpLog('\tBrowser inner width/height: ' + window.innerWidth + '/' + window.innerHeight + '\n');
 //JMAHER: this is temporarily commented out because this hangs the fennec browser

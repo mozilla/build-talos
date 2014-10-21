@@ -8,6 +8,7 @@
 """
 
 import mozfile
+import mozversion
 import os
 import os.path
 import re
@@ -232,7 +233,6 @@ class FFSetup(object):
             browser_config: object containing all the browser_config options
             profile_dir: The full path to the profile directory to load
         """
-        INFO_REGEX = re.compile('__browserInfo(.*)__browserInfo', re.DOTALL|re.MULTILINE)
         PROFILE_REGEX = re.compile('__metrics(.*)__metrics', re.DOTALL|re.MULTILINE)
 
         command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"],
@@ -256,6 +256,7 @@ class FFSetup(object):
         results_file = open(browser_config['browser_log'], "r")
         results_raw = results_file.read()
         results_file.close()
+
         match = PROFILE_REGEX.search(results_raw)
         if match:
             res = 1
@@ -263,16 +264,15 @@ class FFSetup(object):
             utils.info("Could not find %s in browser_log: %s", PROFILE_REGEX.pattern, browser_config['browser_log'])
             utils.info("Raw results:%s", results_raw)
             utils.info("Initialization of new profile failed")
-        match = INFO_REGEX.search(results_raw)
-        if match:
-            binfo = match.group(1)
-            print binfo
-            for line in binfo.split('\n'):
-                if line.strip().startswith('browser_name'):
-                    browser_config['browser_name'] = line.split(':')[1]
-                if line.strip().startswith('browser_version'):
-                    browser_config['browser_version'] = line.split(':')[1]
-                if line.strip().startswith('buildID'):
-                    browser_config['buildid'] = line.split(':')[1]
+
+        binary = browser_config.get("apk_path")
+        if not binary:
+            binary = browser_config["browser_path"]
+        version_info = mozversion.get_version(binary=binary)
+        browser_config['browser_name'] = version_info['application_name']
+        browser_config['browser_version'] = version_info['application_version']
+        browser_config['buildid'] = version_info['application_buildid']
+        browser_config['repository'] = version_info['application_repository']
+        browser_config['sourcestamp'] = version_info['application_changeset']
 
         return res

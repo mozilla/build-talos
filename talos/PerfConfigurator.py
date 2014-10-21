@@ -426,6 +426,11 @@ the highest value.
         self.config['remote'] = self.remote
 
         if self.remote:
+            if not self.config.get('develop') and \
+               not self.config.get('apk_path'):
+                raise ConfigurationError("Must specify --apkPath on remote "
+                                         "if not in development mode")
+
             # setup remote
             deviceip = self.config.get('deviceip')
             deviceport = self.config['deviceport']
@@ -906,7 +911,8 @@ the highest value.
                     'test_timeout': 1200,
                     'webserver': '',
                     'xperf_path': None,
-                    'error_filename': None
+                    'error_filename': None,
+                    'apk_path': None
                     }
         browser_config = dict(title=title)
         browser_config.update(dict([(i, self.config[i]) for i in required]))

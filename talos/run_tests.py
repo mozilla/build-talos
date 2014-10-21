@@ -4,7 +4,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import ConfigParser
 import filter
 import os
 import PerfConfigurator
@@ -21,58 +20,6 @@ from utils import TalosError, TalosCrash, TalosRegression
 
 # directory of this file
 here = os.path.dirname(os.path.realpath(__file__))
-
-def browserInfo(browser_config, devicemanager=None):
-    """Get the buildid and sourcestamp from the application.ini (if it exists)"""
-    # XXX this should probably be moved to PerfConfigurator.py
-
-    config = ConfigParser.RawConfigParser()
-    appIniFileName = "application.ini"
-    bpath = os.path.dirname(browser_config['browser_path'])
-    if bpath.endswith('MacOS'):
-        # OSX bundle structure changed in bug 1053820
-        if not os.path.exists(os.path.join(bpath, appIniFileName)):
-            bpath = os.path.join(os.path.dirname(bpath), 'Resources')
-    appIniPath = os.path.join(bpath, appIniFileName)
-
-    # keys for various browser info
-    keys = {'buildid': ('App', 'BuildID'),
-            'repository': ('App', 'SourceRepository'),
-            'sourcestamp': ('App', 'SourceStamp'),
-            'browser_name': ('App', 'Name'),
-            'browser_version': ('App', 'Version')}
-
-    # fetch application.ini from remote
-    if devicemanager:
-        if not os.path.isfile('remoteapp.ini'):
-            if browser_config['browser_path'].startswith('org.mozilla.f'): # mobile Firefox/fennec
-                remoteAppIni = '/data/data/%s/%s' % (browser_config['browser_path'], appIniFileName)
-            else:
-                remoteAppIni = '/%s/%s' % (browser_config['deviceroot'], appIniFileName)
-            devicemanager.getFile(remoteAppIni, 'remoteapp.ini')
-        appIniPath = 'remoteapp.ini'
-
-    if not os.path.isfile(appIniPath):
-        raise TalosError("Could not read application information from file "
-                         "'%s'" % appIniPath)
-
-    # read from application.ini
-    config.read(appIniPath)
-
-    # fill out browser_config data
-    for key in keys:
-        value = browser_config.get(key)
-        if not value:
-            browser_config[key] = config.get(*keys[key])
-            utils.info("Reading '%s' from %s => %s", key, appIniPath,
-                       browser_config[key])
-        # we should have a value that is not None or a blank string for
-        # the key at this point
-        if not browser_config[key]:
-            raise TalosError("Key '%s' should be specified in browser_config, "
-                             "was not" % browser_config[key])
-
-    return browser_config
 
 def useBaseTestDefaults(base, tests):
     for test in tests:
@@ -241,13 +188,6 @@ def run_tests(configurator):
         date = int(time.time())
     utils.debug("using testdate: %d", date)
     utils.debug("actual date: %d", int(time.time()))
-
-    # pull buildid & sourcestamp from browser
-    try:
-        browser_config = browserInfo(browser_config, devicemanager=dm)
-    except:
-        if not browser_config['develop']:
-            raise
 
     if browser_config['remote']:
         procName = browser_config['browser_path'].split('/')[-1]
