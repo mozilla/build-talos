@@ -3,24 +3,9 @@
  */
 
 // Detect if we are on older branches that don't have specialpowers enabled talos available
-var useSpecialPowers = true;
-try {
-  if (SpecialPowers === undefined)
-    useSpecialPowers = false;
-} catch (ex) {
-  useSpecialPowers = false;
-}
+// we use useSpecialPowers in quit.js, it will be removed in bug 1088252
+var useSpecialPowers = false;
 var ipcMode = false; // running in e10s build and need to use IPC?
-if (!useSpecialPowers) {
-  try {
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-    var ipcsanity = Components.classes["@mozilla.org/preferences-service;1"]
-                      .getService(Components.interfaces.nsIPrefBranch);
-    ipcsanity.setIntPref("mochitest.ipcmode", 0);
-  } catch (e) {
-    ipcMode = true;
-  }
-}
 
 function contentDispatchEvent(type, data, sync) {
   if (typeof(data) === "undefined") {
@@ -47,57 +32,43 @@ function contentAsyncEvent(type, data) {
 //Ideally we would remove the dump() and just do ipc logging
 function dumpLog(msg) {
   dump(msg);
-  if (ipcMode == true) {
-    contentAsyncEvent('Logger', msg);
-  } else if (useSpecialPowers) {
-    SpecialPowers.log(msg);
-  } else {
-    MozFileLogger.log(msg);
-  }
+  MozFileLogger.log(msg);
 }
 
 
-if (!useSpecialPowers) {
-  try {
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
 
-    if (Cc === undefined) {
-      var Cc = Components.classes;
-      var Ci = Components.interfaces;
-    }
-  } catch (ex) {} //running in ipcMode-chrome
+if (Cc === undefined) {
+  var Cc = Components.classes;
+  var Ci = Components.interfaces;
 }
 
-try {
-  const FOSTREAM_CID = "@mozilla.org/network/file-output-stream;1";
-  const LF_CID = "@mozilla.org/file/local;1";
-  
-  // File status flags. It is a bitwise OR of the following bit flags.
-  // Only one of the first three flags below may be used.
-  const PR_READ_ONLY    = 0x01; // Open for reading only.
-  const PR_WRITE_ONLY   = 0x02; // Open for writing only.
-  const PR_READ_WRITE   = 0x04; // Open for reading and writing.
-  
-  // If the file does not exist, the file is created.
-  // If the file exists, this flag has no effect.
-  const PR_CREATE_FILE  = 0x08;
-  
-  // The file pointer is set to the end of the file prior to each write.
-  const PR_APPEND       = 0x10;
-  
-  // If the file exists, its length is truncated to 0.
-  const PR_TRUNCATE     = 0x20;
-  
-  // If set, each write will wait for both the file data
-  // and file status to be physically updated.
-  const PR_SYNC         = 0x40;
-  
-  // If the file does not exist, the file is created. If the file already
-  // exists, no action and NULL is returned.
-  const PR_EXCL         = 0x80;
-} catch (ex) {
- // probably not running in the test harness
-}
+const FOSTREAM_CID = "@mozilla.org/network/file-output-stream;1";
+const LF_CID = "@mozilla.org/file/local;1";
+
+// File status flags. It is a bitwise OR of the following bit flags.
+// Only one of the first three flags below may be used.
+const PR_READ_ONLY    = 0x01; // Open for reading only.
+const PR_WRITE_ONLY   = 0x02; // Open for writing only.
+const PR_READ_WRITE   = 0x04; // Open for reading and writing.
+
+// If the file does not exist, the file is created.
+// If the file exists, this flag has no effect.
+const PR_CREATE_FILE  = 0x08;
+
+// The file pointer is set to the end of the file prior to each write.
+const PR_APPEND       = 0x10;
+
+// If the file exists, its length is truncated to 0.
+const PR_TRUNCATE     = 0x20;
+
+// If set, each write will wait for both the file data
+// and file status to be physically updated.
+const PR_SYNC         = 0x40;
+
+// If the file does not exist, the file is created. If the file already
+// exists, no action and NULL is returned.
+const PR_EXCL         = 0x80;
 
 /** Init the file logger with the absolute path to the file.
     It will create and append if the file already exists **/
@@ -105,14 +76,7 @@ var MozFileLogger = {};
 
 
 MozFileLogger.init = function(path) {
-  if (ipcMode) {
-    contentAsyncEvent("LoggerInit", {"filename": path});
-    return;
-  }
-
-  try {
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-  } catch (ex) {} //running in ipcMode-chrome
+  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
 
   MozFileLogger._file = Cc[LF_CID].createInstance(Ci.nsILocalFile);
   MozFileLogger._file.initWithPath(path);
@@ -122,16 +86,8 @@ MozFileLogger.init = function(path) {
 }
 
 MozFileLogger.getLogCallback = function() {
-  if (ipcMode) {
-    return function(msg) {
-      contentAsyncEvent("Logger", {"num": msg.num, "level": msg.level, "info": msg.info.join(' ')});
-    }
-  }
-
   return function (msg) {
-    try {
-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-    } catch(ex) {} //running in ipcMode-chrome
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
 
     var data = msg.num + " " + msg.level + " " + msg.info.join(' ') + "\n";
     if (MozFileLogger._foStream)
@@ -159,9 +115,7 @@ MozFileLogger.close = function() {
     return;
   }
 
-  try {
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
-  } catch(ex) {} //running in ipcMode-chrome
+  netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
 
   if(MozFileLogger._foStream)
     MozFileLogger._foStream.close();
@@ -170,19 +124,10 @@ MozFileLogger.close = function() {
   MozFileLogger._file = null;
 }
 
-if (ipcMode == false) {
-  if (!useSpecialPowers) {
-    try {
-      var prefs = Components.classes['@mozilla.org/preferences-service;1']
-        .getService(Components.interfaces.nsIPrefBranch2);
-      var filename = prefs.getCharPref('talos.logfile');
-      MozFileLogger.init(filename);
-    } catch (ex) {} //pref does not exist, return empty string
-  } else {
-    try {
-      var filename = SpecialPowers.getCharPref('talos.logfile');
-      SpecialPowers.setLogFile(filename);
-    } catch (ex) {} //pref does not exist, return empty string
-  }
-}
+try {
+  var prefs = Components.classes['@mozilla.org/preferences-service;1']
+    .getService(Components.interfaces.nsIPrefBranch2);
+  var filename = prefs.getCharPref('talos.logfile');
+  MozFileLogger.init(filename);
+} catch (ex) {} //pref does not exist, return empty string
 
