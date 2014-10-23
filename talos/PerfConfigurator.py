@@ -426,10 +426,8 @@ the highest value.
         self.config['remote'] = self.remote
 
         if self.remote:
-            if not self.config.get('develop') and \
-               not self.config.get('apk_path'):
-                raise ConfigurationError("Must specify --apkPath on remote "
-                                         "if not in development mode")
+            if not self.config.get('apk_path'):
+                raise ConfigurationError("Must specify --apkPath for Android")
 
             # setup remote
             deviceip = self.config.get('deviceip')
