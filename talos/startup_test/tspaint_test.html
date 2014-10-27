@@ -17,16 +17,14 @@ function painted() {
   window.removeEventListener("MozAfterPaint", painted, true);
 
   var startupTime = -1;
-  if (useSpecialPowers) {
-    // We need to define this still
-    throw('NOT DEFINED');
-  } else {
-    try {
-      netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
-      var startupInfo = Components.classes['@mozilla.org/toolkit/app-startup;1'].
+
+  try {
+    netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+    var startupInfo = Components.classes['@mozilla.org/toolkit/app-startup;1'].
                                    getService(Ci.nsIAppStartup).getStartupInfo();
-      startupTime = now - startupInfo['process'];
-    } catch(ex) { dumpLog(ex + '\n'); }
+    startupTime = now - startupInfo['process'];
+  } catch(ex) {
+    dumpLog(ex + '\n');
   }
 
   Profiler.pause();
@@ -47,14 +45,13 @@ function failed() {
 
 function dumpConsoleAndQuit() {
   var messages = {}
-  if (useSpecialPowers) {
-    messages = SpecialPowers.getConsoleMessages();
-  } else {
-    try {
-      netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
-      var consoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
-      consoleService.getMessageArray(messages, {});
-    } catch(ex) { dumpLog(ex + '\n'); }
+
+  try {
+    netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
+    var consoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
+    consoleService.getMessageArray(messages, {});
+  } catch(ex) {
+    dumpLog(ex + '\n');
   }
 
   for (var i = 0; i < messages.value.length; i++)

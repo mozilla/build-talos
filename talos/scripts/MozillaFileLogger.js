@@ -2,9 +2,6 @@
  * MozFileLogger, a log listener that can write to a local file.
  */
 
-// Detect if we are on older branches that don't have specialpowers enabled talos available
-// we use useSpecialPowers in quit.js, it will be removed in bug 1088252
-var useSpecialPowers = false;
 var ipcMode = false; // running in e10s build and need to use IPC?
 
 function contentDispatchEvent(type, data, sync) {

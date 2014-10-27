@@ -75,11 +75,6 @@ function goQuitApplication()
     return;
   }
 
-  if (useSpecialPowers) {
-    SpecialPowers.quit();
-    return;
-  }
-
   const privs = 'UniversalPreferencesRead UniversalPreferencesWrite ' +
     'UniversalXPConnect';
 
