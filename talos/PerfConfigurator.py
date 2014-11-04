@@ -494,6 +494,10 @@ the highest value.
         # if e10s is enabled, set prefs accordingly
         if self.config.get('e10s'):
             self.config['preferences']['browser.tabs.remote.autostart'] = True
+        else:
+            self.config['preferences']['browser.tabs.remote.autostart'] = False
+            self.config['preferences']['browser.tabs.remote.autostart.1'] = False
+            self.config['preferences']['browser.tabs.remote.autostart.2'] = False
 
         extraPrefs = self.config.pop('extraPrefs', {})
         extraPrefs = dict([(i, utils.parsePref(j)) for i, j in extraPrefs.items()])
