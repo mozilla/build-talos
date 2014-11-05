@@ -242,7 +242,7 @@ function plInit() {
                           "    sendAsyncMessage('PageLoader:LoadEvent', {}); " +
                           "  } " +
                           "}; " +
-                          "content.wrappedJSObject.setTimeout(_contentPaintHandler, 0); ";
+                          "content.setTimeout(_contentPaintHandler, 0); ";
                        } else {
                          contentScript += "    sendAsyncMessage('PageLoader:LoadEvent', {}); ";
                        }
