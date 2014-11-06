@@ -155,6 +155,10 @@ def run_tests(configurator):
         # we are running this with win 8 metro
         title = "%s.m" % (title,)
 
+    if browser_config['e10s'] and not title.endswith(".e"):
+        # we are running in e10s mode
+        title = "%s.e" % (title,)
+
     # get the process name from the path to the browser
     if not browser_config['process']:
         browser_config['process'] = os.path.basename(browser_config['browser_path'])

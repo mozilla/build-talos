@@ -309,7 +309,6 @@ class GraphserverOutput(Output):
         wait_time = 5 # number of seconds between each attempt
 
         for index, data_string in enumerate(results):
-
             times = 0
             msg = ""
             while times < self.retries:
@@ -606,6 +605,9 @@ class DatazillaOutput(Output):
             if self.results.title.endswith(".m") and not version.endswith('.m'):
                 # we are running this against win 8 metro
                 version = '%s.m' % (version,)
+            elif self.results.title.endswith(".e") and not version.endswith('.e'):
+                # we are running this against e10s builds
+                version = '%s.e' % (version,)
 
         return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
 
