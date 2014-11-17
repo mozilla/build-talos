@@ -9,22 +9,9 @@ except IOError, OSError:
 
 version = "0.0"
 
-dependencies = ['PyYAML',
-                'mozlog == 2.6',
-                'mozcrash == 0.13',
-                'mozdevice == 0.40',
-                'mozfile == 1.1',
-                'mozhttpd == 0.5',
-                'mozinfo == 0.7',
-                'datazilla == 1.4',
-                'moznetwork == 0.24',
-                'mozprocess == 0.21',
-                'mozinstall == 1.6',
-                'mozversion == 0.8',
-                'httplib2',
-                'oauth2',
-                'cache_flusher == 1.0.4'
-                ]
+with open(os.path.join(here, "requirements.txt")) as f:
+    dependencies = f.read().splitlines()
+
 dependency_links = []
 
 setup(name='talos',
