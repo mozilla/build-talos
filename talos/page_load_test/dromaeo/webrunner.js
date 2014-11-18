@@ -90,21 +90,21 @@
 						startShark();
 					}
 					
-					start = (new Date()).getTime();
+					start = performance.now();
 					
 					if ( runStyle === "runs/s" ) {
 						var runs = 0;
 						
-						cur = (new Date()).getTime();
+						cur = performance.now();
 						
 						while ( (cur - start) < 1000 ) {
 							fn();
-							cur = (new Date()).getTime();
+							cur = performance.now();
 							runs++;
 						}
 					} else {
 						fn();
-						cur = (new Date()).getTime();
+						cur = performance.now();
 					}
 
 					if ( doShark(name) ) {
