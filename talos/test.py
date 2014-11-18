@@ -358,8 +358,8 @@ class tp(PageloaderTest):
     resolution = 20
     win_counters = ['Working Set', 'Private Bytes', '% Processor Time']
     w7_counters = ['Working Set', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
-    linux_counters = ['Private Bytes', 'RSS', 'XRes']
-    mac_counters = ['Private Bytes', 'RSS']
+    linux_counters = ['Private Bytes', 'Main_RSS', 'XRes']
+    mac_counters = ['Main_RSS']
     shutdown = True
 
 class tp4m(tp):
@@ -427,7 +427,7 @@ class tp5o(PageloaderTest):
     win_counters = ['Main_RSS', 'Private Bytes', '% Processor Time']
     w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS']
-    mac_counters = ['Private Bytes', 'Main_RSS']
+    mac_counters = ['Main_RSS']
     responsiveness = True
     sps_profile_interval = 10
     sps_profile_entries = 2000000
