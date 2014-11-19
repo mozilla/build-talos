@@ -330,7 +330,14 @@ the highest value.
         'browser.displayedE10SPrompt.2': 9999,
         'browser.displayedE10SPrompt.3': 9999,
         'browser.displayedE10SPrompt.4': 9999,
-        'browser.displayedE10SPrompt.5': 9999
+        'browser.displayedE10SPrompt.5': 9999,
+        'app.update.badge': False,
+        'browser.devedition.theme.showCustomizeButton': False,
+        'browser.devedition.theme.enabled': False,
+        'devtools.webide.widget.enabled': False,
+        'devtools.webide.widget.inNavbarByDefault': False,
+        'devtools.chrome.enabled': False,
+        'devtools.debugger.remote-enabled': False
     }
 
     # keys to generated self.config that are global overrides to tests
