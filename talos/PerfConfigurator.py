@@ -337,7 +337,10 @@ the highest value.
         'devtools.webide.widget.enabled': False,
         'devtools.webide.widget.inNavbarByDefault': False,
         'devtools.chrome.enabled': False,
-        'devtools.debugger.remote-enabled': False
+        'devtools.debugger.remote-enabled': False,
+        'devtools.theme': "light",
+        'devtools.timeline.enabled': False,
+        'identity.fxaccounts.migrateToDevEdition': False
     }
 
     # keys to generated self.config that are global overrides to tests
