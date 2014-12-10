@@ -82,6 +82,7 @@ class TsBase(Test):
         'xperf_stackwalk',
         'tpmozafterpaint',
         'test_name_extension',
+        'extensions',
         'setup',
         'cleanup',
         'fennecIDs',
@@ -148,8 +149,9 @@ class tresize(TsBase):
     """
     This test does some resize thing.
     """
+    extensions = '${talos}/startup_test/tresize/addon'
     cycles = 20
-    url = 'startup_test/tresize-test.html'
+    url = 'startup_test/tresize/addon/content/tresize-test.html'
     timeout = 150
     sps_profile_interval = 10
     tpmozafterpaint = True
