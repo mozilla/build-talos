@@ -19,7 +19,7 @@ function painted() {
   window.gBrowser.removeEventListener("MozAfterPaint", painted, true);
   var paintTime = window.performance.now();
   dataSet[count].end = paintTime;
-  setTimeout(resizeCompleted, 0);
+  setTimeout(resizeCompleted, 20);
 }
 
 function resizeTest() {
