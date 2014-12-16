@@ -264,7 +264,8 @@ class TTest(object):
         self.resolution = test_config['resolution']
         utils.setEnvironmentVars(browser_config['env'])
         utils.setEnvironmentVars({'MOZ_CRASHREPORTER_NO_REPORT': '1'})
-
+        # for winxp e10s logging: https://bugzilla.mozilla.org/show_bug.cgi?id=1037445
+        utils.setEnvironmentVars({'MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA': '1'})
         if browser_config['symbols_path']:
             utils.setEnvironmentVars({'MOZ_CRASHREPORTER': '1'})
         else:
