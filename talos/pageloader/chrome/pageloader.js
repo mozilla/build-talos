@@ -43,6 +43,7 @@ var gPaintWindow = window;
 var gPaintListener = false;
 var loadNoCache = false;
 var scrollTest = false;
+var gUseE10S = false;
 
 //when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
 var gTime = -1;
@@ -223,9 +224,11 @@ function plInit() {
                      browserWindow.focus();
 
                      content = browserWindow.getBrowser();
+                     gUseE10S = (plPageFlags() & EXECUTE_SCROLL_TEST) || (content.selectedBrowser &&
+                                 content.selectedBrowser.getAttribute("remote") == "true")
 
                      // Load the frame script for e10s / IPC message support
-                     if (content.selectedBrowser.getAttribute("remote") == "true") {
+                     if (gUseE10S) {
                        let contentScript = "data:,function _contentLoadHandler(e) { " +
                          "  if (e.originalTarget.defaultView == content) { " +
                          "    content.wrappedJSObject.tpRecordTime = function(t, s, n) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s, testName: n }); }; ";
@@ -251,6 +254,7 @@ function plInit() {
                          "} " +
                          "addEventListener('load', _contentLoadHandler, true); ";
                        content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
+                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
                      }
                      if (reportRSS) {
                        initializeMemoryCollector(plLoadPage, 100);
@@ -309,7 +313,7 @@ function plLoadPage() {
     removeLastAddedMsgListener = null;
   }
 
-  if (plPageFlags() & TEST_DOES_OWN_TIMING) {
+  if ((plPageFlags() & TEST_DOES_OWN_TIMING) && !gUseE10S) {
     // if the page does its own timing, use a capturing handler
     // to make sure that we can set up the function for content to call
 
@@ -321,7 +325,7 @@ function plLoadPage() {
         gPaintListener = false;
       }
     };
-  } else {
+  } else if (!gUseE10S) {
     // if the page doesn't do its own timing, use a bubbling handler
     // to make sure that we're called after the page's own onload() handling
 
@@ -338,8 +342,7 @@ function plLoadPage() {
   }
 
   // If the test browser is remote (e10s / IPC) we need to use messages to watch for page load
-  if (content.selectedBrowser &&
-      content.selectedBrowser.getAttribute("remote") == "true") {
+  if (gUseE10S) {
     let mm = content.selectedBrowser.messageManager;
     mm.addMessageListener('PageLoader:LoadEvent', ContentListener);
     mm.addMessageListener('PageLoader:RecordTime', ContentListener);
@@ -486,18 +489,17 @@ function plLoadHandlerCapturing(evt) {
   removeLastAddedListener = null;
 
   setTimeout(plWaitForPaintingCapturing, 0);
+}
 
+// Shim function this is really defined in tscroll.js
+function sendScroll() {
   const SCROLL_TEST_STEP_PX = 10;
   const SCROLL_TEST_NUM_STEPS = 100;
-  if (plPageFlags() & EXECUTE_SCROLL_TEST) {
-    // The page doesn't really use tpRecordTime. Instead, we trigger the scroll test,
-    // and the scroll test will call tpRecordTime which will take us to the next page
-
-    // Let the page settle down after its load event, then execute the scroll test.
-    setTimeout(testScroll, 500,
-               content.contentWindow.wrappedJSObject, SCROLL_TEST_STEP_PX,
-               content.contentWindow.wrappedJSObject.tpRecordTime, SCROLL_TEST_NUM_STEPS);
-  }
+  // The page doesn't really use tpRecordTime. Instead, we trigger the scroll test,
+  // and the scroll test will call tpRecordTime which will take us to the next page
+  let details = {target: 'content', stepSize: SCROLL_TEST_STEP_PX, opt_numSteps: SCROLL_TEST_NUM_STEPS};
+  let mm = content.selectedBrowser.messageManager;
+  mm.sendAsyncMessage("PageLoader:ScrollTest", { details: details });
 }
 
 function plWaitForPaintingCapturing() {
@@ -610,7 +612,10 @@ function plLoadHandlerMessage() {
     clearTimeout(timeoutEvent);
   }
 
-  if ((plPageFlags() & TEST_DOES_OWN_TIMING)) {
+  if ((plPageFlags() & EXECUTE_SCROLL_TEST)) {
+    // Let the page settle down after its load event, then execute the scroll test.
+    setTimeout(sendScroll, 500);
+  } else if ((plPageFlags() & TEST_DOES_OWN_TIMING)) {
     var time;
 
     if (typeof(gStartTime) != "number")
@@ -709,8 +714,7 @@ function plStopAll(force) {
       content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
       content.removeEventListener("MozAfterPaint", plPainted, true);
 
-    if (content.selectedBrowser &&
-        content.selectedBrowser.getAttribute("remote") == "true") {
+    if (gUseE10S) {
       let mm = content.selectedBrowser.messageManager;
       mm.removeMessageListener('PageLoader:LoadEvent', ContentListener);
       mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
@@ -818,127 +822,3 @@ function dumpLine(str) {
   dump("\n");
 }
 
-// Note: The content from here upto '// End scroll test' is duplicated at:
-//       - talos/page_load_test/scroll/scroll-test.js
-//       - inside talos/pageloader/chrome/pageloader.js
-//
-// - Please keep these copies in sync.
-// - Pleace make sure that any changes apply cleanly to all use cases.
-
-function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
-{
-  function myNow() {
-    return (window.performance && window.performance.now) ?
-            window.performance.now() :
-            Date.now();
-  };
-
-  var isWindow = target.self === target;
-
-  var getPos =       isWindow ? function() { return target.pageYOffset; }
-                              : function() { return target.scrollTop; };
-
-  var gotoTop =      isWindow ? function() { target.scroll(0, 0);  ensureScroll(); }
-                              : function() { target.scrollTop = 0; ensureScroll(); };
-
-  var doScrollTick = isWindow ? function() { target.scrollBy(0, stepSize); ensureScroll(); }
-                              : function() { target.scrollTop += stepSize; ensureScroll(); };
-
-  function ensureScroll() { // Ensure scroll by reading computed values. screenY is for X11.
-    if (!this.dummyEnsureScroll) {
-      this.dummyEnsureScroll = 1;
-    }
-    this.dummyEnsureScroll += window.screenY + getPos();
-  }
-
-  function rAFFallback(callback) {
-    var interval = 1000 / 60;
-    var now = (window.performance && window.performance.now) ?
-              window.performance.now() :
-              Date.now();
-    // setTimeout can return early, make sure to target the next frame.
-    if (this.lastTarget && now < this.lastTarget)
-      now = this.lastTarget + 0.01; // Floating point errors may result in just too early.
-    var delay = interval - now % interval;
-    this.lastTarget = now + delay;
-    setTimeout(callback, delay);
-  }
-
-  var rAF = window.requestAnimationFrame       ||
-            window.mozRequestAnimationFrame    ||
-            window.webkitRequestAnimationFrame ||
-            window.oRequestAnimationFrame      ||
-            window.msRequestAnimationFrame     ||
-            rAFFallback;
-
-  // For reference, rAF should fire on vsync, but Gecko currently doesn't use vsync.
-  // Instead, it uses 1000/layout.frame_rate
-  // (with 60 as default value when layout.frame_rate == -1).
-
-  function startTest()
-  {
-    // We should be at the top of the page now.
-    var start = myNow();
-    var lastScrollPos = getPos();
-    var lastScrollTime = start;
-    var durations = [];
-    var report = opt_reportFunc || tpRecordTime;
-
-    function tick() {
-      var now = myNow();
-      var duration = now - lastScrollTime;
-      lastScrollTime = now;
-
-      durations.push(duration);
-      doScrollTick();
-
-      /* stop scrolling if we can't scroll more, or if we've reached requested number of steps */
-      if ((getPos() == lastScrollPos) || (opt_numSteps && (durations.length >= (opt_numSteps + 2)))) {
-        Profiler.pause();
-
-        // Note: The first (1-5) intervals WILL be longer than the rest.
-        // First interval might include initial rendering and be extra slow.
-        // Also requestAnimationFrame needs to sync (optimally in 1 frame) after long frames.
-        // Suggested: Ignore the first 5 intervals.
-
-        durations.pop(); // Last step was 0.
-        durations.pop(); // and the prev one was shorter and with end-of-page logic, ignore both.
-
-        if (window.talosDebug)
-          window.talosDebug.displayData = true; // In a browser: also display all data points.
-
-        // For analysis (otherwise, it's too many data points for talos):
-        // tpRecordTime(durations.join(","));
-        var sum = 0;
-        for (var i = 0; i < durations.length; i++)
-          sum += Number(durations[i]);
-        // Report average interval or (failsafe) 0 if no intervls were recorded
-        report(durations.length ? sum / durations.length : 0);
-
-        return;
-      }
-
-      lastScrollPos = getPos();
-      rAF(tick);
-    }
-
-    Profiler.resume();
-    rAF(tick);
-  }
-
-
-  // Not part of the test and does nothing if we're within talos,
-  // But provides an alternative tpRecordTime (with some stats display) if running in a browser
-  // If a callback is provided, then we don't need this debug reporting.
-  if(!opt_reportFunc && document.head) {
-    var imported = document.createElement('script');
-    imported.src = '../../scripts/talos-debug.js?dummy=' + Date.now(); // For some browsers to re-read
-    document.head.appendChild(imported);
-  }
-
-  setTimeout(function(){
-    gotoTop();
-    rAF(startTest);
-  }, 260);
-}
-// End scroll test
