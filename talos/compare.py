@@ -7,6 +7,7 @@ import datetime, time
 from optparse import OptionParser
 import sys
 import os
+import filter
 
 SERVER = 'graphs.mozilla.org'
 selector = '/api/test/runs'
@@ -26,13 +27,12 @@ branch_map['UX']      = {'pgo':    {'id': 59, 'name': 'UX'},
 branches = ['Try', 'Firefox', 'Inbound', 'Cedar', 'UX']
 
 # TODO: pull test names and reverse_tests from test.py in the future
+# TODO: add android test names
 test_map = {}
-test_map['ts_places_med'] = {'id': 53, 'tbplname': 'ts_places_generated_med'}
-test_map['ts_places_max'] = {'id': 54, 'tbplname': 'ts_places_generated_max'}
 test_map['dromaeo_css'] = {'id': 72, 'tbplname': 'dromaeo_css'}
 test_map['dromaeo_dom'] = {'id': 73, 'tbplname': 'dromaeo_dom'}
 test_map['kraken'] = {'id': 232, 'tbplname': 'kraken'}
-test_map['v8'] = {'id': 230, 'tbplname': 'v8_7'}
+test_map['v8_7'] = {'id': 230, 'tbplname': 'v8_7'}
 test_map['tscrollr'] = {'id': 222, 'tbplname': 'tscrollr_paint'}
 test_map['a11yr'] = {'id': 223, 'tbplname': 'a11yr_paint'}
 test_map['ts_paint'] = {'id': 83, 'tbplname': 'ts_paint'}
@@ -48,22 +48,39 @@ test_map['tscrollx'] = {'id': 287, 'tbplname': 'tscrollx_paint'}
 test_map['sessionrestore'] = {'id': 313, 'tbplname':'sessionrestore'}
 test_map['sessionrestore_no_auto_restore'] = {'id': 315, 'tbplname':'sessionrestore_no_auto_restore'}
 test_map['tart'] = {'id': 293, 'tbplname': 'tart'}
+test_map['cart'] = {'id': 309, 'tbplname': 'cart'}
 test_map['tcanvasmark'] = {'id': 297, 'tbplname': 'tcanvasmark_paint'}
-tests = ['tresize', 'kraken', 'v8', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore' ]
+test_map['glterrain'] = {'id': 325, 'tbplname': 'glterrain'}
+test_map['media_tests'] = {'id': 317, 'tbplname': 'media_tests'}
 
-reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8']
+tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
+
+reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8', 'canvasmark']
 
 platform_map = {}
 platform_map['Linux'] = 33 #14 - 14 is the old fedora, we are now on Ubuntu slaves
+platform_map['Linux (e10s)'] = 41
 platform_map['Linux64'] = 35 #15 - 15 is the old fedora, we are now on Ubuntu slaves
-platform_map['Win'] = 25 # 12 is for non-ix
+platform_map['Linux64 (e10s)'] = 43
+platform_map['Win7'] = 25 # 12 is for non-ix
+platform_map['Win7 (e10s)'] = 47
 platform_map['Win8'] = 31
+platform_map['Win8 (e10s)'] = 49
 platform_map['WinXP'] = 37 # 1 is for non-ix
+platform_map['WinXP (e10s)'] = 45
 platform_map['Win64'] = 19
 platform_map['OSX64'] = 21 #10.6
+platform_map['OSX64 (e10s)'] = 51
 platform_map['OSX'] = 13 #10.5.8
 platform_map['OSX10.8'] = 24
-platforms = ['Linux', 'Linux64', 'Win', 'WinXP', 'Win8', 'OSX64', 'OSX10.8'] #'Win64' doesn't have talos results
+platform_map['OSX10.8 (e10s)'] = 53
+platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8']
+platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)', 'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)', 'OSX10.8 (e10s)']
+
+# e10s is a new platform we are supporting, as we don't run it often there is not a need for it, right now it is just noise
+# having it defined allows us to start looking at e10s vs non e10s.  How to do that with compare.py is not implemented, but now we can at least
+# compare a try run with e10s data to m-c
+platforms.extend(platforms_e10s)
 
 def getGraphData(testid, branchid, platformid):
     body = {"id": testid, "branchid": branchid, "platformid": platformid}
@@ -221,46 +238,66 @@ def parseGraphResultsByDate(data, start, end):
     high = 0
     count = 0
     runs = data['test_runs']
+    vals = []
     for run in runs:
         if run[2] >= start and run[2] <= end:
+            vals.append(run[3])
             if run[3] < low:
                 low = run[3]
             if run[3] > high:
                 high = run[3]
             count += 1
 
-    return {'low': low, 'high': high, 'count': count}
+    average = 0
+    geomean = 0
+    if count > 0:
+        average = filter.mean(vals)
+        geomean = filter.geometric_mean(vals)
+    return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
 
 def parseGraphResultsByChangeset(data, changeset):
     low = sys.maxint
     high = 0
     count = 0
     runs = data['test_runs']
+    vals = []
     for run in runs:
         push = run[1]
         cset = push[2]
         if cset == changeset:
+            vals.append(run[3])
             if run[3] < low:
                 low = run[3]
             if run[3] > high:
                 high = run[3]
             count += 1
 
-    return {'low': low, 'high': high, 'count': count}
+    average = 0
+    geomean = 0
+    if count > 0:
+        average = filter.mean(vals)
+        geomean = filter.geometric_mean(vals)
+    return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
 
 
-def compareResults(revision, branch, masterbranch, startdate, enddate, platforms, tests, pgo, printurl, dzdata, pgodzdata):
-    print "   test\t\t\tmin.\t->\tmax.\trev.\tDatazilla"
+def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, dzdata=None, pgodzdata=None, doPrint=False):
+    startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(skipdays+history))).timetuple()))
+    enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=skipdays)).timetuple()))
+
+    if doPrint:
+        print "   test\t\t\tmin.\t->\tmax.\trev."
+
     for p in platforms:
-        print "%s:" % (p)
+        output = ["%s:\n" % p]
+
         for t in tests:
-            dzval = "N/A"
+            dzval = None
             if dzdata:
                 if p in dzdata:
                     if test_map[t]['tbplname'] in dzdata[p]:
                         dzval = dzdata[p][test_map[t]['tbplname']]
 
-            pgodzval = "N/A"
+            pgodzval = None
             if pgodzdata:
                 if p in pgodzdata:
                     if test_map[t]['tbplname'] in pgodzdata[p]:
@@ -280,26 +317,31 @@ def compareResults(revision, branch, masterbranch, startdate, enddate, platforms
                 results = parseGraphResultsByDate(data, startdate, enddate)
                 test = parseGraphResultsByChangeset(testdata, revision)
                 status = ''
-                if test['low'] < results['low']:
+                if test['geomean'] < results['low']:
                     status = ':)'
                     if t in reverse_tests:
                         status = ':('
-                if test['high'] > results['high']:
+                if test['geomean'] > results['high']:
                     status = ':('
                     if t in reverse_tests:
                         status = ':)'
 
                 if test['low'] == sys.maxint or results['low'] == sys.maxint or \
                    test['high'] == 0  or results['high'] == 0:
-                    print "   %-18s\tNo results found" % (t)
-
+                    output.append("   %-18s\tNo results found" % t)
                 else:
-                    url = ""
+                    string = "%2s %-18s\t%7.1f\t->\t%7.1f\t%7.1f" % (status, t, results['low'], results['high'], test['avg'])
+                    if dzval and pgodzval:
+                        string = "\t[%s] [PGO: %s]" % (dzval, pgodzval)
                     if printurl:
                         url = shorten("http://graphs.mozilla.org/graph.html#tests=[[%s,%s,%s]]" % (test_map[t]['id'], bid, platform_map[p]))
-                    print "%2s %-18s\t%7.1f\t->\t%7.1f\t%7.1f\t[%s] [PGO: %s]\t%s" % (status, t, results['low'], results['high'], test['low'], dzval, pgodzval, url)
+                        string = "\t%s" % url
+                    output.append(string)
             else:
-                print "   %-18s\tNo data for platform" % t
+                output.append("   %-18s\tNo data for platform" % t)
+
+        if doPrint:
+            print '\n'.join(output)
 
 class CompareOptions(OptionParser):
 
@@ -325,6 +367,11 @@ class CompareOptions(OptionParser):
                         action = "store", type = "int", dest = "skipdays",
                         default = 0,
                         help = "Specify the number of days to ignore results, default '0'.  Note: If a regression landed 4 days ago, use --skipdays=5")
+
+        self.add_option("--history",
+                        action = "store", type = "int", dest = "history",
+                        default = 14,
+                        help = "Specify the number of days in history to go back and get results.  If specified in conjunction with --skipdays, we will collect <history> days starting an extra <skipdays> in the past.  For example, if you have skipdays as 7 and history as 14, then we will collect data from 7-21 days in the past.  Default is 14 days")
 
         self.add_option("--platform",
                         action = "append", type = "choice", dest = "platforms",
@@ -380,9 +427,6 @@ def main():
     if not options.revision:
         parser.error("ERROR: --revision is required")
 
-    startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(options.skipdays+14))).timetuple()))
-    enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=options.skipdays)).timetuple()))
-
     #TODO: We need to ensure we have full coverage of the pushlog before we can do this.
 #    alldata = getDatazillaData(options.branch)
 #    datazilla, pgodatazilla, xperfdata = alldata[options.revision]
@@ -390,7 +434,7 @@ def main():
     if options.xperf:
         print xperfdata
     else:
-        compareResults(options.revision, options.branch, options.masterbranch, startdate, enddate, platforms, tests, options.pgo, options.printurl, datazilla, pgodatazilla)
+        compareResults(options.revision, options.branch, options.masterbranch, options.skipdays, options.history, platforms, tests, options.pgo, options.printurl, datazilla, pgodatazilla, True)
 
 def shorten(url):
     headers = {'content-type':'application/json'}
