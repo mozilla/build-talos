@@ -290,6 +290,8 @@ the highest value.
         'browser.safebrowsing.updateURL': 'http://127.0.0.1/safebrowsing-dummy/update',
         'browser.safebrowsing.enabled': False,
         'browser.safebrowsing.malware.enabled': False,
+        'browser.search.isUS': True,
+        'browser.search.countryCode': 'US',
         'extensions.update.url': 'http://127.0.0.1/extensions-dummy/updateURL',
         'extensions.update.background.url': 'http://127.0.0.1/extensions-dummy/updateBackgroundURL',
         'extensions.blocklist.enabled': False,
