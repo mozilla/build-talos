@@ -8,7 +8,6 @@
 """
 
 import mozfile
-import mozversion
 import os
 import os.path
 import re
@@ -264,15 +263,5 @@ class FFSetup(object):
             utils.info("Could not find %s in browser_log: %s", PROFILE_REGEX.pattern, browser_config['browser_log'])
             utils.info("Raw results:%s", results_raw)
             utils.info("Initialization of new profile failed")
-
-        binary = browser_config.get("apk_path")
-        if not binary:
-            binary = browser_config["browser_path"]
-        version_info = mozversion.get_version(binary=binary)
-        browser_config['browser_name'] = version_info['application_name']
-        browser_config['browser_version'] = version_info['application_version']
-        browser_config['buildid'] = version_info['application_buildid']
-        browser_config['repository'] = version_info['application_repository']
-        browser_config['sourcestamp'] = version_info['application_changeset']
 
         return res

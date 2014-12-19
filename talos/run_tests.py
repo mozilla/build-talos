@@ -4,6 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import mozversion
 import filter
 import os
 import PerfConfigurator
@@ -184,6 +185,16 @@ def run_tests(configurator):
 
     # normalize browser path to work across platforms
     browser_config['browser_path'] = os.path.normpath(browser_config['browser_path'])
+
+    binary = browser_config.get("apk_path")
+    if not binary:
+        binary = browser_config["browser_path"]
+    version_info = mozversion.get_version(binary=binary)
+    browser_config['browser_name'] = version_info['application_name']
+    browser_config['browser_version'] = version_info['application_version']
+    browser_config['buildid'] = version_info['application_buildid']
+    browser_config['repository'] = version_info['application_repository']
+    browser_config['sourcestamp'] = version_info['application_changeset']
 
     # get test date in seconds since epoch
     if testdate:
