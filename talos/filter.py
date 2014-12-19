@@ -64,8 +64,8 @@ def geometric_mean(series):
     """
     total = 0
     for i in series:
-        total += math.log(i)
-    return math.exp(total / len(series))
+        total += math.log(i+1)
+    return math.exp(total / len(series)) - 1
 
 scalar_filters = [mean, median, max, min, variance, stddev, dromaeo]
 
