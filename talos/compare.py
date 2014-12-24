@@ -77,10 +77,6 @@ platform_map['OSX10.8 (e10s)'] = 53
 platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)', 'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)', 'OSX10.8 (e10s)']
 
-# e10s is a new platform we are supporting, as we don't run it often there is not a need for it, right now it is just noise
-# having it defined allows us to start looking at e10s vs non e10s.  How to do that with compare.py is not implemented, but now we can at least
-# compare a try run with e10s data to m-c
-platforms.extend(platforms_e10s)
 
 def getGraphData(testid, branchid, platformid):
     body = {"id": testid, "branchid": branchid, "platformid": platformid}
@@ -280,7 +276,7 @@ def parseGraphResultsByChangeset(data, changeset):
     return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
 
 
-def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, dzdata=None, pgodzdata=None, doPrint=False):
+def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, compare_e10s=False, dzdata=None, pgodzdata=None, doPrint=False):
     startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(skipdays+history))).timetuple()))
     enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=skipdays)).timetuple()))
 
@@ -312,7 +308,10 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
                 bid = branch_map[masterbranch]['pgo']['id']
 
             data = getGraphData(test_map[t]['id'], bid, platform_map[p])
-            testdata = getGraphData(test_map[t]['id'], test_bid, platform_map[p])
+            if compare_e10s:
+                testdata = getGraphData(test_map[t]['id'], test_bid, platform_map[p + " (e10s)"])
+            else:
+                testdata = getGraphData(test_map[t]['id'], test_bid, platform_map[p])
             if data and testdata:
                 results = parseGraphResultsByDate(data, startdate, enddate)
                 test = parseGraphResultsByChangeset(testdata, revision)
@@ -393,6 +392,11 @@ class CompareOptions(OptionParser):
                         default = False,
                         help = "Use PGO Branch if available")
 
+        self.add_option("--compare-e10s",
+                        action = "store_true", dest = "compare_e10s",
+                        default = False,
+                        help = "Compare e10s vs non-e10s")
+
         self.add_option("--xperf",
                         action = "store_true", dest = "xperf",
                         default = False,
@@ -434,7 +438,7 @@ def main():
     if options.xperf:
         print xperfdata
     else:
-        compareResults(options.revision, options.branch, options.masterbranch, options.skipdays, options.history, platforms, tests, options.pgo, options.printurl, datazilla, pgodatazilla, True)
+        compareResults(options.revision, options.branch, options.masterbranch, options.skipdays, options.history, platforms, tests, options.pgo, options.printurl, options.compare_e10s, datazilla, pgodatazilla, True)
 
 def shorten(url):
     headers = {'content-type':'application/json'}
