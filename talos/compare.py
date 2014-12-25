@@ -52,9 +52,14 @@ test_map['cart'] = {'id': 309, 'tbplname': 'cart'}
 test_map['tcanvasmark'] = {'id': 297, 'tbplname': 'tcanvasmark_paint'}
 test_map['glterrain'] = {'id': 325, 'tbplname': 'glterrain'}
 test_map['media_tests'] = {'id': 317, 'tbplname': 'media_tests'}
+test_map['remote-trobocheck2'] = {'id': 201, 'tbplname': 'remote-trobocheck2'}
+test_map['remote-trobopan'] = {'id': 174, 'tbplname': 'remote-trobopan'}
+test_map['remote-troboprovider'] = {'id': 200, 'tbplname': 'remote-troboprovider'}
+test_map['remote-tsvgx'] = {'id': 281, 'tbplname': 'remote-tsvgx'}
+test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'remote-tp4m_nochrome'}
 
 tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
-
+android_tests = ['remote-trobocheck2', 'remote-trobopan', 'remote-troboprovider', 'remote-tsvgx', 'remote-tp4m_nochrome']
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8', 'canvasmark']
 
 platform_map = {}
@@ -74,7 +79,8 @@ platform_map['OSX64 (e10s)'] = 51
 platform_map['OSX'] = 13 #10.5.8
 platform_map['OSX10.8'] = 24
 platform_map['OSX10.8 (e10s)'] = 53
-platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8']
+platform_map['Android'] = 29
+platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8', 'Android']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)', 'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)', 'OSX10.8 (e10s)']
 
 
@@ -285,8 +291,11 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
 
     for p in platforms:
         output = ["%s:\n" % p]
+        itertests = tests
+        if p == "Android":
+            itertests = android_tests
 
-        for t in tests:
+        for t in itertests:
             dzval = None
             if dzdata:
                 if p in dzdata:
@@ -300,12 +309,20 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
                         pgodzval = pgodzdata[p][test_map[t]['tbplname']]
 
             test_bid = branch_map[branch]['nonpgo']['id']
-            if p.startswith('OSX') or pgo:
+            if p.startswith('OSX') or p.startswith('Android') or pgo:
                 test_bid = branch_map[branch]['pgo']['id']
+                # Hack for talos on Android Firefox, since we use different
+                # numbers for pgo and android builds.
+                if p.startswith('Android') and branch == 'Firefox':
+                    test_bid = 11
 
             bid = branch_map[masterbranch]['nonpgo']['id']
-            if p.startswith('OSX') or pgo:
+            if p.startswith('OSX') or p.startswith('Android') or pgo:
                 bid = branch_map[masterbranch]['pgo']['id']
+                # Hack for talos on Android Firefox, since we use different
+                # numbers for pgo and android builds.
+                if p.startswith('Android') and masterbranch == 'Firefox':
+                    bid = 11
 
             data = getGraphData(test_map[t]['id'], bid, platform_map[p])
             if compare_e10s:
