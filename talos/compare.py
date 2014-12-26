@@ -33,32 +33,29 @@ test_map['dromaeo_css'] = {'id': 72, 'tbplname': 'dromaeo_css'}
 test_map['dromaeo_dom'] = {'id': 73, 'tbplname': 'dromaeo_dom'}
 test_map['kraken'] = {'id': 232, 'tbplname': 'kraken'}
 test_map['v8_7'] = {'id': 230, 'tbplname': 'v8_7'}
-test_map['tscrollr'] = {'id': 222, 'tbplname': 'tscrollr_paint'}
 test_map['a11yr'] = {'id': 223, 'tbplname': 'a11yr_paint'}
 test_map['ts_paint'] = {'id': 83, 'tbplname': 'ts_paint'}
 test_map['tpaint'] = {'id': 82, 'tbplname': 'tpaint'}
-test_map['tsvgr'] = {'id': 224, 'tbplname': 'tsvgr'}
 test_map['tsvgr_opacity'] = {'id': 225, 'tbplname': 'tsvgr_opacity'}
 test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
-test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
 test_map['tp5o'] = {'id': 255, 'tbplname': 'tp5o_paint'}
 test_map['tp5o_scroll'] = {'id': 323, 'tbplname': 'tp5o_scroll'}
 test_map['tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
-test_map['tscrollx'] = {'id': 287, 'tbplname': 'tscrollx_paint'}
+test_map['tscrollx'] = {'id': 287, 'tbplname': 'tscrollx'}
 test_map['sessionrestore'] = {'id': 313, 'tbplname':'sessionrestore'}
 test_map['sessionrestore_no_auto_restore'] = {'id': 315, 'tbplname':'sessionrestore_no_auto_restore'}
 test_map['tart'] = {'id': 293, 'tbplname': 'tart'}
 test_map['cart'] = {'id': 309, 'tbplname': 'cart'}
-test_map['tcanvasmark'] = {'id': 297, 'tbplname': 'tcanvasmark_paint'}
+test_map['tcanvasmark'] = {'id': 289, 'tbplname': 'tcanvasmark'}
 test_map['glterrain'] = {'id': 325, 'tbplname': 'glterrain'}
 test_map['media_tests'] = {'id': 317, 'tbplname': 'media_tests'}
-test_map['remote-trobocheck2'] = {'id': 201, 'tbplname': 'remote-trobocheck2'}
-test_map['remote-trobopan'] = {'id': 174, 'tbplname': 'remote-trobopan'}
-test_map['remote-troboprovider'] = {'id': 200, 'tbplname': 'remote-troboprovider'}
-test_map['remote-tsvgx'] = {'id': 281, 'tbplname': 'remote-tsvgx'}
-test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'remote-tp4m_nochrome'}
+test_map['remote-trobocheck2'] = {'id': 201, 'tbplname': 'tcheck2'}
+test_map['remote-trobopan'] = {'id': 174, 'tbplname': 'trobopan'}
+test_map['remote-troboprovider'] = {'id': 200, 'tbplname': 'tprovider'}
+test_map['remote-tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
+test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'tp4m'}
 
-tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
+tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
 android_tests = ['remote-trobocheck2', 'remote-trobopan', 'remote-troboprovider', 'remote-tsvgx', 'remote-tp4m_nochrome']
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8', 'canvasmark']
 
@@ -83,6 +80,18 @@ platform_map['Android'] = 29
 platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8', 'Android']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)', 'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)', 'OSX10.8 (e10s)']
 
+def getListOfTests(platform, tests):
+    # media_tests are run only on Linux64 platform
+    if not platform.startswith('Linux64'):
+        tests.remove('media_tests')
+
+    # dromaeo_css, dromaeo_dom, kraken, v8_7 tests are not run on WinXP platform
+    if platform.startswith('WinXP'):
+        tests.remove('dromaeo_css')
+        tests.remove('dromaeo_dom')
+        tests.remove('kraken')
+        tests.remove('v8_7')
+    return tests
 
 def getGraphData(testid, branchid, platformid):
     body = {"id": testid, "branchid": branchid, "platformid": platformid}
@@ -281,7 +290,6 @@ def parseGraphResultsByChangeset(data, changeset):
         geomean = filter.geometric_mean(vals)
     return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
 
-
 def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, compare_e10s=False, dzdata=None, pgodzdata=None, doPrint=False):
     startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(skipdays+history))).timetuple()))
     enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=skipdays)).timetuple()))
@@ -291,7 +299,7 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
 
     for p in platforms:
         output = ["%s:\n" % p]
-        itertests = tests
+        itertests = getListOfTests(p, tests)
         if p == "Android":
             itertests = android_tests
 
