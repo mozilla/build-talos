@@ -290,7 +290,7 @@ def parseGraphResultsByChangeset(data, changeset):
         geomean = filter.geometric_mean(vals)
     return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
 
-def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, compare_e10s=False, dzdata=None, pgodzdata=None, doPrint=False):
+def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, compare_e10s=False, dzdata=None, pgodzdata=None, verbose=False, doPrint=False):
     startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(skipdays+history))).timetuple()))
     enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=skipdays)).timetuple()))
 
@@ -360,7 +360,10 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
                     if printurl:
                         url = shorten("http://graphs.mozilla.org/graph.html#tests=[[%s,%s,%s]]" % (test_map[t]['id'], bid, platform_map[p]))
                         string = "\t%s" % url
-                    output.append(string)
+                    # Output data for all tests in case of --verbose.
+                    # If not --verbose, then output in case of improvements or regression.
+                    if verbose or status != '':
+                        output.append(string)
             else:
                 output.append("   %-18s\tNo data for platform" % t)
 
@@ -427,6 +430,11 @@ class CompareOptions(OptionParser):
                         default = False,
                         help = "Print xperf information")
 
+        self.add_option("--verbose",
+                        action = "store_true", dest = "verbose",
+                        default = False,
+                        help = "Output information for all tests")
+
 def main():
     global platforms, tests
     parser = CompareOptions()
@@ -463,7 +471,7 @@ def main():
     if options.xperf:
         print xperfdata
     else:
-        compareResults(options.revision, options.branch, options.masterbranch, options.skipdays, options.history, platforms, tests, options.pgo, options.printurl, options.compare_e10s, datazilla, pgodatazilla, True)
+        compareResults(options.revision, options.branch, options.masterbranch, options.skipdays, options.history, platforms, tests, options.pgo, options.printurl, options.compare_e10s, datazilla, pgodatazilla, options.verbose, True)
 
 def shorten(url):
     headers = {'content-type':'application/json'}
