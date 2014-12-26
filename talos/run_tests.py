@@ -218,6 +218,10 @@ def run_tests(configurator):
 
     # results links
     results_urls, results_options = configurator.output_options()
+    # set --results_url and --datazilla-url to defaults, if --develop is specified to PerfConfigurator.py
+    if browser_config['develop']:
+        results_urls['results_urls'] = ['local.out']
+        results_urls['datazilla_urls'] = ['local.json']
     talos_results.check_output_formats(results_urls, **results_options)
 
     # setup a webserver, if --develop is specified to PerfConfigurator.py
@@ -278,6 +282,8 @@ def run_tests(configurator):
     # output results
     if results_urls:
         talos_results.output(results_urls, **results_options)
+        if browser_config['develop']:
+            print "Thanks for running Talos locally. Results are in %s and %s" % (results_urls['results_urls'], results_urls['datazilla_urls'])
 
     # we will stop running tests on a failed test, or we will return 0 for green
     return 0
