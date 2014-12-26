@@ -20,11 +20,13 @@ branch_map['Firefox'] = {'pgo':    {'id': 1,  'name': 'Firefox'},
                          'nonpgo': {'id': 94, 'name': 'Firefox-Non-PGO'}}
 branch_map['Inbound'] = {'pgo':    {'id': 63, 'name': 'Mozilla-Inbound'},
                          'nonpgo': {'id': 131, 'name': 'Mozilla-Inbound-Non-PGO'}}
+branch_map['Aurora']  = {'pgo':    {'id': 52, 'name': 'Mozilla-Aurora'}}
+branch_map['Beta']    = {'pgo':    {'id': 53, 'name': 'Mozilla-Beta'}}
 branch_map['Cedar']   = {'pgo':    {'id': 26, 'name': 'Cedar'},
                          'nonpgo': {'id': 26, 'name': 'Cedar'}}
 branch_map['UX']      = {'pgo':    {'id': 59, 'name': 'UX'},
                          'nonpgo': {'id': 137, 'name': 'UX-Non-PGO'}}
-branches = ['Try', 'Firefox', 'Inbound', 'Cedar', 'UX']
+branches = ['Try', 'Firefox', 'Inbound', 'Aurora', 'Beta', 'Cedar', 'UX']
 
 # TODO: pull test names and reverse_tests from test.py in the future
 # TODO: add android test names
@@ -316,21 +318,23 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
                     if test_map[t]['tbplname'] in pgodzdata[p]:
                         pgodzval = pgodzdata[p][test_map[t]['tbplname']]
 
-            test_bid = branch_map[branch]['nonpgo']['id']
             if p.startswith('OSX') or p.startswith('Android') or pgo:
                 test_bid = branch_map[branch]['pgo']['id']
                 # Hack for talos on Android Firefox, since we use different
                 # numbers for pgo and android builds.
                 if p.startswith('Android') and branch == 'Firefox':
                     test_bid = 11
+            else:
+                test_bid = branch_map[branch]['nonpgo']['id']
 
-            bid = branch_map[masterbranch]['nonpgo']['id']
             if p.startswith('OSX') or p.startswith('Android') or pgo:
                 bid = branch_map[masterbranch]['pgo']['id']
                 # Hack for talos on Android Firefox, since we use different
                 # numbers for pgo and android builds.
                 if p.startswith('Android') and masterbranch == 'Firefox':
                     bid = 11
+            else:
+                bid = branch_map[masterbranch]['nonpgo']['id']
 
             data = getGraphData(test_map[t]['id'], bid, platform_map[p])
             if compare_e10s:
@@ -449,11 +453,15 @@ def main():
     if options.masterbranch and not options.masterbranch in branches:
         parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (options.masterbranch, branches))
 
+    if any(branch in options.branch or options.masterbranch for branch in ['Aurora', 'Beta']) and not options.pgo:
+        parser.error("Error: please specify --pgo flag in case of Aurora/Beta branch")
+
     branch = None
     if options.branch in branches:
-        branch = branch_map[options.branch]['nonpgo']['name']
         if options.pgo:
             branch = branch_map[options.branch]['pgo']['name']
+        else:
+            branch = branch_map[options.branch]['nonpgo']['name']
     else:
         parser.error("ERROR: the branch '%s' you specified does not exist in '%s'" % (options.branch, branches))
 
