@@ -66,17 +66,6 @@ class FFProcess(object):
         #kill any remaining browser processes
         #returns string of which process_names were terminated and with what signal
 
-        # if we are running this against the metro browser, we currently use
-        # metrotestharness.exe as a way to launch the metro browser process.
-        # Talos thinks this harness is the browser, see:
-        # http://hg.mozilla.org/build/talos/file/8c5f2725fbdd/talos/run_tests.py#l249
-        # We must inform talos about the sub process, the metro browser itself,
-        # that is spawned from metrotestharness. The metro browser proc is
-        # given the same name as the non metro equivalent: 'firefox.exe'
-        if process_name == "metrotestharness" and \
-                "firefox" not in self.extra_prog:
-            self.extra_prog.append("firefox")
-
         processes_to_kill = filter(lambda n: n, ([process_name, child_process] +
                                                  self.extra_prog))
         utils.debug("Terminating: %s", ", ".join(str(p) for p in processes_to_kill))
