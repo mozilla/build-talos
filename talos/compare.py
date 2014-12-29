@@ -453,7 +453,7 @@ def main():
     if options.masterbranch and not options.masterbranch in branches:
         parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (options.masterbranch, branches))
 
-    if any(branch in options.branch or options.masterbranch for branch in ['Aurora', 'Beta']) and not options.pgo:
+    if any(branch in options.branch or branch in options.masterbranch for branch in ['Aurora', 'Beta']) and not options.pgo:
         parser.error("Error: please specify --pgo flag in case of Aurora/Beta branch")
 
     branch = None
