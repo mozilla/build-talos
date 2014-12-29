@@ -11,16 +11,13 @@ see https://wiki.mozilla.org/Buildbot/Talos/DataFormat
 
 import filter
 import json
-import optparse
 import os
 import output
 import re
-import sys
-import time
 import utils
 import csv
 
-__all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'BrowserLogResults', 'main']
+__all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'BrowserLogResults']
 
 class TalosResults(object):
     """Container class for Talos results"""
@@ -516,56 +513,3 @@ class BrowserLogResults(object):
 
     def responsiveness(self):
         return self.RESULTS_RESPONSIVENESS_REGEX.findall(self.results_raw)
-
-
-def main(args=sys.argv[1:]):
-
-    # parse command line options
-    usage = '%prog [options] browser.log [...]'
-    parser = optparse.OptionParser(usage=usage)
-    # TODO: unify CLI options with PerfConfigurator/talos options
-    parser.add_option("-a", dest='testname',
-                      default='test')
-    parser.add_option("-t", "--title", dest="title",
-                      default='qm-pxp01')
-    parser.add_option("--date", dest="date",
-                      default=time.time())
-    options, args = parser.parse_args()
-    if not args:
-        parser.print_help()
-        parser.exit()
-
-    # make a browser_config dictionary with minimal information
-    browser_config = {'branch_name': '',
-                      'buildid': 'testbuildid',
-                      'sourcestamp': '62f0b771583c',
-                      'browser_name': 'Firefox',
-                      'browser_version': '3.14'
-                      }
-
-    # filters
-    # TODO: add to CLI options
-    filters = [filter.ignore_max, filter.mean]
-
-    # gather the results
-    results = TalosResults(title=options.title,
-                           date=options.date,
-                           browser_config=browser_config,
-                           filters=filters)
-    for arg in args:
-        browser_log = BrowserLogResults(arg)
-        test_results = TestResults({'name': arg})
-        test_results.add(browser_log.results())
-        results.add(test_results)
-
-    # print the graphserver-format data
-    # TODO: add the ability to specify results_urls, raw_results_urls
-    # and ability to output to stdout
-    import tempfile
-    filename = tempfile.mktemp()
-    results.output(results_urls=['file://%s' % filename])
-    contents = file(filename).read()
-    print contents
-
-if __name__ == '__main__':
-    main()
