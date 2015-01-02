@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import utils
 import whitelist
 
 SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
@@ -82,21 +83,12 @@ def parse(logfilename, data):
         print "%s: %s" % (e.filename, e.strerror)
         return False
 
-# Generator that allows us to figure out which item is the last one so that we
-# can serialize this data properly
-def indexed_items(itr):
-    prev_i, prev_val = 0, itr.next()
-    for i, val in enumerate(itr, start = 1):
-        yield prev_i, prev_val
-        prev_i, prev_val = i, val
-    yield -1, prev_val
-
 def write_output(outfilename, data):
     # Write the data out so that we can track it
     try:
         with open(outfilename, 'w') as outfile:
             outfile.write("[\n")
-            for idx, (key, value) in indexed_items(data.iteritems()):
+            for idx, (key, value) in utils.indexed_items(data.iteritems()):
                 output = "    [\"%s\", \"%s\", \"%s\", \"%s\", %d, %d, %f]" % (
                             key[0], key[1], key[2], key[3], value[KEY_COUNT],
                             value[KEY_RUN_COUNT], value[KEY_DURATION])

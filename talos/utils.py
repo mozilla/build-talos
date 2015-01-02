@@ -238,3 +238,14 @@ def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir
 
     debug("command line: %s", ' '.join(command_args))
     return command_args
+
+def indexed_items(itr):
+    """
+    Generator that allows us to figure out which item is the last one so that we
+    can serialize this data properly
+    """
+    prev_i, prev_val = 0, itr.next()
+    for i, val in enumerate(itr, start = 1):
+        yield prev_i, prev_val
+        prev_i, prev_val = i, val
+    yield -1, prev_val
