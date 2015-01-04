@@ -42,7 +42,6 @@ def buildCommandLine(test):
         raise TalosError('pageloader delay must be int 1 to 10,000')
     if 'tpmanifest' not in test:
         raise TalosError("tpmanifest not found in test: %s" % test)
-        # TODO: should probably check if the tpmanifest exists
 
     # build pageloader command from options
     url = ['-tp', test['tpmanifest']]
