@@ -220,8 +220,10 @@ def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir
     if platform.system() == "Darwin":
         command_args.extend(['-foreground'])
 
-    #TODO: figure out a robust method to allow extra_args as a list instead of assuming a string
-    if extra_args.strip():
+    if isinstance(extra_args, list):
+        command_args.extend(extra_args)
+
+    elif extra_args.strip():
         command_args.extend([extra_args])
 
     command_args.extend(['-profile', profile_dir])
