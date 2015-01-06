@@ -4,7 +4,7 @@
 
 import json, urllib, httplib
 import datetime, time
-from optparse import OptionParser
+from argparse import ArgumentParser
 import sys
 import os
 import filter
@@ -374,67 +374,67 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
         if doPrint:
             print '\n'.join(output)
 
-class CompareOptions(OptionParser):
+class CompareOptions(ArgumentParser):
 
     def __init__(self):
-        OptionParser.__init__(self)
+        ArgumentParser.__init__(self)
 
-        self.add_option("--revision",
-                        action = "store", type = "string", dest = "revision",
+        self.add_argument("--revision",
+                        action = "store", type = str, dest = "revision",
                         default = None,
                         help = "revision of the source you are testing")
 
-        self.add_option("--branch",
-                        action = "store", type = "string", dest = "branch",
+        self.add_argument("--branch",
+                        action = "store", type = str, dest = "branch",
                         default = "Try",
                         help = "branch that your revision landed on which you are testing, default 'Try'.  Options are: %s" % (branches))
 
-        self.add_option("--masterbranch",
-                        action = "store", type = "string", dest = "masterbranch",
+        self.add_argument("--masterbranch",
+                        action = "store", type = str, dest = "masterbranch",
                         default = "Firefox",
                         help = "master branch that you will be comparing against, default 'Firefox'.  Options are: %s" % (branches))
 
-        self.add_option("--skipdays",
-                        action = "store", type = "int", dest = "skipdays",
+        self.add_argument("--skipdays",
+                        action = "store", type = int, dest = "skipdays",
                         default = 0,
                         help = "Specify the number of days to ignore results, default '0'.  Note: If a regression landed 4 days ago, use --skipdays=5")
 
-        self.add_option("--history",
-                        action = "store", type = "int", dest = "history",
+        self.add_argument("--history",
+                        action = "store", type = int, dest = "history",
                         default = 14,
                         help = "Specify the number of days in history to go back and get results.  If specified in conjunction with --skipdays, we will collect <history> days starting an extra <skipdays> in the past.  For example, if you have skipdays as 7 and history as 14, then we will collect data from 7-21 days in the past.  Default is 14 days")
 
-        self.add_option("--platform",
-                        action = "append", type = "choice", dest = "platforms",
+        self.add_argument("--platform",
+                        action = "append", type = str, dest = "platforms", metavar = "PLATFORMS",
                         default = None, choices = platforms,
                         help = "Specify a single platform to compare. This option can be specified multiple times and defaults to 'All' if not specified.  Options are: %s" % (platforms))
 
-        self.add_option("--testname",
-                        action = "append", type = "choice", dest = "testnames",
+        self.add_argument("--testname",
+                        action = "append", type = str, dest = "testnames", metavar = "TESTS",
                         default = None, choices = tests,
                         help = "Specify a single test to compare. This option can be specified multiple times and defaults to 'All' if not specified. Options are: %s" % (tests))
 
-        self.add_option("--print-graph-url",
+        self.add_argument("--print-graph-url",
                         action = "store_true", dest = "printurl",
                         default = False,
                         help = "Print a url that can link to the data in graph server")
 
-        self.add_option("--pgo",
+        self.add_argument("--pgo",
                         action = "store_true", dest = "pgo",
                         default = False,
                         help = "Use PGO Branch if available")
 
-        self.add_option("--compare-e10s",
+        self.add_argument("--compare-e10s",
                         action = "store_true", dest = "compare_e10s",
                         default = False,
                         help = "Compare e10s vs non-e10s")
 
-        self.add_option("--xperf",
+        self.add_argument("--xperf",
                         action = "store_true", dest = "xperf",
                         default = False,
                         help = "Print xperf information")
 
-        self.add_option("--verbose",
+        self.add_argument("--verbose",
                         action = "store_true", dest = "verbose",
                         default = False,
                         help = "Output information for all tests")
@@ -442,44 +442,44 @@ class CompareOptions(OptionParser):
 def main():
     global platforms, tests
     parser = CompareOptions()
-    options, args = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.platforms:
-        platforms = options.platforms
+    if args.platforms:
+        platforms = args.platforms
 
-    if options.testnames:
-        tests = options.testnames
+    if args.testnames:
+        tests = args.testnames
 
-    if options.masterbranch and not options.masterbranch in branches:
-        parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (options.masterbranch, branches))
+    if args.masterbranch and not args.masterbranch in branches:
+        parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (args.masterbranch, branches))
 
-    if any(branch in options.branch or branch in options.masterbranch for branch in ['Aurora', 'Beta']) and not options.pgo:
+    if any(branch in args.branch or branch in args.masterbranch for branch in ['Aurora', 'Beta']) and not args.pgo:
         parser.error("Error: please specify --pgo flag in case of Aurora/Beta branch")
 
     branch = None
-    if options.branch in branches:
-        if options.pgo:
-            branch = branch_map[options.branch]['pgo']['name']
+    if args.branch in branches:
+        if args.pgo:
+            branch = branch_map[args.branch]['pgo']['name']
         else:
-            branch = branch_map[options.branch]['nonpgo']['name']
+            branch = branch_map[args.branch]['nonpgo']['name']
     else:
-        parser.error("ERROR: the branch '%s' you specified does not exist in '%s'" % (options.branch, branches))
+        parser.error("ERROR: the branch '%s' you specified does not exist in '%s'" % (args.branch, branches))
 
-    if options.skipdays:
-        if options.skipdays > 30:
+    if args.skipdays:
+        if args.skipdays > 30:
             parser.error("ERROR: please specify the skipdays between 0-30")
 
-    if not options.revision:
+    if not args.revision:
         parser.error("ERROR: --revision is required")
 
     #TODO: We need to ensure we have full coverage of the pushlog before we can do this.
-#    alldata = getDatazillaData(options.branch)
-#    datazilla, pgodatazilla, xperfdata = alldata[options.revision]
-    datazilla, pgodatazilla, xperfdata = getDatazillaCSET(options.revision, branch)
-    if options.xperf:
+#    alldata = getDatazillaData(args.branch)
+#    datazilla, pgodatazilla, xperfdata = alldata[args.revision]
+    datazilla, pgodatazilla, xperfdata = getDatazillaCSET(args.revision, branch)
+    if args.xperf:
         print xperfdata
     else:
-        compareResults(options.revision, options.branch, options.masterbranch, options.skipdays, options.history, platforms, tests, options.pgo, options.printurl, options.compare_e10s, datazilla, pgodatazilla, options.verbose, True)
+        compareResults(args.revision, args.branch, args.masterbranch, args.skipdays, args.history, platforms, tests, args.pgo, args.printurl, args.compare_e10s, datazilla, pgodatazilla, args.verbose, True)
 
 def shorten(url):
     headers = {'content-type':'application/json'}
