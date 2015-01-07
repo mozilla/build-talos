@@ -29,7 +29,6 @@ branch_map['UX']      = {'pgo':    {'id': 59, 'name': 'UX'},
 branches = ['Try', 'Firefox', 'Inbound', 'Aurora', 'Beta', 'Cedar', 'UX']
 
 # TODO: pull test names and reverse_tests from test.py in the future
-# TODO: add android test names
 test_map = {}
 test_map['dromaeo_css'] = {'id': 72, 'tbplname': 'dromaeo_css'}
 test_map['dromaeo_dom'] = {'id': 73, 'tbplname': 'dromaeo_dom'}
@@ -40,6 +39,7 @@ test_map['ts_paint'] = {'id': 83, 'tbplname': 'ts_paint'}
 test_map['tpaint'] = {'id': 82, 'tbplname': 'tpaint'}
 test_map['tsvgr_opacity'] = {'id': 225, 'tbplname': 'tsvgr_opacity'}
 test_map['tresize'] = {'id': 254, 'tbplname': 'tresize'}
+test_map['tp5n'] = {'id': 206, 'tbplname': 'tp5n_paint'}
 test_map['tp5o'] = {'id': 255, 'tbplname': 'tp5o_paint'}
 test_map['tp5o_scroll'] = {'id': 323, 'tbplname': 'tp5o_scroll'}
 test_map['tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
@@ -57,7 +57,7 @@ test_map['remote-troboprovider'] = {'id': 200, 'tbplname': 'tprovider'}
 test_map['remote-tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
 test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'tp4m'}
 
-tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
+tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
 android_tests = ['remote-trobocheck2', 'remote-trobopan', 'remote-troboprovider', 'remote-tsvgx', 'remote-tp4m_nochrome']
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8', 'canvasmark']
 
@@ -72,27 +72,36 @@ platform_map['Win8'] = 31
 platform_map['Win8 (e10s)'] = 49
 platform_map['WinXP'] = 37 # 1 is for non-ix
 platform_map['WinXP (e10s)'] = 45
-platform_map['Win64'] = 19
 platform_map['OSX64'] = 21 #10.6
 platform_map['OSX64 (e10s)'] = 51
-platform_map['OSX'] = 13 #10.5.8
 platform_map['OSX10.8'] = 24
 platform_map['OSX10.8 (e10s)'] = 53
 platform_map['Android'] = 29
 platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8', 'Android']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)', 'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)', 'OSX10.8 (e10s)']
 
-def getListOfTests(platform, tests):
-    # media_tests are run only on Linux64 platform
-    if not platform.startswith('Linux64'):
-        tests.remove('media_tests')
+disabled_tests = {}
+disabled_tests['Linux'] = ['media_tests']
+disabled_tests['Linux (e10s)'] = ['media_tests']
+disabled_tests['Win7'] = ['media_tests']
+disabled_tests['Win7 (e10s)'] = ['media_tests']
+disabled_tests['Win8'] = ['media_tests']
+disabled_tests['Win8 (e10s)'] = ['media_tests']
+disabled_tests['WinXP'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7']
+disabled_tests['WinXP (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7']
+disabled_tests['Win64'] = ['media_tests']
+disabled_tests['OSX64'] = ['media_tests']
+disabled_tests['OSX64 (e10s)'] = ['media_tests']
+disabled_tests['OSX'] = ['media_tests']
+disabled_tests['OSX10.8'] = ['media_tests']
+disabled_tests['OSX10.8 (e10s)'] = ['media_tests']
 
-    # dromaeo_css, dromaeo_dom, kraken, v8_7 tests are not run on WinXP platform
-    if platform.startswith('WinXP'):
-        tests.remove('dromaeo_css')
-        tests.remove('dromaeo_dom')
-        tests.remove('kraken')
-        tests.remove('v8_7')
+def getListOfTests(platform, tests):
+    if platform in disabled_tests:
+        skip_tests = disabled_tests[platform]
+        for t in skip_tests:
+            if t in tests:
+                tests.remove(t)
     return tests
 
 def getGraphData(testid, branchid, platformid):
