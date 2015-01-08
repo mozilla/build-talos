@@ -9,76 +9,55 @@ import os
 import shutil
 import time
 import utils
+import copy
 from utils import TalosError,MakeDirectoryContentsWritable
-from mozprocess import pid as mozpid
 
 class FFProcess(object):
     testAgent = None
     extra_prog=["crashreporter"] #list of extra programs to be killed
 
-    def ProcessesWithNames(self, *process_names):
-        """Returns a list of processes running with the given name(s):
-        [(pid, name), (...), ...]
-        Useful to check whether a Browser process is still running
+    def TerminateProcesses(self, pids, timeout):
+        """Helper function to terminate processes with the given pids
 
         Args:
-            process_names: String or strings containing process names, i.e. "firefox"
-
-        Returns:
-            An array with a list of processes in the list which are running
-        """
-        processes_with_names = []
-        for process_name in process_names:
-            try:
-                pids = mozpid.get_pids(process_name)
-                processes_with_names.extend([(pid, process_name) for pid in pids])
-            except:
-                # on osx 10.6, we get a keyerror on 'CMD' inside mozprocess.pids
-                # it appears we have the browser terminating, appears to be a race condition
-                pass
-
-        return processes_with_names
-
-    def TerminateAllProcesses(self, timeout, *process_names):
-        """Helper function to terminate all processes with the given process name
-
-        Args:
-            process_names: String or strings containing the process name, i.e. "firefox"
+            pids: A list containing PIDs of process, i.e. firefox
         """
         results = []
-        for process_name in process_names:
-            try:
-                for pid in mozpid.get_pids(process_name):
-                    ret = self._TerminateProcess(pid, timeout)
-                    if ret:
-                        results.append("%s (%s): %s" % (process_name, pid, ret))
-            except:
-                # on osx 10.6, we get a keyerror on 'CMD' inside mozprocess.pids
-                # it appears we have the browser terminating, appears to be a race condition
-                pass
+        for pid in copy.deepcopy(pids):
+            ret = self._TerminateProcess(pid, timeout)
+            if ret:
+                results.append("(%s): %s" % (pid, ret))
+            else:
+                # Remove PIDs which are already terminated
+                pids.remove(pid)
         return ",".join(results)
 
-    def checkAllProcesses(self, process_name, child_process):
-        #is anything browser related active?
-        return self.ProcessesWithNames(*([process_name, child_process]+self.extra_prog))
+    def checkProcesses(self, pids):
+        """Returns a list of browser related PIDs still running
 
-    def cleanupProcesses(self, process_name, child_process, browser_wait):
+        Args:
+            pids: A list containg PIDs
+        Returns:
+            A list containing PIDs which are still running
+        """
+        pids = [pid for pid in pids if utils.is_running(pid)]
+        return pids
+
+    def cleanupProcesses(self, pids, browser_wait):
         #kill any remaining browser processes
         #returns string of which process_names were terminated and with what signal
 
-        processes_to_kill = filter(lambda n: n, ([process_name, child_process] +
-                                                 self.extra_prog))
-        utils.debug("Terminating: %s", ", ".join(str(p) for p in processes_to_kill))
-        terminate_result = self.TerminateAllProcesses(browser_wait, *processes_to_kill)
+        utils.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
+        terminate_result = self.TerminateProcesses(pids, browser_wait)
         #check if anything is left behind
-        if self.checkAllProcesses(process_name, child_process):
+        if self.checkProcesses(pids):
             #this is for windows machines.  when attempting to send kill messages to win processes the OS
             # always gives the process a chance to close cleanly before terminating it, this takes longer
             # and we need to give it a little extra time to complete
             time.sleep(browser_wait)
-            processes = self.checkAllProcesses(process_name, child_process)
-            if processes:
-                raise TalosError("failed to cleanup processes: %s" % processes)
+            process_pids = self.checkProcesses(pids)
+            if process_pids:
+                raise TalosError("failed to cleanup process with PID: %s" % process_pids)
 
         return terminate_result
 

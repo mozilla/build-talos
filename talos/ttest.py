@@ -39,6 +39,7 @@ class TTest(object):
 
     _ffsetup = None
     _ffprocess = None
+    _pids = []
     platform_type = ''
 
     def __init__(self, remote = False):
@@ -104,9 +105,12 @@ class TTest(object):
         return profile_dir, temp_dir
 
     def initializeProfile(self, profile_dir, browser_config):
-        if not self._ffsetup.InitializeNewProfile(profile_dir, browser_config):
+        res, pid = self._ffsetup.InitializeNewProfile(profile_dir, browser_config)
+        if pid:
+            self._pids.append(pid)
+        if not res:
             raise TalosError("failed to initialize browser")
-        processes = self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process'])
+        processes = self._ffprocess.checkProcesses(self._pids)
         if processes:
             raise TalosError("browser failed to close after being initialized")
 
@@ -120,9 +124,7 @@ class TTest(object):
         """cleanup browser processes and process crashes if found"""
 
         # cleanup processes
-        self._ffprocess.cleanupProcesses(browser_config['process'],
-                                         browser_config['child_process'],
-                                         browser_config['browser_wait'])
+        self._ffprocess.cleanupProcesses(self._pids, browser_config['browser_wait'])
 
         # find stackwalk binary
         if platform.system() in ('Windows', 'Microsoft'):
@@ -283,13 +285,6 @@ class TTest(object):
         temp_dir = None
 
         try:
-            running_processes = self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process'])
-            if running_processes:
-                msg = " already running before testing started (unclean system)"
-                utils.debug("%s%s", browser_config['process'], msg)
-                running_processes_str = ", ".join([('[%s] %s' % (pid, process_name)) for pid, process_name in running_processes])
-                raise TalosError("Found processes still running: %s. Please close them before running talos." % running_processes_str)
-
             # add any provided directories to the installed browser
             for dir in browser_config['dirs']:
                 self._ffsetup.InstallInBrowser(browser_config['browser_path'],
@@ -394,7 +389,7 @@ class TTest(object):
                         shutil.copy(origin, dest)
 
                 # check to see if the previous cycle is still hanging around
-                if (i > 0) and self._ffprocess.checkAllProcesses(browser_config['process'], browser_config['child_process']):
+                if (i > 0) and self._ffprocess.checkProcesses(self._pids):
                     raise TalosError("previous cycle still running")
 
                 # Run the test
@@ -428,12 +423,13 @@ class TTest(object):
                         from startup_test.media import media_manager
                         mm_httpd = media_manager.run_server(os.path.dirname(os.path.realpath(__file__)))
 
-                    browser = TalosProcess.TalosProcess(command_args, 
+                    browser = TalosProcess.TalosProcess(command_args,
                                                         env=os.environ.copy(),
                                                         logfile=browser_config['browser_log'],
                                                         supress_javascript_errors=True)
                     browser.run(timeout=timeout)
-                    self.pid = browser.pid
+                    pid = browser.pid
+                    self._pids.append(pid)
 
                     if self.counters:
                         self.cm = self.CounterManager(browser_config['process'], self.counters)
@@ -470,7 +466,7 @@ class TTest(object):
 
                     if test_config['cleanup']:
                         #HACK: add the pid to support xperf where we require the pid in post processing
-                        talosconfig.generateTalosConfig(command_args, browser_config, test_config, pid=self.pid)
+                        talosconfig.generateTalosConfig(command_args, browser_config, test_config, pid=pid)
                         cleanup = TalosProcess.TalosProcess(['python'] + test_config['cleanup'].split(), env=os.environ.copy())
                         cleanup.run()
                         cleanup.wait()

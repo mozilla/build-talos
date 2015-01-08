@@ -96,7 +96,7 @@ def readConfigFile(filename):
 
 def is_running(pid, psarg='axwww'):
     """returns if a pid is running"""
-    return bool([i for i in mozpid.ps(psarg) if pid == int(i['PID'])])
+    return bool([i for i in mozpid.ps() if pid == int(i['PID'])])
 
 def interpolatePath(path, profile_dir=None, firefox_path=None, robocop_TestPackage=None, robocop_TestName=None, webserver=None):
     path = string.Template(path).safe_substitute(talos=here)

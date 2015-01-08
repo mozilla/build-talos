@@ -239,10 +239,11 @@ class FFSetup(object):
                                                         browser_config["deviceroot"],
                                                         profile_dir,
                                                         browser_config["init_url"])
-
+        pid = None
         if not browser_config['remote']:
             browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
             browser.run()
+            pid = browser.pid
             browser.wait()
             browser = None
             time.sleep(5)
@@ -264,4 +265,4 @@ class FFSetup(object):
             utils.info("Raw results:%s", results_raw)
             utils.info("Initialization of new profile failed")
 
-        return res
+        return res, pid

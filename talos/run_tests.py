@@ -140,6 +140,12 @@ def run_tests(configurator):
     # set browser_config
     browser_config=configurator.browser_config()
 
+    # pass --no-remote to firefox launch, if --develop is specified to PerfConfigurator.py
+    # set 'remote' in browser_config to False, if --develop is specified to PerfConfigurator.py
+    if browser_config['develop']:
+        browser_config['extra_args'] = '--no-remote'
+        browser_config['remote'] = False
+
     #set defaults
     title = config.get('title', '')
     testdate = config.get('testdate', '')
