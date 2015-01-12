@@ -12,7 +12,6 @@
 """
 unified configuration with serialization/deserialization
 """
-
 import copy
 import os
 import optparse
@@ -519,12 +518,10 @@ class Configuration(optparse.OptionParser):
         - full: whether to serialize non-set optional strings [TODO]
         """
         # TODO: allow file object vs file name
-
+        format = self.filename2format(filename)
         if not format:
+            filename += ".yml"
             format = self.filename2format(filename)
-            if not format:
-                raise Exception('Please specify a format')
-                # TODO: more specific exception type
 
         provider = self.configuration_provider(format)
         if not provider:
