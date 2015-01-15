@@ -346,6 +346,8 @@ class TTest(object):
                 except OSError:
                     pass
 
+                utils.info("Activating Gecko Profiling. Temp. profile dir: {0}, interval: {1}, entries: {2}".format(sps_profile_dir, sps_profile_interval, sps_profile_entries))
+
                 profiling_info = {
                     "sps_profile_interval": sps_profile_interval,
                     "sps_profile_entries": sps_profile_entries,
