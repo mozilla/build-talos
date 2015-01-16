@@ -13,6 +13,7 @@
 -->
 <head>
 <meta charset="utf-8"/>
+<script src="../../../../scripts/Profiler.js"></script>
 <script type="x-shader/x-vertex" id="vertexShader">
   attribute vec3 vertexPosition;
   attribute vec3 normalVector;
@@ -196,6 +197,7 @@
     gCurrentTimestamp = 0;
     gResultTimestamps = new Array(WARMUP_TIMESTAMPS + MEASURED_FRAMES);
 
+    Profiler.resume("Starting requestAnimationFrame loop", true);
     requestAnimationFrame(draw);
   }
 
@@ -209,6 +211,7 @@
     gResultTimestamps[gCurrentTimestamp++] = performance.now();
     var recordedTimestamps = gCurrentTimestamp;
     if (recordedTimestamps >= WARMUP_TIMESTAMPS + MEASURED_FRAMES) {
+      Profiler.pause("Stopping requestAnimationFrame loop", true);
       var intervals = [];
       var lastWarmupTimestampId = WARMUP_TIMESTAMPS - 1;
       for (var i = lastWarmupTimestampId + 1; i < gResultTimestamps.length; i++) {

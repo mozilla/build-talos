@@ -90,6 +90,7 @@
 						startShark();
 					}
 					
+					Profiler.resume();
 					start = performance.now();
 					
 					if ( runStyle === "runs/s" ) {
@@ -111,6 +112,7 @@
 						stopShark();
 						disconnectShark();
 					}
+					Profiler.pause();
 					
 					// For making Median and Variance
 					if ( runStyle === "runs/s" ) {

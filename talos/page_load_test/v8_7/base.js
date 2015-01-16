@@ -213,11 +213,13 @@ BenchmarkSuite.prototype.NotifyError = function(error) {
 BenchmarkSuite.prototype.RunSingleBenchmark = function(benchmark, data) {
   function Measure(data) {
     var elapsed = 0;
+    Profiler.resume(benchmark.name);
     var start = new Date();
     for (var n = 0; elapsed < 1000; n++) {
       benchmark.run();
       elapsed = new Date() - start;
     }
+    Profiler.pause(benchmark.name);
     if (data != null) {
       data.runs += n;
       data.elapsed += elapsed;
