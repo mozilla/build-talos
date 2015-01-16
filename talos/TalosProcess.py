@@ -6,12 +6,16 @@ from mozprocess import ProcessHandler
 from threading import Thread
 import os
 import time
+import utils
 
 from utils import TalosError
 
 class TalosProcess(ProcessHandler):
     """
     Process handler for running peptests
+
+    After the browser prints __endTimestamp, we give it wait_for_quit_timeout
+    seconds to quit and kill it if it's still alive at that point.
     """
     def __init__(self, cmd,
                        args=None, cwd=None,
@@ -19,12 +23,14 @@ class TalosProcess(ProcessHandler):
                        ignore_children=False,
                        logfile=None,
                        supress_javascript_errors=False,
+                       wait_for_quit_timeout=5,
                        **kwargs):
 
         self.firstTime = int(time.time()) * 1000
         self.logfile = logfile
         self.results_file = None
         self.supress_javascript_errors = supress_javascript_errors
+        self.wait_for_quit_timeout = wait_for_quit_timeout
         if env is None:
             env = os.environ.copy()
 
@@ -44,8 +50,8 @@ class TalosProcess(ProcessHandler):
         if self.results_file:
             self.results_file.close()
 
-    def waitForQuit(self, timeout=5):
-        for i in range(1, timeout):
+    def waitForQuit(self):
+        for i in range(1, self.wait_for_quit_timeout):
             if self.proc.returncode != None:
                 self.logToFile("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % self.firstTime)
                 self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % (int(time.time()) * 1000))
@@ -53,6 +59,7 @@ class TalosProcess(ProcessHandler):
                 return
             time.sleep(1)
 
+        utils.info("Browser shutdown timed out after {0} seconds, terminating process.".format(self.wait_for_quit_timeout))
         self.proc.kill()
         self.logToFile("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % self.firstTime)
         self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % (int(time.time()) * 1000))
