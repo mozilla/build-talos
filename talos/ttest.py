@@ -299,33 +299,6 @@ class TTest(object):
                 mainthread_io = os.path.join(here, "mainthread_io.log")
                 utils.setEnvironmentVars({'MOZ_MAIN_THREAD_IO_LOG': mainthread_io})
 
-
-            # Turn on the profiler on startup and write its output to a temp file
-            sps_profile = test_config.get('sps_profile', False) and not browser_config['remote']
-            sps_profile_file = None
-            if sps_profile:
-                sps_profile_interval = test_config.get('sps_profile_interval', 1)
-                sps_profile_entries = test_config.get('sps_profile_entries', 1000000)
-                sps_profile_file = tempfile.mktemp();
-                utils.info("Activating Gecko Profiling. Temp. profile: {0}, interval: {1}, entries: {2}".format(sps_profile_file, sps_profile_interval, sps_profile_entries))
-                utils.setEnvironmentVars({'MOZ_PROFILER_STARTUP': '1'})
-                utils.setEnvironmentVars({'MOZ_PROFILER_ENTRIES': sps_profile_entries})
-                utils.setEnvironmentVars({'MOZ_PROFILER_INTERVAL': sps_profile_interval})
-                utils.setEnvironmentVars({'MOZ_PROFILER_THREADS': 'GeckoMain,Compositor'})
-                utils.setEnvironmentVars({'MOZ_PROFILER_SHUTDOWN': sps_profile_file})
-                utils.setEnvironmentVars({'MOZ_SHUTDOWN_CHECKS': 'nothing'})
-
-                # Make sure no archive already exists in the location where we plan to output
-                # our profiler archive
-                mud = os.environ.get('MOZ_UPLOAD_DIR', None)
-                if mud:
-                    arcname = os.path.join(mud, "profile_{0}.zip".format(test_config['name']))
-                    try:
-                        utils.info("Clearing archive {0}".format(arcname))
-                        os.remove(arcname)
-                    except OSError:
-                        pass
-
             preferences = copy.deepcopy(browser_config['preferences'])
             if 'preferences' in test_config and test_config['preferences']:
                 testPrefs = dict([(i, utils.parsePref(j)) for i, j in test_config['preferences'].items()])
@@ -345,6 +318,29 @@ class TTest(object):
             if browser_config['fennecIDs']:
                 # This pushes environment variables to the device, be careful of placement
                 self.setupRobocopTests(browser_config, profile_dir)
+
+            upload_dir = os.environ.get('MOZ_UPLOAD_DIR', None)
+            sps_profile = upload_dir and test_config.get('sps_profile', False) and not browser_config['remote']
+            sps_profile_dir = None
+            profile_arcname = None
+            if sps_profile:
+                # Create a temporary directory into which the tests can put their profiles.
+                # These files will be assembled into one big zip file later on, which is put
+                # into the MOZ_UPLOAD_DIR.
+                sps_profile_dir = tempfile.mkdtemp();
+
+                sps_profile_interval = test_config.get('sps_profile_interval', 1)
+                sps_profile_entries = test_config.get('sps_profile_entries', 1000000)
+                sps_profile_threads = 'GeckoMain,Compositor'
+
+                # Make sure no archive already exists in the location where we plan to output
+                # our profiler archive
+                profile_arcname = os.path.join(upload_dir, "profile_{0}.sps.zip".format(test_config['name']))
+                try:
+                    utils.info("Clearing archive {0}".format(profile_arcname))
+                    os.remove(profile_arcname)
+                except OSError:
+                    pass
 
             utils.debug("initialized %s", browser_config['process'])
 
@@ -509,19 +505,27 @@ class TTest(object):
                         mode = zipfile.ZIP_DEFLATED
                     except:
                         mode = zipfile.ZIP_STORED
-                    mud = os.environ.get('MOZ_UPLOAD_DIR', None)
-                    if mud:
-                        profile_name = "profile_{0}".format(test_config['name'])
-                        cycle_name = "cycle_{0}.sps".format(i)
-                        arcname = os.path.join(mud, "{0}.zip".format(profile_name))
-                        profile_filename = os.path.join(profile_name, cycle_name)
-                        utils.info("Adding profile {0} to archive {1}".format(profile_filename, arcname))
-                        with zipfile.ZipFile(arcname, 'a', mode) as arc:
+                    with zipfile.ZipFile(profile_arcname, 'a', mode) as arc:
+                        # Collect all individual profiles that the test has put into sps_profile_dir.
+                        for profile_filename in os.listdir(sps_profile_dir):
+                            testname = profile_filename
+                            if testname.endswith(".sps"):
+                                testname = testname[0:-4]
+                            profile_path = os.path.join(sps_profile_dir, profile_filename)
+
+                            # Our zip will contain one directory per subtest, and each subtest
+                            # directory will contain one or more cycle_i.sps files.
+                            # For example, with test_config['name'] == 'tscrollx',
+                            #  profile_filename == 'iframe.svg.sps', i == 0, we'll get
+                            #  path_in_zip == 'profile_tscrollx/iframe.svg/cycle_0.sps'.
+                            cycle_name = "cycle_{0}.sps".format(i)
+                            path_in_zip = os.path.join("profile_{0}".format(test_config['name']), testname, cycle_name)
+                            utils.info("Adding profile {0} to archive {1}".format(path_in_zip, profile_arcname))
                             try:
-                                arc.write(sps_profile_file, profile_filename)
+                                arc.write(profile_path, path_in_zip)
                             except Exception as e:
                                 utils.info(e)
-                                utils.info("Failed to copy profile {0} as {1} to archive {2}".format(sps_profile_file, profile_filename, arcname))
+                                utils.info("Failed to copy profile {0} as {1} to archive {2}".format(profile_path, path_in_zip, profile_arcname))
 
                 #clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
@@ -530,6 +534,8 @@ class TTest(object):
             # cleanup
             self.cleanupProfile(temp_dir)
             utils.restoreEnvironmentVars()
+            if sps_profile:
+                shutil.rmtree(sps_profile_dir)
 
             # include global (cross-cycle) counters
             test_results.all_counter_results.extend([{key: value} for key, value in global_counters.items()])
