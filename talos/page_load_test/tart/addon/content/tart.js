@@ -659,12 +659,8 @@ Tart.prototype = {
 
   startTest: function(doneCallback, config) {
     this._onTestComplete = function (results) {
-        if (config.controlProfiler)
-          Profiler.resume("TART - end", true);
-        else
-          Profiler.mark("TART - end", true);
-
-        doneCallback(results);
+      Profiler.mark("TART - end", true);
+      doneCallback(results);
     };
     this._config = config;
 
@@ -674,10 +670,7 @@ Tart.prototype = {
     this._tartTab = this._win.gBrowser.selectedTab;
     this._win.gBrowser.selectedBrowser.focus(); // Unfocus the URL bar to avoid caret blink
 
-    if (config.controlProfiler)
-      Profiler.pause("TART - start", true);
-    else
-      Profiler.mark("TART - start", true);
+    Profiler.mark("TART - start", true);
 
     return this._startTest();
   }
