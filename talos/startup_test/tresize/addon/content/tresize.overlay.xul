@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <overlay id="Scrapper-Overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+<script type="application/x-javascript" src="Profiler.js" />
 <script type="application/x-javascript" src="tresize.js" />
 <script type="application/x-javascript">
 (function(){
@@ -17,8 +18,7 @@
         result: result
       });
     }
-
-    runTest(sendResult);
+    runTest(sendResult, m.data.locationSearch);
   });
 })();
 </script>

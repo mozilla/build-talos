@@ -10,7 +10,9 @@
 
 function runTest() {
   dispatchEvent(
-    new CustomEvent("tresize@mozilla.org:chrome-run-event", { bubbles: true })
+    new CustomEvent("tresize@mozilla.org:chrome-run-event",
+                    { bubbles: true,
+                      detail: { locationSearch: location.search } })
   );
 }
 

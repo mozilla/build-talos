@@ -18,6 +18,7 @@ var doneCallback = null;
 function painted() {
   window.gBrowser.removeEventListener("MozAfterPaint", painted, true);
   var paintTime = window.performance.now();
+  Profiler.pause("resize " + count);
   dataSet[count].end = paintTime;
   setTimeout(resizeCompleted, 20);
 }
@@ -26,6 +27,7 @@ function resizeTest() {
   try {
     windowSize += resizeIncrement;
     window.gBrowser.addEventListener("MozAfterPaint", painted, true);
+    Profiler.resume("resize " + count);
     dataSet[count] = {'start': window.performance.now()};
     window.resizeTo(windowSize,windowSize);
   } catch(ex) { finish([ex + '\n']); }
@@ -33,6 +35,7 @@ function resizeTest() {
 
 function testCompleted() {
   try {
+    Profiler.finishTest();
     var total = 0;
     var diffs = [];
     for (var idx = 0; idx < count; idx++) {
@@ -61,10 +64,12 @@ function resizeCompleted() {
   }
 }
 
-function runTest(callback) {
+function runTest(callback, locationSearch) {
   doneCallback = callback;
   window.moveTo(10,10);
   window.resizeTo(windowSize,windowSize);
+  Profiler.initFromURLQueryParams(locationSearch);
+  Profiler.beginTest("tresize");
   resizeTest();
 }
 

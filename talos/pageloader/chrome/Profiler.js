@@ -6,6 +6,7 @@
 //         - talos/scripts/Profiler.js
 //         - talos/pageloader/chrome/Profiler.js
 //         - talos/page_load_test/tart/addon/content/Profiler.js
+//         - talos/startup_test/tresize/addon/content/Profiler.js
 //
 //  - Please keep these copies in sync.
 //  - Please make sure your changes apply cleanly to all use cases.
