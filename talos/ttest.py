@@ -323,6 +323,8 @@ class TTest(object):
             sps_profile = upload_dir and test_config.get('sps_profile', False) and not browser_config['remote']
             sps_profile_dir = None
             profile_arcname = None
+            profiling_info = None
+
             if sps_profile:
                 # Create a temporary directory into which the tests can put their profiles.
                 # These files will be assembled into one big zip file later on, which is put
@@ -341,6 +343,13 @@ class TTest(object):
                     os.remove(profile_arcname)
                 except OSError:
                     pass
+
+                profiling_info = {
+                    "sps_profile_interval": sps_profile_interval,
+                    "sps_profile_entries": sps_profile_entries,
+                    "sps_profile_dir": sps_profile_dir,
+                    "sps_profile_threads": sps_profile_threads
+                }
 
             utils.debug("initialized %s", browser_config['process'])
 
@@ -395,7 +404,8 @@ class TTest(object):
                                                                 browser_config["extra_args"],
                                                                 browser_config["deviceroot"],
                                                                 profile_dir,
-                                                                test_config['url'])
+                                                                test_config['url'],
+                                                                profiling_info=profiling_info)
 
                 self.counter_results = None
                 mainthread_error_count = 0

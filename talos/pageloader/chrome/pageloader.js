@@ -42,6 +42,8 @@ var useMozAfterPaint = false;
 var loadNoCache = false;
 var scrollTest = false;
 
+var profilingInfo = null;
+
 //when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
 var gTime = -1;
 var gStartTime = -1;
@@ -101,6 +103,11 @@ function plInit() {
     if (args.rss) reportRSS = true;
     if (args.loadnocache) loadNoCache = true;
     if (args.scrolltest) scrollTest = true;
+    if (args.profilinginfo) profilingInfo = JSON.parse(args.profilinginfo)
+
+    if (profilingInfo) {
+      Profiler.initFromObject(profilingInfo);
+    }
 
     forceCC = !args.noForceCC;
     doRenderTest = args.doRender;
@@ -146,6 +153,9 @@ function plInit() {
       renderReport = new Report();
 
     pageIndex = 0;
+    if (profilingInfo) {
+      Profiler.beginTest(getCurrentPageShortName());
+    }
   
     if (args.useBrowserChrome) {
       // Create a new chromed browser window for content
@@ -283,6 +293,12 @@ function plLoadPage() {
 }
 
 function startAndLoadURI(pageName) {
+  if (!(plPageFlags() & TEST_DOES_OWN_TIMING)) {
+    // Resume the profiler because we're really measuring page load time.
+    // If the test is doing its own timing, it'll also need to do its own
+    // profiler pausing / resuming.
+    Profiler.resume("Starting to load URI " + pageName, true);
+  }
   start_time = Date.now();
   if (loadNoCache) {
     content.loadURIWithFlags(pageName, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
@@ -291,17 +307,30 @@ function startAndLoadURI(pageName) {
   }
 }
 
+function getTestName() { // returns tp5n
+  var pageName = pages[pageIndex].url.spec;
+  let parts = pageName.split('/');
+  if (parts.length > 4) {
+    return parts[4];
+  }
+  return "pageloader";
+}
+
+function getCurrentPageShortName() {
+  var pageName = pages[pageIndex].url.spec;
+  let parts = pageName.split('/');
+  if (parts.length > 5) {
+    return parts[5];
+  }
+  return "page_" + pageIndex;
+}
+
 function loadFail() {
   var pageName = pages[pageIndex].url.spec;
   numRetries++;
 
   if (numRetries >= maxRetries) {
-    let parts = pageName.split('/');
-    let testname = "pageloader";
-    if (parts.length > 4) {
-      testname = parts[4];
-    }
-    dumpLine('__FAILTimeout in ' + testname + '__FAIL');
+    dumpLine('__FAILTimeout in ' + getTestName() + '__FAIL');
     dumpLine('__FAILTimeout (' + numRetries + '/' + maxRetries + ') exceeded on ' + pageName + '__FAIL');
     plStop(true);
   } else {
@@ -321,11 +350,19 @@ function plNextPage() {
   if (pageCycle < numPageCycles) {
     pageCycle++;
     doNextPage = true;
-  } else if (pageIndex < pages.length-1) {
-    pageIndex++;
-    recordedName = null;
-    pageCycle = 1;
-    doNextPage = true;
+  } else {
+    if (profilingInfo) {
+      Profiler.finishTest();
+    }
+    if (pageIndex < pages.length-1) {
+      pageIndex++;
+      if (profilingInfo) {
+        Profiler.beginTest(getCurrentPageShortName());
+      }
+      recordedName = null;
+      pageCycle = 1;
+      doNextPage = true;
+    }
   }
 
   if (doNextPage == true) {
@@ -404,6 +441,7 @@ function _loadHandlerCapturing() {
 
   if (gTime !== -1) {
     plRecordTime(gTime);
+    Profiler.pause("capturing load handler fired", true);
     gTime = -1;
     recordedName = null;
     setTimeout(plNextPage, delay);
@@ -417,6 +455,8 @@ function _loadHandler() {
 
   var end_time = Date.now();
   var time = (end_time - start_time);
+
+  Profiler.pause("Bubbling load handler fired.", true);
 
   // does this page want to do its own timing?
   // if so, we shouldn't be here

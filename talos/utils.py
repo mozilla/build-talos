@@ -10,7 +10,9 @@ import time
 import urlparse
 import yaml
 import string
+import urllib
 import mozlog
+import json
 from mozlog import debug, info # this is silly, but necessary
 import platform
 from mozprocess import pid as mozpid
@@ -213,7 +215,7 @@ def parsePref(value):
     except ValueError:
         return value
 
-def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir, url):
+def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir, url, profiling_info=None):
     #TODO: allow for spaces in file names on Windows
 
     command_args = [browser_path.strip()]
@@ -227,6 +229,15 @@ def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir
         command_args.extend([extra_args])
 
     command_args.extend(['-profile', profile_dir])
+
+    if profiling_info:
+        # For pageloader, buildCommandLine() puts the -tp* command line options into
+        # the url argument.
+        # It would be better to assemble all -tp arguments in one place, but we don't
+        # have the profiling information in buildCommandLine().
+        if url.find(' -tp') != -1:
+            command_args.extend(['-tpprofilinginfo', json.dumps(profiling_info)])
+
     command_args.extend(url.split(' '))
 
     # Handle robocop case
