@@ -237,6 +237,10 @@ def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot, profile_dir
         # have the profiling information in buildCommandLine().
         if url.find(' -tp') != -1:
             command_args.extend(['-tpprofilinginfo', json.dumps(profiling_info)])
+        elif url.find('?') != -1:
+            url += '&' + urllib.urlencode(profiling_info)
+        else:
+            url += '?' + urllib.urlencode(profiling_info)
 
     command_args.extend(url.split(' '))
 

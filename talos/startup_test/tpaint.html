@@ -24,6 +24,8 @@ function startTest() {
   windowIndex = -1;
   openTimes = [];
 
+  Profiler.initFromURLQueryParams(location.search);
+  Profiler.beginTest("tpaint");
   scheduleNextWindow();
 }
 
@@ -43,6 +45,8 @@ function calcMedian( numbers ) {
 }
 
 function reportTimes() {
+  Profiler.finishTest();
+
   var min = 99999, max = 0, avg = 0;
   var count = openTimes.length;
   for (var i = 0; i < count; i++) {
