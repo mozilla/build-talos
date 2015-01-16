@@ -210,6 +210,7 @@ function plInit() {
                        "} " +
                        "addEventListener('load', _contentLoadHandler, true); ";
                      content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
+                     content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
                      content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
 
                      if (reportRSS) {
