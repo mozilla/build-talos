@@ -568,6 +568,8 @@ class TTest(object):
                         else:
                             symbolicator.integrate_symbol_zip_from_file(browser_config['symbols_path'])
 
+                    missing_symbols_zip = os.path.join(upload_dir, "missingsymbols.zip")
+
                     try:
                         mode = zipfile.ZIP_DEFLATED
                     except:
@@ -583,6 +585,7 @@ class TTest(object):
                                 profile_file = open(profile_path, 'r')
                                 profile = json.load(profile_file)
                                 profile_file.close()
+                                symbolicator.dump_and_integrate_missing_symbols(profile, missing_symbols_zip)
                                 symbolicator.symbolicate_profile(profile)
                                 sps.compress_profile(profile)
                                 sps.save_profile(profile, profile_path)
