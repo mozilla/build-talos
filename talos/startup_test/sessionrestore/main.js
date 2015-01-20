@@ -6,25 +6,27 @@ var Services = Components.utils.import("resource://gre/modules/Services.jsm", {}
  * Display the result, send it to the harness and quit.
  */
 function finish() {
-  var startup_info = Services.startup.getStartupInfo();
 
-  var duration = startup_info.sessionRestored - startup_info.sessionRestoreInit;
+  setTimeout(function () {
+    var startup_info = Services.startup.getStartupInfo();
 
-  // Show result on screen. Nice but not really necessary.
-  document.getElementById("sessionRestoreInit-to-sessionRestored").textContent = duration + "ms";
+    var duration = startup_info.sessionRestored - startup_info.sessionRestoreInit;
 
-  // Report data to Talos, if possible
-  dumpLog("__start_report" +
-          duration         +
-          "__end_report\n\n");
+    // Show result on screen. Nice but not really necessary.
+    document.getElementById("sessionRestoreInit-to-sessionRestored").textContent = duration + "ms";
 
-  // Next one is required by the test harness but not used
-  dumpLog("__startTimestamp" +
-          Date.now()         +
-          "__endTimestamp\n\n");
+    // Report data to Talos, if possible
+    dumpLog("__start_report" +
+            duration         +
+            "__end_report\n\n");
 
-  goQuitApplication();
-  return;
+    // Next one is required by the test harness but not used
+    dumpLog("__startTimestamp" +
+            Date.now()         +
+            "__endTimestamp\n\n");
+
+    goQuitApplication();
+  }, 0);
 }
 
 function main() {
@@ -43,8 +45,7 @@ function main() {
   // Otherwise, we need to wait until *after* sesionstore-windows-restored,
   // which is the event that sets sessionRestored - since sessionRestoreInit
   // is set before sessionRestored, we are certain that both are now set.
-  Services.obs.addObserver((() => window.setTimeout(finish, 0)),
-    "sessionstore-windows-restored", false);
+  Services.obs.addObserver(finish, "sessionstore-windows-restored", false);
 }
 
-window.addEventListener("load", main);
+main();
