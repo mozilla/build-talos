@@ -26,6 +26,10 @@ import mozdevice
 import talosconfig
 import shutil
 import zipfile
+import json
+from profiler import symbolication
+from profiler import sps
+import mozfile
 from threading import Thread
 
 from utils import TalosError, TalosCrash, TalosRegression
@@ -326,6 +330,7 @@ class TTest(object):
             profiling_info = None
 
             additional_env_vars = {}
+            symbol_paths = {}
 
             if sps_profile:
                 # Create a temporary directory into which the tests can put their profiles.
@@ -345,6 +350,12 @@ class TTest(object):
                     os.remove(profile_arcname)
                 except OSError:
                     pass
+
+                symbol_paths = {
+                    'FIREFOX': tempfile.mkdtemp(),
+                    'THUNDERBIRD': tempfile.mkdtemp(),
+                    'WINDOWS': tempfile.mkdtemp()
+                }
 
                 utils.info("Activating Gecko Profiling. Temp. profile dir: {0}, interval: {1}, entries: {2}".format(sps_profile_dir, sps_profile_interval, sps_profile_entries))
 
@@ -529,6 +540,34 @@ class TTest(object):
                 test_results.add(browser_log_filename, counter_results=self.counter_results)
 
                 if sps_profile:
+                    symbolicator = symbolication.ProfileSymbolicator({
+                        # Trace-level logging (verbose)
+                        "enableTracing": 0,
+                        # Fallback server if symbol is not found locally
+                        "remoteSymbolServer": "http://symbolapi.mozilla.org:80/",
+                        # Maximum number of symbol files to keep in memory
+                        "maxCacheEntries": 2000000,
+                        # Frequency of checking for recent symbols to cache (in hours)
+                        "prefetchInterval": 12,
+                        # Oldest file age to prefetch (in hours)
+                        "prefetchThreshold": 48,
+                        # Maximum number of library versions to pre-fetch per library
+                        "prefetchMaxSymbolsPerLib": 3,
+                        # Default symbol lookup directories
+                        "defaultApp": "FIREFOX",
+                        "defaultOs": "WINDOWS",
+                        # Paths to .SYM files, expressed internally as a mapping of app or platform names
+                        # to directories
+                        # Note: App & OS names from requests are converted to all-uppercase internally
+                        "symbolPaths": symbol_paths
+                    })
+
+                    if browser_config['symbols_path']:
+                        if mozfile.is_url(browser_config['symbols_path']):
+                            symbolicator.integrate_symbol_zip_from_url(browser_config['symbols_path'])
+                        else:
+                            symbolicator.integrate_symbol_zip_from_file(browser_config['symbols_path'])
+
                     try:
                         mode = zipfile.ZIP_DEFLATED
                     except:
@@ -540,6 +579,20 @@ class TTest(object):
                             if testname.endswith(".sps"):
                                 testname = testname[0:-4]
                             profile_path = os.path.join(sps_profile_dir, profile_filename)
+                            try:
+                                profile_file = open(profile_path, 'r')
+                                profile = json.load(profile_file)
+                                profile_file.close()
+                                symbolicator.symbolicate_profile(profile)
+                                sps.compress_profile(profile)
+                                sps.save_profile(profile, profile_path)
+                                profile = None # Free up memory
+                            except MemoryError as e:
+                                utils.info("Ran out of memory while trying to symbolicate profile {0} (cycle {1})".format(profile_path, i))
+                            except Exception as e:
+                                utils.info(e)
+                                utils.info("Encountered an exception during profile symbolication {0} (cycle {1})".format(profile_path, i))
+                            profile = None # Free up memory
 
                             # Our zip will contain one directory per subtest, and each subtest
                             # directory will contain one or more cycle_i.sps files.
@@ -564,6 +617,8 @@ class TTest(object):
             utils.restoreEnvironmentVars()
             if sps_profile:
                 shutil.rmtree(sps_profile_dir)
+                for symbol_path in symbol_paths.values():
+                    shutil.rmtree(symbol_path)
 
             # include global (cross-cycle) counters
             test_results.all_counter_results.extend([{key: value} for key, value in global_counters.items()])
