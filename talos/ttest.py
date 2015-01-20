@@ -414,6 +414,9 @@ class TTest(object):
 
                 # Run the test
                 timeout = test_config.get('timeout', 7200) # 2 hours default
+                if sps_profile:
+                    # When profiling, give the browser some extra time to dump the profile.
+                    timeout += 5 * 60
 
                 command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"],
                                                                 browser_config["extra_args"],
