@@ -619,9 +619,13 @@ class TTest(object):
             self.cleanupProfile(temp_dir)
             utils.restoreEnvironmentVars()
             if sps_profile:
-                shutil.rmtree(sps_profile_dir)
+                # For some reason, on Windows, big profiles are sometimes locked
+                # by another process even after all Firefox processes have been
+                # terminated. Allow up to 10 minutes for the file lock to be
+                # released.
+                utils.rmtree_until_timeout(sps_profile_dir, 20 * 60)
                 for symbol_path in symbol_paths.values():
-                    shutil.rmtree(symbol_path)
+                    utils.rmtree_until_timeout(symbol_path, 20 * 60)
 
             # include global (cross-cycle) counters
             test_results.all_counter_results.extend([{key: value} for key, value in global_counters.items()])

@@ -15,6 +15,7 @@ import mozlog
 import json
 from mozlog import debug, info # this is silly, but necessary
 import platform
+import shutil
 from mozprocess import pid as mozpid
 
 # directory of this file for use with interpolatePath()
@@ -266,3 +267,22 @@ def indexed_items(itr):
         yield prev_i, prev_val
         prev_i, prev_val = i, val
     yield -1, prev_val
+
+def rmtree_until_timeout(path, timeout):
+    """
+    Like shutils.rmtree, but retries until timeout seconds have elapsed.
+    """
+    elapsed = 0
+    while True:
+        try:
+            shutil.rmtree(path)
+            if elapsed > 0:
+                info("shutil.rmtree({0}) succeeded after retrying for {1} seconds.".format(path, elapsed))
+            return
+        except Exception as e:
+            if elapsed >= timeout:
+                info("shutil.rmtree({0}) still failing after retrying for {1} seconds.".format(path, elapsed))
+                raise e
+            # Wait 1 second and retry.
+            time.sleep(1) # 1 second
+            elapsed += 1
