@@ -333,6 +333,7 @@ function loadFail() {
   if (numRetries >= maxRetries) {
     dumpLine('__FAILTimeout in ' + getTestName() + '__FAIL');
     dumpLine('__FAILTimeout (' + numRetries + '/' + maxRetries + ') exceeded on ' + pageName + '__FAIL');
+    Profiler.finishTest();
     plStop(true);
   } else {
     dumpLine('__WARNTimeout (' + numRetries + '/' + maxRetries + ') exceeded on ' + pageName + '__WARN');
