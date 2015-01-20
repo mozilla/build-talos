@@ -75,6 +75,7 @@ class TsBase(Test):
         'sps_profile',
         'sps_profile_interval',
         'sps_profile_entries',
+        'sps_profile_startup',
         'preferences',
         'xperf_counters',
         'xperf_providers',
@@ -104,6 +105,7 @@ class ts(TsBase):
     """
     cycles = 20
     timeout = 150
+    sps_profile_startup = True
     url = 'startup_test/startup_test.html'
     shutdown = True
 

@@ -325,6 +325,8 @@ class TTest(object):
             profile_arcname = None
             profiling_info = None
 
+            additional_env_vars = {}
+
             if sps_profile:
                 # Create a temporary directory into which the tests can put their profiles.
                 # These files will be assembled into one big zip file later on, which is put
@@ -350,6 +352,17 @@ class TTest(object):
                     "sps_profile_dir": sps_profile_dir,
                     "sps_profile_threads": sps_profile_threads
                 }
+
+                if test_config.get('sps_profile_startup', False):
+                    # Set environment variables which will cause profiling to
+                    # start as early as possible. These are consumed by Gecko
+                    # itself, not by Talos JS code.
+                    additional_env_vars = {
+                        'MOZ_PROFILER_STARTUP': '1',
+                        'MOZ_PROFILER_INTERVAL': str(sps_profile_interval),
+                        'MOZ_PROFILER_ENTRIES': str(sps_profile_entries),
+                        "MOZ_PROFILER_THREADS": str(sps_profile_threads)
+                    }
 
             utils.debug("initialized %s", browser_config['process'])
 
@@ -430,7 +443,7 @@ class TTest(object):
                         mm_httpd = media_manager.run_server(os.path.dirname(os.path.realpath(__file__)))
 
                     browser = TalosProcess.TalosProcess(command_args,
-                                                        env=os.environ.copy(),
+                                                        env=dict(os.environ.items() + additional_env_vars.items()),
                                                         logfile=browser_config['browser_log'],
                                                         supress_javascript_errors=True,
                                                         wait_for_quit_timeout=5)

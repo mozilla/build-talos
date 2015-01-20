@@ -13,6 +13,9 @@
 
 function painted() {
   var now = Date.now();
+  Profiler.pause();
+  Profiler.initFromURLQueryParams(location.search);
+  Profiler.finishStartupProfiling();
 
   window.removeEventListener("MozAfterPaint", painted, true);
 

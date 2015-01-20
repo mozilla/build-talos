@@ -12,6 +12,9 @@
 
 </head><body onload="
     var now = (new Date()).getTime();
+    Profiler.pause();
+    Profiler.initFromURLQueryParams(location.search);
+    Profiler.finishStartupProfiling();
     var begin = document.location.search.split('=')[1]; // ?begin=nnnnn
     var startupTime = now - begin;
     document.body.textContent = 'Startup time = ' + startupTime + ' ms';
@@ -35,6 +38,8 @@
         dumpLog('__startTimestamp' + Date.now() + '__endTimestamp\n');
       }
       Profiler.pause();
+      Profiler.initFromURLQueryParams(location.search);
+      Profiler.finishStartup();
       goQuitApplication();
       window.close();
     }, 0);

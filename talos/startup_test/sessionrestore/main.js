@@ -6,6 +6,9 @@ var Services = Components.utils.import("resource://gre/modules/Services.jsm", {}
  * Display the result, send it to the harness and quit.
  */
 function finish() {
+  Profiler.pause("This test measures the time between sessionRestoreInit and sessionRestored, ignore everything around that");
+  Profiler.initFromURLQueryParams(location.search);
+  Profiler.finishStartupProfiling();
 
   setTimeout(function () {
     var startup_info = Services.startup.getStartupInfo();
