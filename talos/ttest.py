@@ -537,7 +537,12 @@ class TTest(object):
                     raise TalosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
 
                 # add the results from the browser output
-                test_results.add(browser_log_filename, counter_results=self.counter_results)
+                try:
+                    test_results.add(browser_log_filename, counter_results=self.counter_results)
+                except Exception as e:
+                    # Log the exception, but continue. One way to get here is if the browser hangs,
+                    # and we'd still like to get symbolicated profiles in that case.
+                    utils.info(e)
 
                 if sps_profile:
                     symbolicator = symbolication.ProfileSymbolicator({
