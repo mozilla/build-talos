@@ -18,7 +18,20 @@ var Profiler;
 
 (function(){
   var _profiler;
-  var test_name = document.location.pathname;
+
+  // If this script is loaded in a framescript context, there won't be a
+  // document object, so just use a fallback value in that case.
+  var test_name = this.document ? this.document.location.pathname : "unknown";
+
+  // Whether Profiler has been initialized. Until that happens, most calls
+  // will be ignored.
+  var enabled = false;
+
+  // The subtest name that beginTest() was called with.
+  var currentTest = "";
+
+  // Profiling settings.
+  var profiler_interval, profiler_entries, profiler_threadsArray, profiler_dir;
 
   try {
     // Outside of talos, this throws a security exception which no-op this file.
@@ -32,7 +45,69 @@ var Profiler;
     _profiler = Components.classes["@mozilla.org/tools/profiler;1"].getService(Components.interfaces.nsIProfiler);
   } catch (ex) { (typeof(dumpLog) == "undefined" ? dump : dumpLog)(ex + "\n"); }
 
+  // Parses an url query string into a JS object.
+  function searchToObject(locationSearch) {
+    var pairs = locationSearch.substring(1).split("&");
+    var result = {};
+
+    for (var i in pairs) {
+      if (pairs[i] !== "") {
+        var pair = pairs[i].split("=");
+        result[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || "");
+      }
+    }
+
+    return result;
+  }
+
   Profiler = {
+    /**
+     * Initialize the profiler using profiler settings supplied in a JS object.
+     * The following properties on the object are respected:
+     *  - sps_profile_interval
+     *  - sps_profile_entries
+     *  - sps_profile_threads
+     *  - sps_profile_dir
+     */
+    initFromObject: function Profiler__initFromObject (obj) {
+      if (obj &&
+          ("sps_profile_dir" in obj) && typeof obj.sps_profile_dir == "string" &&
+          ("sps_profile_interval" in obj) && Number.isFinite(obj.sps_profile_interval * 1) &&
+          ("sps_profile_entries" in obj) && Number.isFinite(obj.sps_profile_entries * 1) &&
+          ("sps_profile_threads" in obj) && typeof obj.sps_profile_threads == "string") {
+        profiler_interval = obj.sps_profile_interval;
+        profiler_entries = obj.sps_profile_entries;
+        profiler_threadsArray = obj.sps_profile_threads.split(",");
+        profiler_dir = obj.sps_profile_dir;
+        enabled = true;
+      }
+    },
+    initFromURLQueryParams: function Profiler__initFromURLQueryParams (locationSearch) {
+      this.initFromObject(searchToObject(locationSearch));
+    },
+    beginTest: function Profiler__beginTest (testName) {
+      currentTest = testName;
+      if (_profiler && enabled) {
+        _profiler.StartProfiler(profiler_entries, profiler_interval,
+                                ["js", "leaf", "stackwalk", "threads"], 4,
+                                profiler_threadsArray, profiler_threadsArray.length);
+        if (_profiler.PauseSampling) {
+          _profiler.PauseSampling();
+        }
+      }
+    },
+    finishTest: function Profiler__finishTest () {
+      if (_profiler && enabled) {
+        _profiler.dumpProfileToFile(profiler_dir + "/" + currentTest + ".sps");
+        _profiler.StopProfiler();
+      }
+    },
+    finishStartupProfiling: function Profiler__finishStartupProfiling () {
+      if (_profiler && enabled) {
+        _profiler.dumpProfileToFile(profiler_dir + "/startup.sps");
+        _profiler.StopProfiler();
+      }
+    },
     resume: function Profiler__resume (name, explicit) {
       if (_profiler) {
         if (_profiler.ResumeSampling) {
