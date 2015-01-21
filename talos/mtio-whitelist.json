@@ -72,6 +72,8 @@
  "{profile}\\extensions\\pageloader@mozilla.org": {},
  "{profile}\\extensions\\pageloader@mozilla.org\\plugins": {},
  "{profile}\\extensions\\pageloader@mozilla.org\\searchplugins": {},
+ "{profile}\\extensions\\pageloader@mozilla.org\\chrome\\profiler.js": {},
+ "{profile}\\extensions\\pageloader@mozilla.org\\chrome\\tscroll.js": {},
  "{profile}\\key3.db": {},
  "{profile}\\localstore-1.rdf": {},
  "{profile}\\localstore.rdf": {},
