@@ -44,6 +44,7 @@ var gPaintListener = false;
 var loadNoCache = false;
 var scrollTest = false;
 var gUseE10S = false;
+var profilingInfo = false;
 
 //when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
 var gTime = -1;
@@ -193,37 +194,31 @@ function plInit() {
                        let contentScript = "data:,function _contentLoadHandler(e) { " +
                          "  if (e.originalTarget.defaultView == content) { " +
                          "    content.wrappedJSObject.tpRecordTime = function(t, s, n) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s, testName: n }); }; ";
-                        if (useMozAfterPaint) {
-                          contentScript += "" + 
-                          "function _contentPaintHandler() { " +
-                          "  var utils = content.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils); " +
-                          "  if (utils.isMozAfterPaintPending) { " +
-                          "    addEventListener('MozAfterPaint', function(e) { " +
-                          "      removeEventListener('MozAfterPaint', arguments.callee, true); " + 
-                          "      sendAsyncMessage('PageLoader:LoadEvent', {}); " +
-                          "    }, true); " + 
-                          "  } else { " +
-                          "    sendAsyncMessage('PageLoader:LoadEvent', {}); " +
-                          "  } " +
-                          "}; " +
-                          "content.setTimeout(_contentPaintHandler, 0); ";
+                       if (useMozAfterPaint) {
+                         contentScript += "" +
+                         "function _contentPaintHandler() { " +
+                         "  var utils = content.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils); " +
+                         "  if (utils.isMozAfterPaintPending) { " +
+                         "    addEventListener('MozAfterPaint', function(e) { " +
+                         "      removeEventListener('MozAfterPaint', arguments.callee, true); " +
+                         "      sendAsyncMessage('PageLoader:LoadEvent', {}); " +
+                         "    }, true); " +
+                         "  } else { " +
+                         "    sendAsyncMessage('PageLoader:LoadEvent', {}); " +
+                         "  } " +
+                         "}; " +
+                         "content.setTimeout(_contentPaintHandler, 0); ";
                        } else {
                          contentScript += "    sendAsyncMessage('PageLoader:LoadEvent', {}); ";
                        }
-                       contentScript += "" + 
+                       contentScript += "" +
                          "  }" +
                          "} " +
                          "addEventListener('load', _contentLoadHandler, true); ";
                        content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
                        content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
+                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
                      }
-                     contentScript += "" +
-                       "  }" +
-                       "} " +
-                       "addEventListener('load', _contentLoadHandler, true); ";
-                     content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
-                     content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
-                     content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
 
                      if (reportRSS) {
                        initializeMemoryCollector(plLoadPage, 100);
