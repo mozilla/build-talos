@@ -467,6 +467,8 @@ class DatazillaOutput(Output):
                         res.add_xperf_results(suite, name, vals)
 
         # make a datazilla test result collection
+        if browser_config['develop'] and not browser_config['sourcestamp']:
+            browser_config['sourcestamp'] = ''
         collection = DatazillaResultsCollection(machine_name=machine['name'],
                                                 os=machine['os'],
                                                 os_version=machine['osversion'],
