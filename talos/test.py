@@ -415,8 +415,8 @@ class tp5n(tp):
     mobile = False # too many files to run, we will hit OOM
     filters = [["ignore_first", [1]], ['median', []]]
     timeout = 1800
-    setup = '${talos}/xtalos/start_xperf.py ${talos}/bcontroller.yml'
-    cleanup = '${talos}/xtalos/parse_xperf.py ${talos}/bcontroller.yml'
+    setup = '${talos}/xtalos/start_xperf.py -c ${talos}/bcontroller.yml'
+    cleanup = '${talos}/xtalos/parse_xperf.py -c ${talos}/bcontroller.yml'
     preferences = {'extensions.autoDisableScopes': '',
                    'extensions.enabledScopes': '',
                    'talos.logfile': 'browser_output.txt'}

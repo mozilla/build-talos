@@ -432,20 +432,20 @@ def etlparser_from_config(config_file, **kwargs):
 
 def main(args=sys.argv[1:]):
 
-    # parse command line options
+    # parse command line arguments
     parser = xtalos.XtalosOptions()
-    options, args = parser.parse_args(args)
-    options = parser.verifyOptions(options)
-    if options == None:
-        parser.error("Unable to verify options")
-    if not options.processID:
-        parser.error("No process ID option given")
+    args = parser.parse_args(args)
+    args = parser.verifyOptions(args)
+    if args == None:
+        parser.error("Unable to verify arguments")
+    if not args.processID:
+        parser.error("No process ID argument given")
 
     # call API
-    etlparser(options.xperf_path, options.etl_filename, options.processID, options.approot,
-              options.configFile, options.outputFile, options.whitelist_file, options.error_filename,
-              options.all_stages, options.all_threads,
-              debug=options.debug_level >= xtalos.DEBUG_INFO)
+    etlparser(args.xperf_path, args.etl_filename, args.processID, args.approot,
+              args.configFile, args.outputFile, args.whitelist_file, args.error_filename,
+              args.all_stages, args.all_threads,
+              debug=args.debug_level >= xtalos.DEBUG_INFO)
 
 if __name__ == "__main__":
     main()

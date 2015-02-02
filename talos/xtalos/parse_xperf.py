@@ -55,15 +55,15 @@ def stop_from_config(config_file=None, debug=False, **kwargs):
 
 def main(args=sys.argv[1:]):
 
-    # parse command line options
+    # parse command line arguments
     parser = xtalos.XtalosOptions()
-    options, args = parser.parse_args(args)
+    args = parser.parse_args(args)
 
     # start xperf
     try:
-        stop_from_config(config_file=args[0],
-                          debug=options.debug_level >= xtalos.DEBUG_INFO,
-                          **options.__dict__)
+        stop_from_config(config_file=args.configFile,
+                          debug=args.debug_level >= xtalos.DEBUG_INFO,
+                          **args.__dict__)
     except xtalos.XTalosError, e:
         parser.error(str(e))
 
