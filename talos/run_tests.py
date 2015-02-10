@@ -185,8 +185,16 @@ def run_tests(configurator):
     browser_config['browser_name'] = version_info['application_name']
     browser_config['browser_version'] = version_info['application_version']
     browser_config['buildid'] = version_info['application_buildid']
-    browser_config['repository'] = version_info['application_repository']
-    browser_config['sourcestamp'] = version_info['application_changeset']
+    try:
+        browser_config['repository'] = version_info['application_repository']
+        browser_config['sourcestamp'] = version_info['application_changeset']
+    except:
+        if not browser_config['develop']:
+            print "unable to find changeset or repository: %s" % version_info
+            sys.exit()
+        else:
+            browser_config['repository'] = 'develop'
+            browser_config['sourcestamp'] = 'develop'
 
     # get test date in seconds since epoch
     if testdate:
