@@ -39,12 +39,10 @@ var forceCC = true;
 var reportRSS = true;
 
 var useMozAfterPaint = false;
-var gPaintWindow = window;
-var gPaintListener = false;
 var loadNoCache = false;
 var scrollTest = false;
-var gUseE10S = false;
-var profilingInfo = false;
+
+var profilingInfo = null;
 
 //when TEST_DOES_OWN_TIMING, we need to store the time from the page as MozAfterPaint can be slower than pageload
 var gTime = -1;
@@ -170,7 +168,6 @@ function plInit() {
         (null, "chrome://browser/content/", "_blank",
          "chrome,all,dialog=no,width=" + winWidth + ",height=" + winHeight, blank);
 
-      gPaintWindow = browserWindow;
       // get our window out of the way
       window.resizeTo(10,10);
 
@@ -186,39 +183,35 @@ function plInit() {
                      browserWindow.focus();
 
                      content = browserWindow.getBrowser();
-                     gUseE10S = (plPageFlags() & EXECUTE_SCROLL_TEST) || (content.selectedBrowser &&
-                                 content.selectedBrowser.getAttribute("remote") == "true")
 
                      // Load the frame script for e10s / IPC message support
-                     if (gUseE10S) {
-                       let contentScript = "data:,function _contentLoadHandler(e) { " +
-                         "  if (e.originalTarget.defaultView == content) { " +
-                         "    content.wrappedJSObject.tpRecordTime = function(t, s, n) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s, testName: n }); }; ";
-                       if (useMozAfterPaint) {
-                         contentScript += "" +
-                         "function _contentPaintHandler() { " +
-                         "  var utils = content.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils); " +
-                         "  if (utils.isMozAfterPaintPending) { " +
-                         "    addEventListener('MozAfterPaint', function(e) { " +
-                         "      removeEventListener('MozAfterPaint', arguments.callee, true); " +
-                         "      sendAsyncMessage('PageLoader:LoadEvent', {}); " +
-                         "    }, true); " +
-                         "  } else { " +
-                         "    sendAsyncMessage('PageLoader:LoadEvent', {}); " +
-                         "  } " +
-                         "}; " +
-                         "content.setTimeout(_contentPaintHandler, 0); ";
-                       } else {
-                         contentScript += "    sendAsyncMessage('PageLoader:LoadEvent', {}); ";
-                       }
-                       contentScript += "" +
-                         "  }" +
-                         "} " +
-                         "addEventListener('load', _contentLoadHandler, true); ";
-                       content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
-                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
-                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
+                     let contentScript = "data:,function _contentLoadHandler(e) { " +
+                       "  if (e.originalTarget.defaultView == content) { " +
+                       "    content.wrappedJSObject.tpRecordTime = function(t, s, n) { sendAsyncMessage('PageLoader:RecordTime', { time: t, startTime: s, testName: n }); }; ";
+                      if (useMozAfterPaint) {
+                        contentScript += "" +
+                        "function _contentPaintHandler() { " +
+                        "  var utils = content.QueryInterface(Components.interfaces.nsIInterfaceRequestor).getInterface(Components.interfaces.nsIDOMWindowUtils); " +
+                        "  if (utils.isMozAfterPaintPending) { " +
+                        "    addEventListener('MozAfterPaint', function(e) { " +
+                        "      removeEventListener('MozAfterPaint', arguments.callee, true); " +
+                        "      sendAsyncMessage('PageLoader:LoadEvent', {}); " +
+                        "    }, true); " +
+                        "  } else { " +
+                        "    sendAsyncMessage('PageLoader:LoadEvent', {}); " +
+                        "  } " +
+                        "}; " +
+                        "content.setTimeout(_contentPaintHandler, 0); ";
+                     } else {
+                       contentScript += "    sendAsyncMessage('PageLoader:LoadEvent', {}); ";
                      }
+                     contentScript += "" +
+                       "  }" +
+                       "} " +
+                       "addEventListener('load', _contentLoadHandler, true); ";
+                     content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
+                     content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
+                     content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
 
                      if (reportRSS) {
                        initializeMemoryCollector(plLoadPage, 100);
@@ -231,7 +224,6 @@ function plInit() {
       browserWindow.addEventListener('load', browserLoadFunc, true);
     } else {
       // Loading content into the initial window we create
-      gPaintWindow = window;
       window.resizeTo(winWidth, winHeight);
 
       content = document.getElementById('contentPageloader');
@@ -277,44 +269,15 @@ function plLoadPage() {
     removeLastAddedMsgListener = null;
   }
 
-  if ((plPageFlags() & TEST_DOES_OWN_TIMING) && !gUseE10S) {
-    // if the page does its own timing, use a capturing handler
-    // to make sure that we can set up the function for content to call
-
-    content.addEventListener('load', plLoadHandlerCapturing, true);
-    removeLastAddedListener = function() {
-      content.removeEventListener('load', plLoadHandlerCapturing, true);
-      if (useMozAfterPaint) {
-        content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
-        gPaintListener = false;
-      }
-    };
-  } else if (!gUseE10S) {
-    // if the page doesn't do its own timing, use a bubbling handler
-    // to make sure that we're called after the page's own onload() handling
-
-    // XXX we use a capturing event here too -- load events don't bubble up
-    // to the <browser> element.  See bug 390263.
-    content.addEventListener('load', plLoadHandler, true);
-    removeLastAddedListener = function() {
-      content.removeEventListener('load', plLoadHandler, true);
-      if (useMozAfterPaint) {
-        gPaintWindow.removeEventListener("MozAfterPaint", plPainted, true);
-        gPaintListener = false;
-      }
-    };
-  }
-
   // If the test browser is remote (e10s / IPC) we need to use messages to watch for page load
-  if (gUseE10S) {
-    let mm = content.selectedBrowser.messageManager;
-    mm.addMessageListener('PageLoader:LoadEvent', ContentListener);
-    mm.addMessageListener('PageLoader:RecordTime', ContentListener);
-    removeLastAddedMsgListener = function() {
-      mm.removeMessageListener('PageLoader:LoadEvent', ContentListener);
-      mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
-    };
-  }
+  let mm = content.selectedBrowser.messageManager;
+  mm.addMessageListener('PageLoader:LoadEvent', ContentListener);
+  mm.addMessageListener('PageLoader:RecordTime', ContentListener);
+  removeLastAddedMsgListener = function() {
+    mm.removeMessageListener('PageLoader:LoadEvent', ContentListener);
+    mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
+  };
+
 
   if (timeout > 0) {
     timeoutEvent = setTimeout(function () {loadFail(); }, timeout);
@@ -376,15 +339,8 @@ function loadFail() {
     dumpLine('__WARNTimeout (' + numRetries + '/' + maxRetries + ') exceeded on ' + pageName + '__WARN');
     // TODO: make this a cleaner cleanup
     pageCycle--;
-    content.removeEventListener('load', plLoadHandler, true);
-    content.removeEventListener('load', plLoadHandlerCapturing, true);
-    content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
-    content.removeEventListener("MozAfterPaint", plPainted, true);
-    gPaintWindow.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
-    gPaintWindow.removeEventListener("MozAfterPaint", plPainted, true);
     removeLastAddedListener = null;
     removeLastAddedMsgListener = null;
-    gPaintListener = false;
 
     //TODO: consider adding a tab and removing the old tab?!?
     setTimeout(plLoadPage, delay);
@@ -457,32 +413,6 @@ function plRecordTime(time) {
   }
 }
 
-function plLoadHandlerCapturing(evt) {
-  // make sure we pick up the right load event
-  if (evt.type != 'load' ||
-       evt.originalTarget.defaultView.frameElement)
-      return;
-
-  //set the tpRecordTime function (called from test pages we load) to store a global time.
-  content.contentWindow.wrappedJSObject.tpRecordTime = function (time, startTime, testName) {
-    gTime = time;
-    gStartTime = startTime;
-    recordedName = testName;
-    setTimeout(plWaitForPaintingCapturing, 0);
-  }
-
-  content.contentWindow.wrappedJSObject.plGarbageCollect = function () {
-    window.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-          .getInterface(Components.interfaces.nsIDOMWindowUtils)
-          .garbageCollect();
-  }
-
-  content.removeEventListener('load', plLoadHandlerCapturing, true);
-  removeLastAddedListener = null;
-
-  setTimeout(plWaitForPaintingCapturing, 0);
-}
-
 // Shim function this is really defined in tscroll.js
 function sendScroll() {
   const SCROLL_TEST_STEP_PX = 10;
@@ -492,29 +422,6 @@ function sendScroll() {
   let details = {target: 'content', stepSize: SCROLL_TEST_STEP_PX, opt_numSteps: SCROLL_TEST_NUM_STEPS};
   let mm = content.selectedBrowser.messageManager;
   mm.sendAsyncMessage("PageLoader:ScrollTest", { details: details });
-}
-
-function plWaitForPaintingCapturing() {
-  if (gPaintListener)
-    return;
-
-  var utils = gPaintWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                   .getInterface(Components.interfaces.nsIDOMWindowUtils);
-
-  if (utils.isMozAfterPaintPending && useMozAfterPaint) {
-    if (gPaintListener == false)
-      gPaintWindow.addEventListener("MozAfterPaint", plPaintedCapturing, true);
-    gPaintListener = true;
-    return;
-  }
-
-  _loadHandlerCapturing();
-}
-
-function plPaintedCapturing() {
-  gPaintWindow.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
-  gPaintListener = false;
-  _loadHandlerCapturing();
 }
 
 function _loadHandlerCapturing() {
@@ -541,39 +448,6 @@ function _loadHandlerCapturing() {
     recordedName = null;
     setTimeout(plNextPage, delay);
   }
-}
-
-// the onload handler
-function plLoadHandler(evt) {
-  // make sure we pick up the right load event
-  if (evt.type != 'load' ||
-       evt.originalTarget.defaultView.frameElement)
-      return;
-
-  content.removeEventListener('load', plLoadHandler, true);
-  setTimeout(waitForPainted, 0);
-}
-
-// This is called after we have received a load event, now we wait for painted
-function waitForPainted() {
-
-  var utils = gPaintWindow.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-                   .getInterface(Components.interfaces.nsIDOMWindowUtils);
-
-  if (!utils.isMozAfterPaintPending || !useMozAfterPaint) {
-    _loadHandler();
-    return;
-  }
-
-  if (gPaintListener == false)
-    gPaintWindow.addEventListener("MozAfterPaint", plPainted, true);
-  gPaintListener = true;
-}
-
-function plPainted() {
-  gPaintWindow.removeEventListener("MozAfterPaint", plPainted, true);
-  gPaintListener = false;
-  _loadHandler();
 }
 
 function _loadHandler() {
@@ -703,19 +577,11 @@ function plStopAll(force) {
   }
 
   if (content) {
-    content.removeEventListener('load', plLoadHandlerCapturing, true);
-    content.removeEventListener('load', plLoadHandler, true);
-    if (useMozAfterPaint)
-      content.removeEventListener("MozAfterPaint", plPaintedCapturing, true);
-      content.removeEventListener("MozAfterPaint", plPainted, true);
+    let mm = content.selectedBrowser.messageManager;
+    mm.removeMessageListener('PageLoader:LoadEvent', ContentListener);
+    mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
 
-    if (gUseE10S) {
-      let mm = content.selectedBrowser.messageManager;
-      mm.removeMessageListener('PageLoader:LoadEvent', ContentListener);
-      mm.removeMessageListener('PageLoader:RecordTime', ContentListener);
-
-      mm.loadFrameScript("data:,removeEventListener('load', _contentLoadHandler, true);", false, true);
-    }
+    mm.loadFrameScript("data:,removeEventListener('load', _contentLoadHandler, true);", false, true);
   }
 
   if (MozillaFileLogger && MozillaFileLogger._foStream)
