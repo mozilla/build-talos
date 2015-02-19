@@ -177,6 +177,13 @@ function plInit() {
       var browserLoadFunc = function (ev) {
         browserWindow.removeEventListener('load', browserLoadFunc, true);
 
+        // For e10s windows, the initial browser is not remote until it attempts to
+        // browse to some URI that should be remote. We bypass this restriction by forcing
+        // the initial browser to be remote before it attempts to go anywhere.
+        if (browserWindow.gMultiProcessBrowser) {
+          browserWindow.XULBrowserWindow.forceInitialBrowserRemote();
+        }
+
         // do this half a second after load, because we need to be
         // able to resize the window and not have it get clobbered
         // by the persisted values
