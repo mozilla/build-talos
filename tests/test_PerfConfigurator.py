@@ -52,14 +52,14 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # parse the standard commands
         outfile = tempfile.mktemp(suffix='.yaml')
-        options, args = example.parse_args(['--activeTests', 'ts', '--develop',  '-e', ffox_path, '-o', outfile])
+        args = example.parse_args(['--activeTests', 'ts', '--develop',  '-e', ffox_path, '-o', outfile])
         self.assertTrue(os.path.exists(outfile))
 
         # ensure that the options appropriately get set
-        self.assertEqual(bool(args), False) # no arguments
-        self.assertEqual(options.develop, True)
-        self.assertEqual(options.activeTests, 'ts')
-        self.assertEqual(options.browser_path, ffox_path)
+        self.assertEqual(bool(args.configuration_files), False) # no arguments
+        self.assertEqual(args.develop, True)
+        self.assertEqual(args.activeTests, 'ts')
+        self.assertEqual(args.browser_path, ffox_path)
 
         # ensure that the configuration appropriately gets updated
         self.assertEqual(example.config['develop'], True)
@@ -84,14 +84,14 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # parse the standard commands
         outfile = tempfile.mktemp(suffix='.yaml')
-        options, args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', '', '--robocopTestPackage', '', '-o', outfile])
+        args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', '', '--robocopTestPackage', '', '-o', outfile])
         self.assertTrue(os.path.exists(outfile))
 
         # ensure that the options appropriately get set
-        self.assertEqual(bool(args), False) # no arguments
-        self.assertEqual(options.activeTests, 'trobopan')
-        self.assertEqual(options.robocopTestName, 'org.mozilla.roboexample.test')
-        self.assertEqual(options.robocopTestPackage, 'org.mozilla.gecko')
+        self.assertEqual(bool(args.configuration_files), False) # no arguments
+        self.assertEqual(args.activeTests, 'trobopan')
+        self.assertEqual(args.robocopTestName, 'org.mozilla.roboexample.test')
+        self.assertEqual(args.robocopTestPackage, 'org.mozilla.gecko')
 
         # ensure that the configuration appropriately gets updated
         self.assertEqual(example.config['tests'][0]['name'], 'trobopan')
@@ -113,14 +113,14 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # parse the standard commands
         outfile = tempfile.mktemp(suffix='.yaml')
-        options, args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', 'pathtofile', '--robocopTestPackage', 'pathtofile', '-o', outfile])
+        args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', 'pathtofile', '--robocopTestPackage', 'pathtofile', '-o', outfile])
         self.assertTrue(os.path.exists(outfile))
 
         # ensure that the options appropriately get set
-        self.assertEqual(bool(args), False) # no arguments
-        self.assertEqual(options.activeTests, 'trobopan')
-        self.assertEqual(options.robocopTestName, 'pathtofile')
-        self.assertEqual(options.robocopTestPackage, 'pathtofile')
+        self.assertEqual(bool(args.configuration_files), False) # no arguments
+        self.assertEqual(args.activeTests, 'trobopan')
+        self.assertEqual(args.robocopTestName, 'pathtofile')
+        self.assertEqual(args.robocopTestPackage, 'pathtofile')
 
         # ensure that the configuration appropriately gets updated
         self.assertEqual(example.config['tests'][0]['name'], 'trobopan')
@@ -236,7 +236,7 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
         Asserts if a specific error is raised on specific incorrect input into Perfconfigurator.
         """
         try:
-            options, args = p_configurator.parse_args(error_test_dict['args'])
+            args = p_configurator.parse_args(error_test_dict['args'])
         except error_test_dict['error']:
             return None
         except:

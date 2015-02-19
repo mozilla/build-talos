@@ -291,20 +291,20 @@ def run_tests(configurator):
 def main(args=sys.argv[1:]):
 
     # parse command line options
-    usage = "%prog [options] manifest.yml [manifest.yml ...]"
+    usage = "%(prog)s [options] manifest.yml [manifest.yml ...]"
     parser = PerfConfigurator.PerfConfigurator(usage=usage)
     parser._dump = False # disable automatic dumping
-    parser.add_option('-d', '--debug', dest='debug',
+    parser.add_argument('-d', '--debug', dest='debug',
                       action='store_true', default=False,
                       help="enable debug")
-    parser.add_option('-n', '--noisy', dest='noisy',
+    parser.add_argument('-n', '--noisy', dest='noisy',
                       action='store_true', default=False,
                       help="DEPRECATED: this is now the default")
-    options, args = parser.parse_args(args)
+    args = parser.parse_args(args)
 
     # set variables
     level = 'info'
-    if options.debug:
+    if args.debug:
         level = 'debug'
     utils.startLogger(level)
     sys.exit(run_tests(parser))

@@ -14,7 +14,7 @@ unified configuration with serialization/deserialization
 """
 import copy
 import os
-import optparse
+import argparse
 
 # imports for configuration providers
 import json
@@ -29,8 +29,7 @@ __all__ = ['Configuration',
            'UnknownOptionException',
            'MissingValueException',
            'ConfigurationProviderException',
-           'TypeCastException',
-           'ConfigurationOption']
+           'TypeCastException']
 
 ### exceptions
 
@@ -110,35 +109,13 @@ if yaml:
 
 __all__.extend([i.__class__.__name__ for i in configuration_providers])
 
-### optparse interface
-
-class ConfigurationOption(optparse.Option):
-    """option that keeps track if it is seen"""
-    # TODO: this should be configurable or something
-    def take_action(self, action, dest, opt, value, values, parser):
-
-        # switch on types
-        formatter = getattr(parser, 'cli_formatter')
-        if formatter:
-            formatter = formatter(dest)
-            if formatter:
-                value = formatter(value)
-
-        # call the optparse front-end
-        optparse.Option.take_action(self, action, dest, opt, value, values, parser)
-
-        # add the parsed option to the set of things parsed
-        if not hasattr(parser, 'parsed'):
-            parser.parsed = dict()
-        parser.parsed[dest] = value
-
 ### plugins for option types
 
 class BaseCLI(object):
     """base_cli for all option types"""
 
     def __call__(self, name, value):
-        """return args, kwargs needed to instantiate an optparse option"""
+        """return args, kwargs needed to instantiate an argparse option"""
 
         args = value.get('flags', ['--%s' % name])
         if not args:
@@ -194,14 +171,14 @@ class IntCLI(BaseCLI):
 
     def __call__(self, name, value):
         args, kw = BaseCLI.__call__(self, name, value)
-        kw['type'] = 'int'
+        kw['type'] = int
         return args, kw
 
 class FloatCLI(BaseCLI):
 
     def __call__(self, name, value):
         args, kw = BaseCLI.__call__(self, name, value)
-        kw['type'] = 'float'
+        kw['type'] = float
         return args, kw
 
 class DictCLI(ListCLI):
@@ -210,7 +187,7 @@ class DictCLI(ListCLI):
 
     def __call__(self, name, value):
 
-        # optparse can't handle dict types OOTB
+        # argparse can't handle dict types OOTB
         default = value.get('default')
         if isinstance(default, dict):
             value = copy.deepcopy(value)
@@ -233,7 +210,7 @@ types = {bool:  BoolCLI(),
 
 __all__ += [i.__class__.__name__ for i in types.values()]
 
-class Configuration(optparse.OptionParser):
+class Configuration(argparse.ArgumentParser):
     """declarative configuration object"""
 
     options = {}         # configuration basis definition
@@ -260,22 +237,12 @@ class Configuration(optparse.OptionParser):
         # setup optionparser
         if 'description' not in parser_args:
             parser_args['description'] = getattr(self, '__doc__', '')
-            if 'formatter' not in parser_args:
-                class PlainDescriptionFormatter(optparse.IndentedHelpFormatter):
-                    """description formatter for console script entry point"""
-                    def format_description(self, description):
-                        if description:
-                            return description.strip() + '\n'
-                        else:
-                            return ''
-                parser_args['formatter'] = PlainDescriptionFormatter()
-        parser_args.setdefault('option_class', ConfigurationOption)
-        optparse.OptionParser.__init__(self, **parser_args)
+        argparse.ArgumentParser.__init__(self, **parser_args)
         self.parsed = dict()
-        self.optparse_options(self)
+        self.argparse_options(self)
         # add option(s) for configuration_providers
         if load:
-            self.add_option(load,
+            self.add_argument(load,
                             dest=self.load_option, action='append',
                             help="load configuration from a file")
 
@@ -285,7 +252,7 @@ class Configuration(optparse.OptionParser):
             if isinstance(dump, basestring):
                 dump = [dump]
             dump = list(dump)
-            self.add_option(*dump, **dict(dest='dump',
+            self.add_argument(*dump, **dict(dest='dump',
                                           help="Output configuration file; Formats: %s" % formats))
 
 
@@ -398,7 +365,7 @@ class Configuration(optparse.OptionParser):
             self.added.add(key)
 
 
-    ### methods for optparse
+    ### methods for argparse
     ### XXX could go in a subclass
 
     def cli_formatter(self, option):
@@ -418,8 +385,8 @@ class Configuration(optparse.OptionParser):
                 return None
             return type(value['default'])
 
-    def optparse_options(self, parser):
-        """add optparse options to a OptionParser instance"""
+    def argparse_options(self, parser):
+        """add argparse options to a ArgumentParser instance"""
         for key, value in self.items():
             try:
                 handler = self.types[self.option_type(key)]
@@ -431,19 +398,27 @@ class Configuration(optparse.OptionParser):
             if not args:
                 # No CLI interface
                 continue
-            parser.add_option(*args, **kw)
+            parser.add_argument(*args, **kw)
+        parser.add_argument('configuration_files', nargs='*')
 
     def parse_args(self, *args, **kw):
 
         self.parsed = dict()
-        options, args = optparse.OptionParser.parse_args(self, *args, **kw)
+        args = argparse.ArgumentParser.parse_args(self, *args, **kw)
+
+        positional_args = args.__dict__.pop('configuration_files')
+
+        for obj in args.__dict__:
+            if self.get_default(obj) != args.__getattribute__(obj):
+                self.parsed[obj] = args.__getattribute__(obj)
 
         # get CLI configuration options
-        cli_config = dict([(key, value) for key, value in options.__dict__.items()
+        cli_config = dict([(key, value) for key, value in args.__dict__.items()
                            if key in self.option_dict and key in self.parsed])
 
         # deserialize configuration
-        configuration_files = getattr(options, self.load_option, args)
+        configuration_files = getattr(args, self.load_option,
+                                      positional_args)
         if not configuration_files:
             configuration_files = []
         if isinstance(configuration_files, basestring):
@@ -471,13 +446,17 @@ class Configuration(optparse.OptionParser):
             pass
 
         # dump configuration
-        self.dump(options, missingvalues)
+        self.dump(args, missingvalues)
 
         # update options from config
-        options.__dict__.update(self.config)
+        args.__dict__.update(self.config)
+        config = []
+        config.append(args)
+
+        args.__dict__.update({'configuration_files':positional_args})
 
         # return parsed arguments
-        return options, args
+        return args
 
     def dump(self, options, missingvalues):
         """dump configuration, if specified"""

@@ -391,7 +391,7 @@ the highest value.
         kwargs.setdefault('dump', ['-o', '--output'])
 
         # set usage argument
-        kwargs.setdefault('usage', '%prog [options] manifest.yml [manifest.yml] [...]')
+        kwargs.setdefault('usage', '%(prog)s [options] manifest.yml [manifest.yml] [...]')
 
         # TODO: something about deviceroot:
         # http://hg.mozilla.org/build/talos/file/c702ff8892be/talos/PerfConfigurator.py#l44
@@ -399,15 +399,15 @@ the highest value.
         # call parent constructor
         Configuration.__init__(self, **kwargs)
 
-    def optparse_options(self, parser):
-        Configuration.optparse_options(self, parser)
+    def argparse_options(self, parser):
+        Configuration.argparse_options(self, parser)
 
         # PerfConfigurator specific options
         # to use used only in parse_args
-        parser.add_option('-v', '--verbose', dest='verbose',
+        parser.add_argument('-v', '--verbose', dest='verbose',
                           action='store_true', default=False,
                           help="Dump configuration to stdout")
-        parser.add_option('--print-tests', dest='print_tests',
+        parser.add_argument('--print-tests', dest='print_tests',
                           action='store_true', default=False,
                           help="Print the resulting tests configuration to stdout (or print available tests if --activeTests not specified)")
 
@@ -636,10 +636,10 @@ the highest value.
     def parse_args(self, *args, **kwargs):
 
         # parse the arguments to configuration
-        options, args = Configuration.parse_args(self, *args, **kwargs)
+        args = Configuration.parse_args(self, *args, **kwargs)
 
         # print tests, if specified
-        if options.print_tests:
+        if args.print_tests:
             if self.config['tests']:
                 # in order to not change self.config['tests']
                 config_test_copy = copy.deepcopy(self.config['tests'])
@@ -670,12 +670,12 @@ the highest value.
             self.error("No tests found; please specify --activeTests")
 
         # serialize to screen, if specified
-        if options.verbose:
+        if args.verbose:
             serializer = YAML()
             serializer._write(sys.stdout, self.config)
 
         # return the arguments
-        return options, args
+        return args
 
     def dump(self, options, missingvalues):
         """
@@ -980,20 +980,17 @@ the highest value.
 def main(args=sys.argv[1:]):
 
     # generate a configuration from command-line arguments
-    conf = PerfConfigurator(usage='%prog [options]')
+    conf = PerfConfigurator(usage='%(prog)s [options]')
 
     # XXX add PerfConfigurator-specific override for load since
     # Perfconfigurator and talos console_script entry points differ
-    conf.add_option("-f", "--sampleConfig", dest="load",
+    conf.add_argument("-f", "--sampleConfig", dest="load",
                     action="append",
                     help="Input config file")
 
     # parse the arguments and dump an output file
-    options, args = conf.parse_args(args)
+    args = conf.parse_args(args)
 
-    if args:
-        conf.error("PerfConfigurator takes no arguments")
-        return 1
     return 0
 
 if __name__ == '__main__':
