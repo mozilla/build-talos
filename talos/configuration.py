@@ -17,14 +17,10 @@ import os
 import argparse
 
 # imports for configuration providers
-import json
-try:
-    import yaml
-except ImportError:
-    yaml = None
+import yaml
 
 __all__ = ['Configuration',
-           'configuration_providers',
+           'configuration_provider',
            'types',
            'UnknownOptionException',
            'MissingValueException',
@@ -39,24 +35,22 @@ class UnknownOptionException(Exception):
 class MissingValueException(Exception):
     """exception raised when a required value is missing"""
 
-class ConfigurationProviderException(Exception):
-    """exception raised when a configuration provider is missing, etc"""
-
 class TypeCastException(Exception):
     """exception raised when a configuration item cannot be coerced to a type"""
 
 
-### configuration providers for serialization/deserialization
+### configuration provider for serialization/deserialization
 
-configuration_providers = []
+configuration_provider = None
 
-class ConfigurationProvider(object):
-    """
-    abstract base class for configuration providers for
-    serialization/deserialization
-    """
+class YAML(object):
+    extensions = ['yml', 'yaml']
+    dump_args = {'default_flow_style': False}
     def read(self, filename):
-        raise NotImplementedError("Abstract base class")
+        f = file(filename)
+        config = yaml.load(f)
+        f.close()
+        return config
 
     def write(self, config, filename):
         if isinstance(filename, basestring):
@@ -74,40 +68,17 @@ class ConfigurationProvider(object):
             f.close()
         if exception:
             raise exception
+
     def _write(self, fp, config):
-        raise NotImplementedError("Abstract base class")
+        fp.write(yaml.dump(config, **self.dump_args))
+        # TODO: could use templates to get order down, etc
 
-if json:
-    class JSON(ConfigurationProvider):
-        indent = 2
-        extensions = ['json']
-        def read(self, filename):
-            return json.loads(file(filename).read())
-        def _write(self, fp, config):
-            fp.write(json.dumps(config, indent=self.indent, sort_keys=True))
-            # TODO: could use templates to get order down, etc
-    configuration_providers.append(JSON())
-
-if yaml:
-    class YAML(ConfigurationProvider):
-        extensions = ['yml', 'yaml']
-        dump_args = {'default_flow_style': False}
-        def read(self, filename):
-            f = file(filename)
-            config = yaml.load(f)
-            f.close()
-            return config
-        def _write(self, fp, config):
-            fp.write(yaml.dump(config, **self.dump_args))
-            # TODO: could use templates to get order down, etc
-
-    configuration_providers.append(YAML())
+configuration_provider = YAML()
+__all__.extend('YAML')
 
 # TODO: add configuration providers
 # - for taking command-line arguments from a file
 # - for .ini files
-
-__all__.extend([i.__class__.__name__ for i in configuration_providers])
 
 ### plugins for option types
 
@@ -217,7 +188,7 @@ class Configuration(argparse.ArgumentParser):
     load_option = 'load' # where to put the load option
     extend = set()       # if dicts/lists should be extended
 
-    def __init__(self, configuration_providers=configuration_providers, types=types, load=None, dump='--dump', **parser_args):
+    def __init__(self, types=types, load=None, dump='--dump', **parser_args):
 
         # sanity check
         if isinstance(self.options, dict):
@@ -230,7 +201,7 @@ class Configuration(argparse.ArgumentParser):
 
         # setup configuration
         self.config = {}
-        self.configuration_providers = configuration_providers
+        self.configuration_provider = configuration_provider
         self.types = types
         self.added = set() # set of items added to the configuration
 
@@ -240,20 +211,19 @@ class Configuration(argparse.ArgumentParser):
         argparse.ArgumentParser.__init__(self, **parser_args)
         self.parsed = dict()
         self.argparse_options(self)
-        # add option(s) for configuration_providers
+        # add option(s) for configuration_provider
         if load:
             self.add_argument(load,
                             dest=self.load_option, action='append',
                             help="load configuration from a file")
 
         # add an option for dumping
-        formats = self.formats()
-        if formats and dump:
+        if configuration_provider and dump:
             if isinstance(dump, basestring):
                 dump = [dump]
             dump = list(dump)
             self.add_argument(*dump, **dict(dest='dump',
-                                          help="Output configuration file; Formats: %s" % formats))
+                                          help="Output configuration file; Formats: yml"))
 
 
     ### methods for iteration
@@ -471,65 +441,20 @@ class Configuration(argparse.ArgumentParser):
 
     ### serialization/deserialization
 
-    def formats(self):
-        """formats for deserialization"""
-        retval = []
-        for provider in self.configuration_providers:
-            if provider.extensions and hasattr(provider, 'write'):
-                retval.append(provider.extensions[0])
-        return retval
-
-    def configuration_provider(self, format):
-        """configuration provider guess for a given filename"""
-        for provider in self.configuration_providers:
-            if format in provider.extensions:
-                return provider
-
-    def filename2format(self, filename):
-        extension = os.path.splitext(filename)[-1]
-        return extension.lstrip('.') or None
-
-    def serialize(self, filename, format=None, full=False):
+    def serialize(self, filename, full=False):
         """
         serialize configuration to a file
         - filename: path of file to serialize to
-        - format: format of configuration provider
         - full: whether to serialize non-set optional strings [TODO]
         """
         # TODO: allow file object vs file name
-        format = self.filename2format(filename)
-        if not format:
-            filename += ".yml"
-            format = self.filename2format(filename)
-
-        provider = self.configuration_provider(format)
-        if not provider:
-            raise Exception("Provider not found for format: %s" % format)
 
         config = copy.deepcopy(self.config)
+        self.configuration_provider.write(config, filename)
 
-        provider.write(config, filename)
-
-    def deserialize(self, filename, format=None):
+    def deserialize(self, filename):
         """load configuration from a file"""
         # TODO: allow file object vs file name
 
         assert os.path.exists(filename)
-
-        # get the format
-        if not format:
-            format = self.filename2format(filename)
-
-        # get the providers in some sensible order
-        providers = self.configuration_providers[:]
-        if format:
-            providers.sort(key=lambda x: int(format in x.extensions), reverse=True)
-
-        # deserialize the data
-        for provider in providers:
-            try:
-                return provider.read(filename)
-            except:
-                continue
-        else:
-            raise ConfigurationProviderException("Could not load %s" % filename)
+        return self.configuration_provider.read(filename)
