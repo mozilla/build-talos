@@ -10,6 +10,7 @@ try {
 } catch (ex) {}
 
 Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource:///modules/E10SUtils.jsm");
 
 var NUM_CYCLES = 5;
 var numPageCycles = 1;
@@ -177,11 +178,28 @@ function plInit() {
       var browserLoadFunc = function (ev) {
         browserWindow.removeEventListener('load', browserLoadFunc, true);
 
+        function firstPageCanLoadAsRemote() {
+          return E10SUtils.canLoadURIInProcess(pageUrls[0], Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT);
+        }
+
         // For e10s windows, the initial browser is not remote until it attempts to
-        // browse to some URI that should be remote. We bypass this restriction by forcing
-        // the initial browser to be remote before it attempts to go anywhere.
+        // browse to a URI that should be remote (landed at bug 1047603).
+        // However, when it loads such URI and reinitialize as remote, we lose the
+        // load listener and the injected tpRecordTime.
+        // The same thing happens if the initial browser starts as remote but the
+        // first page is not-remote (such as with TART/CART which load a chrome URI).
+        //
+        // The preferred pageloader behaviour in e10s is to run the pages as as remote,
+        // so if the page can load as remote, we will load it as remote.
+        //
+        // It also probably means that per test (or, in fact, per pageloader browser
+        // instance which adds the load listener and injects tpRecordTime), all the
+        // pages should be able to load in the same mode as the initial page - due
+        // to this reinitialization on the switch.
         if (browserWindow.gMultiProcessBrowser) {
-          browserWindow.XULBrowserWindow.forceInitialBrowserRemote();
+          if (firstPageCanLoadAsRemote())
+            browserWindow.XULBrowserWindow.forceInitialBrowserRemote();
+          // Implicit else: initial browser in e10s is non-remote by default.
         }
 
         // do this half a second after load, because we need to be
