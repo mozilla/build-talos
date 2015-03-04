@@ -117,7 +117,7 @@
  "C:\\Program Files\\NVIDIA Corporation\\3D Vision\\npnv3dv.dll": {},
  "C:\\Program Files\\NVIDIA Corporation\\3D Vision\\npnv3dvstreaming.dll": {},
  "C:\\Program Files\\{media_player}": {},
- "C:\\windows\\system32\\en-US\\dwrite.dll.mui": {},
+ "C:\\windows\\system32\\en-US\\dwrite.dll.mui": {"ignoreduration": 60},
  "c:\\users\\cltbld": {},
  "c:\\users\\cltbld\\appdata": {},
  "c:\\users\\cltbld\\appdata\\local": {},
