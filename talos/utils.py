@@ -11,6 +11,7 @@ import urlparse
 import yaml
 import string
 import urllib
+import mozinfo
 import mozlog
 import json
 from mozlog import debug, info # this is silly, but necessary
@@ -99,7 +100,26 @@ def readConfigFile(filename):
 
 def is_running(pid, psarg='axwww'):
     """returns if a pid is running"""
-    return bool([i for i in mozpid.ps() if pid == int(i['PID'])])
+    if mozinfo.isWin:
+        from ctypes import sizeof, windll, addressof
+        from ctypes.wintypes import DWORD
+
+        BIG_ARRAY = DWORD * 4096
+        processes = BIG_ARRAY()
+        needed = DWORD()
+
+        pids = []
+        result = windll.psapi.EnumProcesses(processes,
+                                            sizeof(processes),
+                                            addressof(needed))
+        if result:
+            num_results = needed.value / sizeof(DWORD)
+            for i in range(num_results):
+                pids.append(int(processes[i]))
+    else:
+        pids = [int(i['PID']) for i in mozpid.ps()]
+
+    return bool([i for i in pids if pid == i])
 
 def interpolatePath(path, profile_dir=None, firefox_path=None, robocop_TestPackage=None, robocop_TestName=None, webserver=None):
     path = string.Template(path).safe_substitute(talos=here)
