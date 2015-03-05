@@ -301,15 +301,15 @@ def parseGraphResultsByChangeset(data, changeset):
         geomean = filter.geometric_mean(vals)
     return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
 
-def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, compare_e10s=False, dzdata=None, pgodzdata=None, verbose=False, doPrint=False):
+def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, compare_e10s=False, dzdata=None, pgodzdata=None, verbose=False, masterrevision=None, doPrint=False):
     startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(skipdays+history))).timetuple()))
     enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=skipdays)).timetuple()))
 
     if doPrint:
-        print "   test\t\t\tmin.\t->\tmax.\trev."
+        print "   test      Master     gmean  stddev points  change      gmean  stddev points  graph-url"
 
     for p in platforms:
-        output = ["%s:\n" % p]
+        output = ["\n%s:" % p]
         itertests = getListOfTests(p, tests)
         if p == "Android":
             itertests = android_tests
@@ -351,7 +351,10 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
             else:
                 testdata = getGraphData(test_map[t]['id'], test_bid, platform_map[p])
             if data and testdata:
-                results = parseGraphResultsByDate(data, startdate, enddate)
+                if masterrevision:
+                    results = parseGraphResultsByChangeset(data, masterrevision)
+                else:
+                    results = parseGraphResultsByDate(data, startdate, enddate)
                 test = parseGraphResultsByChangeset(testdata, revision)
                 status = ''
                 if test['geomean'] < results['low']:
@@ -365,20 +368,31 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
 
                 if test['low'] == sys.maxint or results['low'] == sys.maxint or \
                    test['high'] == 0  or results['high'] == 0:
-                    output.append("   %-18s\tNo results found" % t)
+                    output.append("   %-18s    No results found" % t)
                 else:
-                    string = "%2s %-18s\t%7.1f\t->\t%7.1f\t%7.1f" % (status, t, results['low'], results['high'], test['avg'])
+                    numresults = len(results['data'])
+                    stddev_results = 0
+                    string = "%2s %-18s" % (status, t)
+                    for d in [results, test]:
+                        string += (" %7.1f +/- %2.0f%% (%s#)" % (d['geomean'], (100 * filter.stddev(d['data']) / d['geomean']), (len(d['data']))))
+                        if d == results:
+                            string += "  [%+6.1f%%]  " % (((test['geomean'] / results['geomean']) - 1) * 100)
+
                     if dzval and pgodzval:
-                        string = "\t[%s] [PGO: %s]" % (dzval, pgodzval)
+                        string = "    [%s] [PGO: %s]" % (dzval, pgodzval)
                     if printurl:
-                        url = shorten("http://graphs.mozilla.org/graph.html#tests=[[%s,%s,%s]]" % (test_map[t]['id'], bid, platform_map[p]))
-                        string = "\t%s" % url
+                        urlbase = 'http://graphs.mozilla.org/graph.html#tests='
+                        points = []
+                        if compare_e10s:
+                            points.append("[%s,%s,%s]" % (test_map[t]['id'], bid, platform_map[p + " (e10s)"]))
+                        points.append("[%s,%s,%s]" % (test_map[t]['id'], bid, platform_map[p]))
+                        string += "    %s" % shorten("%s[%s]" % (urlbase, ','.join(points)))
                     # Output data for all tests in case of --verbose.
                     # If not --verbose, then output in case of improvements or regression.
                     if verbose or status != '':
                         output.append(string)
             else:
-                output.append("   %-18s\tNo data for platform" % t)
+                output.append("   %-18s    No data for platform" % t)
 
         if doPrint:
             print '\n'.join(output)
@@ -392,6 +406,11 @@ class CompareOptions(ArgumentParser):
                         action = "store", type = str, dest = "revision",
                         default = None,
                         help = "revision of the source you are testing")
+
+        self.add_argument("--master-revision",
+                        action = "store", type = str, dest = "masterrevision",
+                        default = None,
+                        help = "revision of the masterbranch if you want to compare to a single push")
 
         self.add_argument("--branch",
                         action = "store", type = str, dest = "branch",
@@ -488,7 +507,7 @@ def main():
     if args.xperf:
         print xperfdata
     else:
-        compareResults(args.revision, args.branch, args.masterbranch, args.skipdays, args.history, platforms, tests, args.pgo, args.printurl, args.compare_e10s, datazilla, pgodatazilla, args.verbose, True)
+        compareResults(args.revision, args.branch, args.masterbranch, args.skipdays, args.history, platforms, tests, args.pgo, args.printurl, args.compare_e10s, datazilla, pgodatazilla, args.verbose, args.masterrevision, True)
 
 def shorten(url):
     headers = {'content-type':'application/json'}
