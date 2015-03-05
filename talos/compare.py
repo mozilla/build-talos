@@ -59,7 +59,7 @@ test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'tp4m'}
 
 tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
 android_tests = ['remote-trobocheck2', 'remote-trobopan', 'remote-troboprovider', 'remote-tsvgx', 'remote-tp4m_nochrome']
-reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8', 'canvasmark']
+reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8_7', 'canvasmark']
 
 platform_map = {}
 platform_map['Linux'] = 33 #14 - 14 is the old fedora, we are now on Ubuntu slaves
