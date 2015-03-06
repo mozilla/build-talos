@@ -74,27 +74,30 @@ platform_map['WinXP'] = 37 # 1 is for non-ix
 platform_map['WinXP (e10s)'] = 45
 platform_map['OSX64'] = 21 #10.6
 platform_map['OSX64 (e10s)'] = 51
-platform_map['OSX10.8'] = 24
+platform_map['OSX10.8'] = 24 #TODO: 10.8 will be gone in the near future
 platform_map['OSX10.8 (e10s)'] = 53
+platform_map['OSX10.10'] = 55
+platform_map['OSX10.10 (e10s)'] = 55 #TODO: a placeholder for now
 platform_map['Android'] = 29
 platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8', 'Android']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)', 'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)', 'OSX10.8 (e10s)']
 
 disabled_tests = {}
-disabled_tests['Linux'] = ['media_tests']
-disabled_tests['Linux (e10s)'] = ['media_tests']
+disabled_tests['Linux'] = ['media_tests', 'tp5n']
+disabled_tests['Linux (e10s)'] = ['media_tests', 'tp5n']
 disabled_tests['Win7'] = ['media_tests']
 disabled_tests['Win7 (e10s)'] = ['media_tests']
-disabled_tests['Win8'] = ['media_tests']
-disabled_tests['Win8 (e10s)'] = ['media_tests']
-disabled_tests['WinXP'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7']
-disabled_tests['WinXP (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7']
-disabled_tests['Win64'] = ['media_tests']
-disabled_tests['OSX64'] = ['media_tests']
-disabled_tests['OSX64 (e10s)'] = ['media_tests']
-disabled_tests['OSX'] = ['media_tests']
-disabled_tests['OSX10.8'] = ['media_tests']
-disabled_tests['OSX10.8 (e10s)'] = ['media_tests']
+disabled_tests['Win8'] = ['media_tests', 'tp5n']
+disabled_tests['Win8 (e10s)'] = ['media_tests', 'tp5n']
+disabled_tests['WinXP'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5n']
+disabled_tests['WinXP (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5n']
+disabled_tests['Win64'] = ['media_tests', 'tp5n']
+disabled_tests['OSX64'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint', 'a11yr', 'sessionrestore', 'sessionrestore_no_auto_restore', 'tsvgr_opacity', 'tart', 'cart', 'tp5o', 'tp5n']
+disabled_tests['OSX64 (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint', 'a11yr', 'sessionrestore', 'sessionrestore_no_auto_restore', 'tsvgr_opacity', 'tart', 'cart', 'tp5o', 'tp5n']
+disabled_tests['OSX10.8'] = ['media_tests', 'tp5n']
+disabled_tests['OSX10.8 (e10s)'] = ['media_tests', 'tp5n']
+disabled_tests['OSX10.10'] = ['media_tests', 'tp5n']
+disabled_tests['OSX10.10 (e10s)'] = ['media_tests', 'tp5n']
 
 def getListOfTests(platform, tests):
     if platform in disabled_tests:
