@@ -249,6 +249,8 @@ class FFSetup(object):
             except KeyboardInterrupt:
                 browser.kill()
                 raise
+            finally:
+                browser.closeLogFile()
             browser = None
             time.sleep(5)
         else:

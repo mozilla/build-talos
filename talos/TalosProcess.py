@@ -35,7 +35,7 @@ class TalosProcess(ProcessHandler):
             env = os.environ.copy()
 
         ProcessHandler.__init__(self, cmd, args=args, cwd=cwd, env=env,
-                                ignore_children=ignore_children, logfile=self.logfile, **kwargs)
+                                ignore_children=ignore_children, processOutputLine=self.processOutputLine, **kwargs)
 
     def logToFile(self, msg):
         if not self.logfile:
