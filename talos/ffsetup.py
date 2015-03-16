@@ -244,7 +244,11 @@ class FFSetup(object):
             browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
             browser.run()
             pid = browser.pid
-            browser.wait()
+            try:
+                browser.wait()
+            except KeyboardInterrupt:
+                browser.kill()
+                raise
             browser = None
             time.sleep(5)
         else:

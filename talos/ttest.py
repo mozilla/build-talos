@@ -475,7 +475,11 @@ class TTest(object):
                         cmthread.start()
 
                     # todo: ctrl+c doesn't close the browser windows
-                    code = browser.wait()
+                    try:
+                        code = browser.wait()
+                    except KeyboardInterrupt:
+                        browser.kill()
+                        raise
                     utils.info("Browser exited with error code: {0}".format(code))
                     browser = None
                     self.isFinished = True
