@@ -8,6 +8,7 @@
 """
 
 import mozfile
+import sys
 import os
 import os.path
 import re
@@ -21,7 +22,7 @@ from xml.dom import minidom
 from utils import TalosError, MakeDirectoryContentsWritable
 import utils
 
-import TalosProcess
+from mozprocess.processhandler import ProcessHandler, StreamOutput
 
 
 class FFSetup(object):
@@ -241,18 +242,20 @@ class FFSetup(object):
                                                         browser_config["init_url"])
         pid = None
         if not browser_config['remote']:
-            browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
-            browser.run()
-            pid = browser.pid
-            try:
-                browser.wait()
-            except KeyboardInterrupt:
-                browser.kill()
-                raise
-            finally:
-                browser.closeLogFile()
-            browser = None
-            time.sleep(5)
+            with open(browser_config['browser_log'], 'w') as logfile:
+                browser = ProcessHandler(
+                    command_args,
+                    processOutputLine=[StreamOutput(logfile),
+                                       StreamOutput(sys.stdout)],
+                    storeOutput=False,
+                )
+                browser.run()
+                pid = browser.pid
+                try:
+                    browser.wait()
+                except KeyboardInterrupt:
+                    browser.kill()
+                    raise
         else:
             self.ffprocess.runProgram(browser_config, command_args, timeout=1200)
 
