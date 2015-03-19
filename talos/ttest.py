@@ -52,10 +52,10 @@ class TalosProcessHandler(object):
         self.proc, self.logfile = proc, logfile
 
     def _wait_for_quit(self):
-        for i in range(1, self.wait_for_quit_timeout):
+        for i in range(1, self.wait_for_quit_timeout * 2):
             if self.proc.poll() is not None:
                 break  # process has shutdown
-            time.sleep(1)
+            time.sleep(0.5)
 
         if self.proc.poll() is None:
             utils.info("Browser shutdown timed out after {0} seconds,"
@@ -82,6 +82,10 @@ class TalosProcessHandler(object):
         if not line.startswith('JavaScript error:'):
             print line
             self.logfile.write(line + "\n")
+
+    def join(self):
+        if self._thread_wait_for_quit:
+            self._thread_wait_for_quit.join()
 
 
 class TTest(object):
@@ -503,13 +507,6 @@ class TTest(object):
                         from startup_test.media import media_manager
                         mm_httpd = media_manager.run_server(os.path.dirname(os.path.realpath(__file__)))
 
-                    if self.counters:
-                        self.cm = self.CounterManager(browser_config['process'], self.counters)
-                        self.counter_results = dict([(counter, []) for counter in self.counters])
-                        cmthread = Thread(target=self.collectCounters)
-                        cmthread.setDaemon(True) # don't hang on quit
-                        cmthread.start()
-
                     handler = TalosProcessHandler()
 
                     browser = ProcessHandler(
@@ -523,6 +520,15 @@ class TTest(object):
                     with open(browser_config['browser_log'], 'w') as logfile:
                         handler.initialize(browser, logfile)
                         browser.run(timeout=timeout)
+
+                        if self.counters:
+                            self.cm = self.CounterManager(browser_config['process'], self.counters)
+                            self.counter_results = dict([(counter, []) for counter in self.counters])
+                            cmthread = Thread(target=self.collectCounters)
+                            cmthread.setDaemon(True) # don't hang on quit
+                            cmthread.start()
+
+
                         pid = browser.pid
                         self._pids.append(pid)
 
@@ -531,6 +537,10 @@ class TTest(object):
                         except KeyboardInterrupt:
                             browser.kill()
                             raise
+
+                        # since our output line callback may kill the process
+                        # in a thread, we need to wait for it
+                        handler.join()
 
                         if browser.didTimeout:
                             logfile.write("\n__FAILbrowser frozen__FAIL\n")
