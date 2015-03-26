@@ -9,6 +9,7 @@ datazilla==1.4
 moznetwork==0.24
 mozprocess==0.21
 mozversion==0.8
+mozprofile==0.23
 httplib2
 oauth2
 cache_flusher==1.0.4

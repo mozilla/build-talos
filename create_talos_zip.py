@@ -28,7 +28,10 @@ mozbase_packages = [ ('mozcrash', '0.13'),
                      ('mozlog', '2.6'),
                      ('moznetwork', '0.24'),
                      ('mozprocess', '0.21'),
-                     ('mozversion', '0.8') ]
+                     ('mozversion', '0.8'),
+                     ('manifestparser', '1.0'),  # required by mozprofile
+                     ('mozprofile', '0.23'),
+]
 
 # datazilla client dependency
 datazilla_client = [('https://raw.github.com/mozilla/datazilla_client/master/dzclient/client.py',
