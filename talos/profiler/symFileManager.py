@@ -4,6 +4,7 @@
 
 from symLogging import LogTrace, LogError, LogMessage
 
+import itertools
 import os
 import re
 import threading
@@ -63,14 +64,15 @@ class SymFileManager:
 
       # Guess the name of the .sym file on disk
       if libName[-4:] == ".pdb":
-        symFileName = re.sub(r"\.[^\.]+$", ".sym", libName)
+        symFileNameWithoutExtension = re.sub(r"\.[^\.]+$", "", libName)
       else:
-        symFileName = libName + ".sym"
+        symFileNameWithoutExtension = libName
 
-      pathSuffix = os.sep + libName + os.sep + breakpadId + os.sep + symFileName
 
       # Look in the symbol dirs for this .sym file
-      for source in symbolSources:
+      for extension, source in itertools.product([".sym", ".nmsym"], symbolSources):
+        symFileName = symFileNameWithoutExtension + extension
+        pathSuffix = os.sep + libName + os.sep + breakpadId + os.sep + symFileName
         path = self.sOptions["symbolPaths"][source] + pathSuffix
         libSymbolMap = self.FetchSymbolsFromFile(path)
         if libSymbolMap:
@@ -109,26 +111,45 @@ class SymFileManager:
       lineNum = 0
       publicCount = 0
       funcCount = 0
-      for line in symFile:
-        lineNum += 1
-        if line[0:7] == "PUBLIC ":
-          line = line.rstrip()
-          fields = line.split(" ")
-          if len(fields) < 4:
-            LogTrace("Line " + str(lineNum) + " is messed")
+      if path.endswith(".sym"):
+        for line in symFile:
+          lineNum += 1
+          if line[0:7] == "PUBLIC ":
+            line = line.rstrip()
+            fields = line.split(" ")
+            if len(fields) < 4:
+              LogTrace("Line " + str(lineNum) + " is messed")
+              continue
+            address = int(fields[1], 16)
+            symbolMap[address] = " ".join(fields[3:])
+            publicCount += 1
+          elif line[0:5] == "FUNC ":
+            line = line.rstrip()
+            fields = line.split(" ")
+            if len(fields) < 5:
+              LogTrace("Line " + str(lineNum) + " is messed")
+              continue
+            address = int(fields[1], 16)
+            symbolMap[address] = " ".join(fields[4:])
+            funcCount += 1
+      elif path.endswith(".nmsym"):
+        addressLength = 0
+        for line in symFile:
+          lineNum += 1
+          if line.startswith(" "):
             continue
-          address = int(fields[1], 16)
-          symbolMap[address] = " ".join(fields[3:])
+          if addressLength == 0:
+            addressLength = line.find(" ")
+          address = int(line[0:addressLength], 16)
+          # Some lines have the form "address space letter space symbol",
+          # some have the form "address space symbol".
+          # The letter has a meaning, but we ignore it.
+          if line[addressLength + 2] == " ":
+            symbol = line[addressLength + 3:].rstrip()
+          else:
+            symbol = line[addressLength + 1:].rstrip()
+          symbolMap[address] = symbol
           publicCount += 1
-        elif line[0:5] == "FUNC ":
-          line = line.rstrip()
-          fields = line.split(" ")
-          if len(fields) < 5:
-            LogTrace("Line " + str(lineNum) + " is messed")
-            continue
-          address = int(fields[1], 16)
-          symbolMap[address] = " ".join(fields[4:])
-          funcCount += 1
     except Exception as e:
       LogError("Error parsing SYM file " + path)
       return None
