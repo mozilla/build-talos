@@ -208,6 +208,7 @@ class tcheck2(TsBase):
     desktop = False
     tpchrome = False
     fennecIDs = True
+    tpdisable_e10s = True
 
 class sessionrestore(ts):
     """
@@ -380,6 +381,7 @@ class tp4m(tp):
     """
     tpmanifest = '${talos}/page_load_test/tp4m.manifest'
     tpchrome = False
+    tpdisable_e10s = True
     rss = True
     tpcycles = 2
     win_counters = w7_counters = linux_counters = mac_counters = None
@@ -569,6 +571,7 @@ class dromaeo_dom(dromaeo):
     sps_profile_interval = 2
     sps_profile_entries = 10000000
     tpmanifest = '${talos}/page_load_test/dromaeo/dom.manifest'
+    tpdisable_e10s = True
 
 class a11y(PageloaderTest):
     """

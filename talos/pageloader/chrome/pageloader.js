@@ -44,6 +44,7 @@ var gPaintWindow = window;
 var gPaintListener = false;
 var loadNoCache = false;
 var scrollTest = false;
+var gDisableE10S = false;
 var gUseE10S = false;
 var profilingInfo = false;
 
@@ -106,6 +107,7 @@ function plInit() {
     if (args.rss) reportRSS = true;
     if (args.loadnocache) loadNoCache = true;
     if (args.scrolltest) scrollTest = true;
+    if (args.disableE10S) gDisableE10S = true;
     if (args.profilinginfo) profilingInfo = JSON.parse(args.profilinginfo)
 
     if (profilingInfo) {
@@ -211,7 +213,8 @@ function plInit() {
                      browserWindow.focus();
 
                      content = browserWindow.getBrowser();
-                     gUseE10S = (plPageFlags() & EXECUTE_SCROLL_TEST) || (content.selectedBrowser &&
+                     gUseE10S = !gDisableE10S || (plPageFlags() & EXECUTE_SCROLL_TEST) ||
+                                 (content.selectedBrowser &&
                                  content.selectedBrowser.getAttribute("remote") == "true")
 
                      // Load the frame script for e10s / IPC message support

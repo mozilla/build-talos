@@ -167,6 +167,7 @@ the highest value.
                                   'tpchrome': True,
                                   'tpcycles': 10,
                                   'tpmozafterpaint': False,
+                                  'tpdisable_e10s': False,
                                   'tpnoisy': True,
                                   'tppagecycles': 1,
                                   'tploadnocache': False,
@@ -360,7 +361,8 @@ the highest value.
                         'tppagecycles',
                         'tpmanifest',
                         'tptimeout',
-                        'tpmozafterpaint'
+                        'tpmozafterpaint',
+                        'tpdisable_e10s'
                         ]
 
     # default filters
@@ -442,6 +444,7 @@ the highest value.
                 raise ConfigurationError("Must specify --apkPath for Android")
 
             # setup remote
+            self.config['tpdisable_e10s'] = True
             deviceip = self.config.get('deviceip')
             deviceport = self.config['deviceport']
             if deviceip or deviceport == -1:
