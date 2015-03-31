@@ -9,17 +9,101 @@ import os
 import platform
 import re
 import subprocess
-import sys
 import urllib2
 import zipfile
+from distutils import spawn
 from symFileManager import SymFileManager
 from symbolicationRequest import SymbolicationRequest
 from symLogging import LogMessage
+
+class OSXSymbolDumper:
+  def __init__(self):
+    self.dump_syms_bin = os.path.join(os.path.dirname(__file__), 'dump_syms_mac')
+    if not os.path.exists(self.dump_syms_bin):
+      raise Exception("No dump_syms_mac binary in this directory")
+
+  def store_symbols(self, lib_path, output_filename_without_extension):
+    """
+    Returns the filename at which the .sym file was created, or None if no
+    symbols were dumped.
+    """
+    output_filename = output_filename_without_extension + ".sym"
+
+    def get_archs(filename):
+      """
+      Find the list of architectures present in a Mach-O file.
+      """
+      return subprocess.Popen(["lipo", "-info", filename], stdout=subprocess.PIPE).communicate()[0].split(':')[2].strip().split()
+
+    def process_file(arch):
+      proc = subprocess.Popen([self.dump_syms_bin, "-a", arch, lib_path],
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+      stdout, stderr = proc.communicate()
+      if proc.returncode != 0:
+        return
+      f = open(output_filename, "w")
+      f.write(stdout)
+      f.close()
+      return output_filename
+
+    for arch in get_archs(lib_path):
+      return process_file(arch)
+    return None
+
+class LinuxSymbolDumper:
+  def __init__(self):
+    self.nm = spawn.find_executable("nm")
+    if not self.nm:
+      raise Exception("Could not find nm, necessary for symbol dumping")
+
+  def store_symbols(self, lib_path, output_filename_without_extension):
+    """
+    Returns the filename at which the .sym file was created, or None if no
+    symbols were dumped.
+    """
+    output_filename = output_filename_without_extension + ".nmsym"
+
+    proc = subprocess.Popen([self.nm, "--demangle", lib_path],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+
+    if proc.returncode != 0:
+      return
+
+    f = open(output_filename, "w")
+    f.write(stdout)
+
+    # Append nm -D output to the file. On Linux, most system libraries have no
+    # "normal" symbols, but they have "dynamic" symbols, which nm -D shows.
+    proc = subprocess.Popen([self.nm, "--demangle", "-D", lib_path],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    stdout, stderr = proc.communicate()
+    if proc.returncode == 0:
+      f.write(stdout)
+    f.close()
+    return output_filename
 
 class ProfileSymbolicator:
   def __init__(self, options):
     self.options = options
     self.sym_file_manager = SymFileManager(self.options)
+    self.symbol_dumper = self.get_symbol_dumper()
+
+  def get_symbol_dumper(self):
+    try:
+      if platform.system() == "Darwin":
+        return OSXSymbolDumper()
+    except:
+      pass
+    try:
+      if platform.system() == "Linux":
+        return LinuxSymbolDumper()
+    except:
+      pass
+    return None
 
   def integrate_symbol_zip_from_url(self, symbol_zip_url):
     if self.have_integrated(symbol_zip_url):
@@ -84,17 +168,11 @@ class ProfileSymbolicator:
     return unknown_modules
 
   def dump_and_integrate_missing_symbols(self, profile_json, symbol_zip_path):
-    # We only support dumping symbols on Mac at the moment.
-    if platform.system() != "Darwin":
+    if not self.symbol_dumper:
       return
 
     unknown_modules = self.get_unknown_modules_in_profile(profile_json)
     if not unknown_modules:
-      return
-
-    # Symbol dumping is done by a binary that lives in the same directory as this file.
-    dump_syms_bin = os.path.join(os.path.dirname(__file__), 'dump_syms_mac')
-    if not os.path.exists(dump_syms_bin):
       return
 
     # We integrate the dumped symbols by dumping them directly into our
@@ -104,78 +182,37 @@ class ProfileSymbolicator:
     # Additionally, we add all dumped symbol files to the missingsymbols zip file.
     zip = zipfile.ZipFile(symbol_zip_path, 'a', zipfile.ZIP_DEFLATED)
 
-    rootlen = len(os.path.join(output_dir, '_')) - 1
     for lib in unknown_modules:
-      [name, breakpadId] = self._module_from_lib(lib)
-      expected_name = os.path.join(name, breakpadId, name) + '.sym'
+      self.dump_and_integrate_symbols_for_lib(lib, output_dir, zip)
+    zip.close()
+
+  def dump_and_integrate_symbols_for_lib(self, lib, output_dir, zip):
+    [name, breakpadId] = self._module_from_lib(lib)
+    expected_name_without_extension = os.path.join(name, breakpadId, name)
+    for extension in [".sym", ".nmsym"]:
+      expected_name = expected_name_without_extension + extension
       if expected_name in zip.namelist():
         # No need to dump the symbols again if we already have it in the
         # missingsymbols zip file from a previous run.
         zip.extract(expected_name, output_dir)
-        continue
-
-      lib_path = lib['name']
-      if not os.path.exists(lib_path):
-        continue
-
-      # Dump the symbols.
-      sym_file = self.store_symbols(lib_path, dump_syms_bin, output_dir)
-      if sym_file:
-        actual_name = sym_file[rootlen:]
-        if expected_name != actual_name:
-          LogMessage("Got unexpected name for symbol file, expected {0} but got {1}.".format(expected_name, actual_name))
-        if actual_name not in zip.namelist():
-          zip.write(sym_file, actual_name)
-    zip.close()
-
-  def store_symbols(self, fullpath, dump_syms_bin, output_directory):
-    """
-    Returns the filename at which the .sym file was created, or None if no
-    symbols were dumped.
-    """
-
-    def should_process(f):
-      if f.endswith(".dylib") or os.access(f, os.X_OK):
-        return subprocess.Popen(["file", "-Lb", f], stdout=subprocess.PIPE).communicate()[0].startswith("Mach-O")
-      return False
-
-    def get_archs(filename):
-      """
-      Find the list of architectures present in a Mach-O file.
-      """
-      return subprocess.Popen(["lipo", "-info", filename], stdout=subprocess.PIPE).communicate()[0].split(':')[2].strip().split()
-
-    def process_file(path, arch, verbose):
-      proc = subprocess.Popen([dump_syms_bin, "-a", arch, path],
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-      stdout, stderr = proc.communicate()
-      if proc.returncode != 0:
-        if verbose:
-          print "Processing %s [%s]...failed.\n" % (path, arch)
         return
-      module = stdout.splitlines()[0]
-      bits = module.split(" ", 4)
-      if len(bits) != 5:
-        return
-      _, platform, cpu_arch, debug_id, filename = bits
-      store_path = os.path.join(output_directory, filename, debug_id)
-      if os.path.exists(store_path):
-        return
+
+    lib_path = lib['name']
+    if not os.path.exists(lib_path):
+      return
+
+    output_filename_without_extension = os.path.join(output_dir, expected_name_without_extension)
+    store_path = os.path.dirname(output_filename_without_extension)
+    if not os.path.exists(store_path):
       os.makedirs(store_path)
-      if verbose:
-        sys.stdout.write("Processing %s [%s]...\n" % (path, arch))
-      output_filename = os.path.join(store_path, filename + ".sym")
-      f = open(output_filename, "w")
-      f.write(stdout)
-      f.close()
-      return output_filename
 
-    if should_process(fullpath):
-      for arch in get_archs(fullpath):
-        if arch == "x86_64":
-          return process_file(fullpath, arch, False)
-    return None
+    # Dump the symbols.
+    sym_file = self.symbol_dumper.store_symbols(lib_path, output_filename_without_extension)
+    if sym_file:
+      rootlen = len(os.path.join(output_dir, '_')) - 1
+      output_filename = sym_file[rootlen:]
+      if output_filename not in zip.namelist():
+        zip.write(sym_file, output_filename)
 
   def symbolicate_profile(self, profile_json):
     if "libs" not in profile_json:
