@@ -335,7 +335,7 @@ the highest value.
         'browser.displayedE10SPrompt.4': 9999,
         'browser.displayedE10SPrompt.5': 9999,
         'app.update.badge': False,
-        'browser.devedition.theme.showCustomizeButton': False,
+        'lightweightThemes.selectedThemeID': "",
         'browser.devedition.theme.enabled': False,
         'devtools.webide.widget.enabled': False,
         'devtools.webide.widget.inNavbarByDefault': False,
