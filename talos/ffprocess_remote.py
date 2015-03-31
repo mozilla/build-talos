@@ -110,7 +110,7 @@ class RemoteProcess(FFProcess):
     def getLogcat(self):
         return self.testAgent.getLogcat()
 
-    def launchProcess(self, cmd, processname, outputFile = "process.txt", timeout = -1):
+    def launchProcess(self, cmd, processname, timeout=-1):
         try:
             cmds = cmd.split()
             waitTime = 30
@@ -118,7 +118,6 @@ class RemoteProcess(FFProcess):
                 waitTime = 0
             if (self.testAgent.fireProcess(cmd, maxWaitTime=waitTime) is None):
                 return None
-            handle = outputFile
 
             timed_out = True
             if (timeout > 0):
@@ -133,7 +132,7 @@ class RemoteProcess(FFProcess):
                 if (timed_out == True):
                     return None
 
-                return handle
+                return True
         except mozdevice.DMError:
             print "Remote Device Error: Error launching process '%s'" % cmd
             raise
@@ -202,12 +201,16 @@ class RemoteProcess(FFProcess):
 
         self.recordLogcat()
         firstTime = time.time()
-        retVal = self.launchProcess(' '.join(command_args), browser_config['browser_path'], outputFile=remoteLog, timeout=timeout)
+        retVal = self.launchProcess(' '.join(command_args),
+                                    browser_config['browser_path'],
+                                    timeout=timeout)
         logcat = self.getLogcat()
         if logcat:
             with open('logcat.log', 'w') as f:
                 f.write(''.join(logcat[-500:-1]))
 
+        # this file is generated because we defined the preference
+        # "talos.logfile" in the profile
         data = self.getFile(remoteLog, browser_config['browser_log'])
         with open(browser_config['browser_log'], 'a') as logfile:
             logfile.write("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % (firstTime * 1000))
