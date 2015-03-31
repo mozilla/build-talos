@@ -30,7 +30,7 @@ class SymbolInfo:
   def GetEntryCount(self):
     return self.entryCount
 
-# Singleton for .SYM file cache management
+# Singleton for .sym / .nmsym file cache management
 class SymFileManager:
   # Symbol cache data structures
   sCache = {}
@@ -62,14 +62,14 @@ class SymFileManager:
     if libSymbolMap is None:
       LogTrace("Need to fetch PDB file for " + libName + " " + breakpadId)
 
-      # Guess the name of the .sym file on disk
+      # Guess the name of the .sym or .nmsym file on disk
       if libName[-4:] == ".pdb":
         symFileNameWithoutExtension = re.sub(r"\.[^\.]+$", "", libName)
       else:
         symFileNameWithoutExtension = libName
 
 
-      # Look in the symbol dirs for this .sym file
+      # Look in the symbol dirs for this .sym or .nmsym file
       for extension, source in itertools.product([".sym", ".nmsym"], symbolSources):
         symFileName = symFileNameWithoutExtension + extension
         pathSuffix = os.sep + libName + os.sep + breakpadId + os.sep + symFileName
