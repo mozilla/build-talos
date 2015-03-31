@@ -189,7 +189,10 @@ class RemoteProcess(FFProcess):
         return data
 
 
-    def runProgram(self, browser_config, command_args, timeout=1200):
+    def run_browser(self, browser_config, command_args, timeout=1200):
+        """
+        Run a remote browser and return the log output data.
+        """
         remoteLog = os.path.join(self.getDeviceRoot() + '/' + browser_config['browser_log'])
         self.removeFile(remoteLog)
         # bug 816719, remove sessionstore.js so we don't interfere with talos
@@ -211,12 +214,17 @@ class RemoteProcess(FFProcess):
 
         # this file is generated because we defined the preference
         # "talos.logfile" in the profile
-        data = self.getFile(remoteLog, browser_config['browser_log'])
-        with open(browser_config['browser_log'], 'a') as logfile:
-            logfile.write("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % (firstTime * 1000))
-            logfile.write("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % int(time.time() * 1000))
+        data = self.getFile(remoteLog)
         if not retVal and data == '':
             raise TalosError("missing data from remote log file")
 
         # Wait out the browser closing
         time.sleep(browser_config['browser_wait'])
+
+        # return the output
+        tag = ("__startBeforeLaunchTimestamp%d"
+               "__endBeforeLaunchTimestamp\n"
+               "__startAfterTerminationTimestamp%d"
+               "__endAfterTerminationTimestamp\n"
+               % (firstTime * 1000, int(time.time() * 1000)))
+        return data + tag

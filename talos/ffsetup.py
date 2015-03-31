@@ -19,7 +19,7 @@ from mozprofile.profile import Profile
 from utils import TalosError, MakeDirectoryContentsWritable
 import utils
 
-from mozprocess.processhandler import ProcessHandler, StreamOutput
+from mozprocess.processhandler import ProcessHandler
 
 
 class FFSetup(object):
@@ -118,35 +118,29 @@ class FFSetup(object):
                                                         browser_config["init_url"])
         pid = None
         if not browser_config['remote']:
-            with open(browser_config['browser_log'], 'w') as logfile:
-                browser = ProcessHandler(
-                    command_args,
-                    processOutputLine=[StreamOutput(logfile),
-                                       StreamOutput(sys.stdout)],
-                    storeOutput=False,
-                )
-                browser.run()
-                pid = browser.pid
-                try:
-                    browser.wait()
-                except KeyboardInterrupt:
-                    browser.kill()
-                    raise
+            browser = ProcessHandler(command_args)
+            browser.run()
+            pid = browser.pid
+            try:
+                browser.wait()
+            except KeyboardInterrupt:
+                browser.kill()
+                raise
+            results_raw = '\n'.join(browser.output)
         else:
-            self.ffprocess.runProgram(browser_config, command_args, timeout=1200)
+            results_raw = self.ffprocess.run_browser(browser_config,
+                                                     command_args,
+                                                     timeout=1200)
 
         res = 0
-        if not os.path.isfile(browser_config['browser_log']):
+        if not results_raw:
             raise TalosError("initalization has no output from browser")
-        results_file = open(browser_config['browser_log'], "r")
-        results_raw = results_file.read()
-        results_file.close()
 
-        match = PROFILE_REGEX.search(results_raw)
-        if match:
+        if PROFILE_REGEX.search(results_raw):
             res = 1
         else:
-            utils.info("Could not find %s in browser_log: %s", PROFILE_REGEX.pattern, browser_config['browser_log'])
+            utils.info("Could not find %s in browser_log",
+                       PROFILE_REGEX.pattern)
             utils.info("Raw results:%s", results_raw)
             utils.info("Initialization of new profile failed")
 

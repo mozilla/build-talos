@@ -31,6 +31,7 @@ from profiler import symbolication
 from profiler import sps
 import mozfile
 from threading import Thread
+from StringIO import StringIO
 
 from utils import TalosError, TalosCrash, TalosRegression
 from ffprocess_linux import LinuxProcess
@@ -517,34 +518,35 @@ class TTest(object):
                         storeOutput=False,
                     )
 
-                    with open(browser_config['browser_log'], 'w') as logfile:
-                        handler.initialize(browser, logfile)
-                        browser.run(timeout=timeout)
+                    handler.initialize(browser, StringIO())
+                    browser.run(timeout=timeout)
 
-                        if self.counters:
-                            self.cm = self.CounterManager(browser_config['process'], self.counters)
-                            self.counter_results = dict([(counter, []) for counter in self.counters])
-                            cmthread = Thread(target=self.collectCounters)
-                            cmthread.setDaemon(True) # don't hang on quit
-                            cmthread.start()
+                    if self.counters:
+                        self.cm = self.CounterManager(browser_config['process'], self.counters)
+                        self.counter_results = dict([(counter, []) for counter in self.counters])
+                        cmthread = Thread(target=self.collectCounters)
+                        cmthread.setDaemon(True) # don't hang on quit
+                        cmthread.start()
 
 
-                        pid = browser.pid
-                        self._pids.append(pid)
+                    pid = browser.pid
+                    self._pids.append(pid)
 
-                        try:
-                            code = browser.wait()
-                        except KeyboardInterrupt:
-                            browser.kill()
-                            raise
+                    try:
+                        code = browser.wait()
+                    except KeyboardInterrupt:
+                        browser.kill()
+                        raise
 
-                        # since our output line callback may kill the process
-                        # in a thread, we need to wait for it
-                        handler.join()
+                    # since our output line callback may kill the process
+                    # in a thread, we need to wait for it
+                    handler.join()
 
-                        if browser.didTimeout:
-                            logfile.write("\n__FAILbrowser frozen__FAIL\n")
-                            raise TalosError("timeout")
+                    if browser.didTimeout:
+                        utils.info("\n__FAILbrowser frozen__FAIL\n")
+                        raise TalosError("timeout")
+
+                    results_raw = handler.logfile.getvalue()
 
                     utils.info("Browser exited with error code: {0}".format(code))
                     browser, handler = None, None
@@ -578,7 +580,9 @@ class TTest(object):
                         cleanup.wait()
 
                 else:
-                    self._ffprocess.runProgram(browser_config, command_args, timeout=timeout)
+                    results_raw = self._ffprocess.run_browser(browser_config,
+                                                              command_args,
+                                                              timeout=timeout)
 
                 # For startup tests, we launch the browser multiple times with the same profile
                 try:
@@ -594,9 +598,8 @@ class TTest(object):
                 except:
                     pass
 
-                # ensure the browser log exists
-                browser_log_filename = browser_config['browser_log']
-                if not os.path.isfile(browser_log_filename):
+                # ensure we have some browser log
+                if not results_raw:
                     raise TalosError("no output from browser [%s]" % browser_log_filename)
 
                 # check for xperf errors
@@ -606,7 +609,7 @@ class TTest(object):
 
                 # add the results from the browser output
                 try:
-                    test_results.add(browser_log_filename, counter_results=self.counter_results)
+                    test_results.add(results_raw, counter_results=self.counter_results)
                 except Exception as e:
                     # Log the exception, but continue. One way to get here is if the browser hangs,
                     # and we'd still like to get symbolicated profiles in that case.
