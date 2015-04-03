@@ -252,6 +252,7 @@ the highest value.
     # see https://developer.mozilla.org/en/Installing_extensions
     preferences = {
         'app.update.enabled': False,
+        'browser.addon-watch.interval': -1, # Deactivate add-on watching
         'browser.bookmarks.max_backups': 0,
         'browser.cache.disk.smart_size.enabled': False,
         'browser.cache.disk.smart_size.first_run': False,
