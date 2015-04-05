@@ -31,63 +31,13 @@ from profiler import symbolication
 from profiler import sps
 import mozfile
 from threading import Thread
-from StringIO import StringIO
 
 from utils import TalosError, TalosCrash, TalosRegression
 from ffprocess_linux import LinuxProcess
 from ffprocess_win32 import Win32Process
 from ffprocess_mac import MacProcess
 from ffsetup import FFSetup
-from mozprocess import ProcessHandler
-
-
-class TalosProcessHandler(object):
-    def __init__(self, wait_for_quit_timeout=5):
-        self.wait_for_quit_timeout = wait_for_quit_timeout
-        self.firstTime = int(time.time()) * 1000
-        self.proc = None
-        self.logfile = None
-        self._thread_wait_for_quit = None
-
-    def initialize(self, proc, logfile):
-        self.proc, self.logfile = proc, logfile
-
-    def _wait_for_quit(self):
-        for i in range(1, self.wait_for_quit_timeout * 2):
-            if self.proc.poll() is not None:
-                break  # process has shutdown
-            time.sleep(0.5)
-
-        if self.proc.poll() is None:
-            utils.info("Browser shutdown timed out after {0} seconds,"
-                       " terminating process.".format(self.wait_for_quit_timeout))
-            self.proc.kill()
-        self.logfile.write("__startBeforeLaunchTimestamp%d"
-                           "__endBeforeLaunchTimestamp\n" % self.firstTime)
-        self.logfile.write("__startAfterTerminationTimestamp%d"
-                           "__endAfterTerminationTimestamp\n"
-                           % (int(time.time()) * 1000))
-
-    def on_output_line(self, line):
-        """
-        Callback called on each line of output
-        Search for signs of error
-        """
-        if '__endTimestamp' in line and self._thread_wait_for_quit is None:
-            # exit the process
-            self._thread_wait_for_quit = Thread(target=self._wait_for_quit)
-            self._thread_wait_for_quit.setDaemon(True)  # don't hang on quit
-            self._thread_wait_for_quit.start()
-
-        # dot not report javascript errors
-        if not line.startswith('JavaScript error:'):
-            print line
-            self.logfile.write(line + "\n")
-
-    def join(self):
-        if self._thread_wait_for_quit:
-            self._thread_wait_for_quit.join()
-
+import TalosProcess
 
 class TTest(object):
 
@@ -508,18 +458,14 @@ class TTest(object):
                         from startup_test.media import media_manager
                         mm_httpd = media_manager.run_server(os.path.dirname(os.path.realpath(__file__)))
 
-                    handler = TalosProcessHandler()
-
-                    browser = ProcessHandler(
-                        command_args,
-                        env=dict(os.environ.items() +
-                                 additional_env_vars.items()),
-                        processOutputLine=handler.on_output_line,
-                        storeOutput=False,
-                    )
-
-                    handler.initialize(browser, StringIO())
+                    browser = TalosProcess.TalosProcess(command_args,
+                                                        env=dict(os.environ.items() + additional_env_vars.items()),
+                                                        logfile=browser_config['browser_log'],
+                                                        supress_javascript_errors=True,
+                                                        wait_for_quit_timeout=5)
                     browser.run(timeout=timeout)
+                    pid = browser.pid
+                    self._pids.append(pid)
 
                     if self.counters:
                         self.cm = self.CounterManager(browser_config['process'], self.counters)
@@ -528,28 +474,14 @@ class TTest(object):
                         cmthread.setDaemon(True) # don't hang on quit
                         cmthread.start()
 
-
-                    pid = browser.pid
-                    self._pids.append(pid)
-
+                    # todo: ctrl+c doesn't close the browser windows
                     try:
                         code = browser.wait()
                     except KeyboardInterrupt:
                         browser.kill()
                         raise
-
-                    # since our output line callback may kill the process
-                    # in a thread, we need to wait for it
-                    handler.join()
-
-                    if browser.didTimeout:
-                        utils.info("\n__FAILbrowser frozen__FAIL\n")
-                        raise TalosError("timeout")
-
-                    results_raw = handler.logfile.getvalue()
-
                     utils.info("Browser exited with error code: {0}".format(code))
-                    browser, handler = None, None
+                    browser = None
                     self.isFinished = True
 
                     if mm_httpd:
@@ -575,14 +507,14 @@ class TTest(object):
                     if test_config['cleanup']:
                         #HACK: add the pid to support xperf where we require the pid in post processing
                         talosconfig.generateTalosConfig(command_args, browser_config, test_config, pid=pid)
-                        cleanup = ProcessHandler(['python'] + test_config['cleanup'].split())
+                        cleanup = TalosProcess.TalosProcess(['python'] + test_config['cleanup'].split(), env=os.environ.copy())
                         cleanup.run()
                         cleanup.wait()
 
+                    # allow mozprocess to terminate fully.  It appears our log file is partial unless we wait
+                    time.sleep(5)
                 else:
-                    results_raw = self._ffprocess.run_browser(browser_config,
-                                                              command_args,
-                                                              timeout=timeout)
+                    self._ffprocess.runProgram(browser_config, command_args, timeout=timeout)
 
                 # For startup tests, we launch the browser multiple times with the same profile
                 try:
@@ -598,8 +530,9 @@ class TTest(object):
                 except:
                     pass
 
-                # ensure we have some browser log
-                if not results_raw:
+                # ensure the browser log exists
+                browser_log_filename = browser_config['browser_log']
+                if not os.path.isfile(browser_log_filename):
                     raise TalosError("no output from browser [%s]" % browser_log_filename)
 
                 # check for xperf errors
@@ -609,7 +542,7 @@ class TTest(object):
 
                 # add the results from the browser output
                 try:
-                    test_results.add(results_raw, counter_results=self.counter_results)
+                    test_results.add(browser_log_filename, counter_results=self.counter_results)
                 except Exception as e:
                     # Log the exception, but continue. One way to get here is if the browser hangs,
                     # and we'd still like to get symbolicated profiles in that case.

@@ -113,14 +113,18 @@ class TestResults(object):
     def add(self, results, counter_results=None):
         """
         accumulate one cycle of results
-        - results : data read from a browser log
+        - results : TalosResults instance or path to browser log
         - counter_results : counters accumulated for this cycle
         """
-        # convert to a results class via parsing the browser log
-        browserLog = BrowserLogResults(results_raw=results,
-                                       counter_results=counter_results,
-                                       global_counters=self.global_counters)
-        results = browserLog.results()
+
+        if isinstance(results, basestring):
+            # ensure the browser log exists
+            if not os.path.isfile(results):
+                raise utils.TalosError("no output from browser [%s]" % results)
+
+            # convert to a results class via parsing the browser log
+            browserLog = BrowserLogResults(filename=results, counter_results=counter_results, global_counters=self.global_counters)
+            results = browserLog.results()
 
         self.using_xperf = browserLog.using_xperf
         # ensure the results format matches previous results

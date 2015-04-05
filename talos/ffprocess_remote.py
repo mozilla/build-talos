@@ -110,7 +110,7 @@ class RemoteProcess(FFProcess):
     def getLogcat(self):
         return self.testAgent.getLogcat()
 
-    def launchProcess(self, cmd, processname, timeout=-1):
+    def launchProcess(self, cmd, processname, outputFile = "process.txt", timeout = -1):
         try:
             cmds = cmd.split()
             waitTime = 30
@@ -118,6 +118,7 @@ class RemoteProcess(FFProcess):
                 waitTime = 0
             if (self.testAgent.fireProcess(cmd, maxWaitTime=waitTime) is None):
                 return None
+            handle = outputFile
 
             timed_out = True
             if (timeout > 0):
@@ -132,7 +133,7 @@ class RemoteProcess(FFProcess):
                 if (timed_out == True):
                     return None
 
-                return True
+                return handle
         except mozdevice.DMError:
             print "Remote Device Error: Error launching process '%s'" % cmd
             raise
@@ -189,10 +190,7 @@ class RemoteProcess(FFProcess):
         return data
 
 
-    def run_browser(self, browser_config, command_args, timeout=1200):
-        """
-        Run a remote browser and return the log output data.
-        """
+    def runProgram(self, browser_config, command_args, timeout=1200):
         remoteLog = os.path.join(self.getDeviceRoot() + '/' + browser_config['browser_log'])
         self.removeFile(remoteLog)
         # bug 816719, remove sessionstore.js so we don't interfere with talos
@@ -204,27 +202,18 @@ class RemoteProcess(FFProcess):
 
         self.recordLogcat()
         firstTime = time.time()
-        retVal = self.launchProcess(' '.join(command_args),
-                                    browser_config['browser_path'],
-                                    timeout=timeout)
+        retVal = self.launchProcess(' '.join(command_args), browser_config['browser_path'], outputFile=remoteLog, timeout=timeout)
         logcat = self.getLogcat()
         if logcat:
             with open('logcat.log', 'w') as f:
                 f.write(''.join(logcat[-500:-1]))
 
-        # this file is generated because we defined the preference
-        # "talos.logfile" in the profile
-        data = self.getFile(remoteLog)
+        data = self.getFile(remoteLog, browser_config['browser_log'])
+        with open(browser_config['browser_log'], 'a') as logfile:
+            logfile.write("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % (firstTime * 1000))
+            logfile.write("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % int(time.time() * 1000))
         if not retVal and data == '':
             raise TalosError("missing data from remote log file")
 
         # Wait out the browser closing
         time.sleep(browser_config['browser_wait'])
-
-        # return the output
-        tag = ("__startBeforeLaunchTimestamp%d"
-               "__endBeforeLaunchTimestamp\n"
-               "__startAfterTerminationTimestamp%d"
-               "__endAfterTerminationTimestamp\n"
-               % (firstTime * 1000, int(time.time() * 1000)))
-        return data + tag

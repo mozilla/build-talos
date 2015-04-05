@@ -7,10 +7,12 @@
 
 """
 
+import mozfile
 import sys
 import os
 import os.path
 import re
+import shutil
 import tempfile
 import time
 import glob
@@ -19,7 +21,7 @@ from mozprofile.profile import Profile
 from utils import TalosError, MakeDirectoryContentsWritable
 import utils
 
-from mozprocess.processhandler import ProcessHandler
+import TalosProcess
 
 
 class FFSetup(object):
@@ -44,6 +46,119 @@ class FFSetup(object):
         self._port = options['port']
         self._env = options['env']
         self._hostproc = hostproc or self.ffprocess
+
+    def PrefString(self, name, value, newline):
+        """Helper function to create a pref string for profile prefs.js
+            in the form 'user_pref("name", value);<newline>'
+
+        Args:
+            name: String containing name of pref
+            value: String containing value of pref
+            newline: Line ending to use, i.e. '\n' or '\r\n'
+
+        Returns:
+            String containing 'user_pref("name", value);<newline>'
+        """
+
+        out_value = str(value)
+        if type(value) == bool:
+            # Write bools as "true"/"false", not "True"/"False".
+            out_value = out_value.lower()
+        if type(value) == str:
+            # Write strings with quotes around them.
+            out_value = '"%s"' % value
+        return 'user_pref("%s", %s);%s' % (name, out_value, newline)
+
+    def install_addon(self, profile_path, addon):
+        """Installs the given addon in the profile.
+           most of this borrowed from mozrunner, except downgraded to work on python 2.4
+           # Contributor(s) for mozrunner:
+           # Mikeal Rogers <mikeal.rogers@gmail.com>
+           # Clint Talbert <ctalbert@mozilla.com>
+           # Henrik Skupin <hskupin@mozilla.com>
+        """
+        def getText(nodelist):
+            rc = []
+            for node in nodelist:
+                if node.nodeType == node.TEXT_NODE:
+                    rc.append(node.data)
+            return str(''.join(rc))
+        def find_id(desc):
+            addon_id = None
+            for elem in desc:
+                apps = elem.getElementsByTagName('em:targetApplication')
+                if apps:
+                    for app in apps:
+                        #remove targetApplication nodes, they contain id's we aren't interested in
+                        elem.removeChild(app)
+                    if elem.getElementsByTagName('em:id'):
+                        addon_id = getText(elem.getElementsByTagName('em:id')[0].childNodes)
+                    elif elem.hasAttribute('em:id'):
+                        addon_id = str(elem.getAttribute('em:id'))
+                else:
+                    if ((elem.hasAttribute('RDF:about')) and (elem.getAttribute('RDF:about') == 'urn:mozilla:install-manifest')):
+                        if elem.getElementsByTagName('NS1:id'):
+                            addon_id = getText(elem.getElementsByTagName('NS1:id')[0].childNodes)
+                        elif elem.hasAttribute('NS1:id'):
+                            addon_id = str(elem.getAttribute('NS1:id'))
+            return addon_id
+
+        def find_unpack(desc):
+            unpack = 'false'
+            for elem in desc:
+                if elem.getElementsByTagName('em:unpack'):
+                    unpack = getText(elem.getElementsByTagName('em:unpack')[0].childNodes)
+                elif elem.hasAttribute('em:unpack'):
+                    unpack = str(elem.getAttribute('em:unpack'))
+                elif elem.getElementsByTagName('NS1:unpack'):
+                    unpack = getText(elem.getElementsByTagName('NS1:unpack')[0].childNodes)
+                elif elem.hasAttribute('NS1:unpack'):
+                    unpack = str(elem.getAttribute('NS1:unpack'))
+                if not unpack:  #no value in attribute/elements, defaults to false
+                    unpack = 'false'
+            return unpack
+
+        tmpdir = None
+        addon_id = None
+        if os.path.isdir(addon):
+            addonSrcPath = addon
+        else:
+            tmpdir = tempfile.mkdtemp(suffix = "." + os.path.split(addon)[-1])
+            zipfile.ZipFile(addon).extractall(tmpdir)
+            addonSrcPath = tmpdir
+
+        doc = minidom.parse(os.path.join(addonSrcPath, 'install.rdf'))
+        # description_element =
+        # tree.find('.//{http://www.w3.org/1999/02/22-rdf-syntax-ns#}Description/')
+
+        desc = doc.getElementsByTagName('Description')
+        addon_id = find_id(desc)
+        unpack = find_unpack(desc)
+        if not addon_id:
+            desc = doc.getElementsByTagName('RDF:Description')
+            addon_id = find_id(desc)
+            unpack = find_unpack(desc)
+
+        if not addon_id: #bail out, we don't have an addon id
+            raise TalosError("no addon_id found for extension")
+
+        if tmpdir is None or unpack.lower() == 'true':  #install addon unpacked
+            addon_path = os.path.join(profile_path, 'extensions', 'staged', addon_id)
+            #if an old copy is already installed, remove it
+            if os.path.isdir(addon_path):
+                mozfile.rmtree(addon_path)
+            shutil.copytree(addonSrcPath, addon_path)
+        else: #do not unpack addon
+            addon_file = os.path.join(profile_path, 'extensions', 'staged', addon_id + '.xpi')
+            if os.path.isfile(addon_file):
+                os.remove(addon_file)
+            shutil.copy(addon, addon_file)
+
+        if tmpdir:
+            # cleanup
+            mozfile.rmtree(tmpdir)
+
+        return addon_id
 
     def CreateTempProfileDir(self, source_profile, prefs, extensions, webserver):
         """Creates a temporary profile directory from the source profile directory
@@ -118,7 +233,7 @@ class FFSetup(object):
                                                         browser_config["init_url"])
         pid = None
         if not browser_config['remote']:
-            browser = ProcessHandler(command_args)
+            browser = TalosProcess.TalosProcess(command_args, env=os.environ.copy(), logfile=browser_config['browser_log'])
             browser.run()
             pid = browser.pid
             try:
@@ -126,21 +241,25 @@ class FFSetup(object):
             except KeyboardInterrupt:
                 browser.kill()
                 raise
-            results_raw = '\n'.join(browser.output)
+            finally:
+                browser.closeLogFile()
+            browser = None
+            time.sleep(5)
         else:
-            results_raw = self.ffprocess.run_browser(browser_config,
-                                                     command_args,
-                                                     timeout=1200)
+            self.ffprocess.runProgram(browser_config, command_args, timeout=1200)
 
         res = 0
-        if not results_raw:
+        if not os.path.isfile(browser_config['browser_log']):
             raise TalosError("initalization has no output from browser")
+        results_file = open(browser_config['browser_log'], "r")
+        results_raw = results_file.read()
+        results_file.close()
 
-        if PROFILE_REGEX.search(results_raw):
+        match = PROFILE_REGEX.search(results_raw)
+        if match:
             res = 1
         else:
-            utils.info("Could not find %s in browser_log",
-                       PROFILE_REGEX.pattern)
+            utils.info("Could not find %s in browser_log: %s", PROFILE_REGEX.pattern, browser_config['browser_log'])
             utils.info("Raw results:%s", results_raw)
             utils.info("Initialization of new profile failed")
 
