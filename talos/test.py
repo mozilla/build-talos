@@ -334,6 +334,24 @@ class cart(PageloaderTest):
                    'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
+
+class damp(PageloaderTest):
+    """
+    Devtools At Maximum Performance
+    Tests the speed of DevTools toolbox open, close, and page reload
+    for each tool, across a very simple and very complicated page.
+    """
+    tpmanifest = '${talos}/page_load_test/devtools/damp.manifest'
+    extensions = '${talos}/page_load_test/devtools/addon'
+    tpcycles = 1
+    tppagecycles = 25
+    tploadnocache = True
+    tpmozafterpaint = False
+    sps_profile_interval = 10
+    sps_profile_entries = 1000000
+    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
+    filters = [["ignore_first", [1]], ['median', []]]
+
 class glterrain(PageloaderTest):
     """
     Simple rotating WebGL scene with moving light source over a textured terrain.
@@ -682,6 +700,7 @@ tests = [ts_paint, ts, tsvg, tdhtml, ts_paint_cold,
          dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
          tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
          tsvgx, tscrollx, tart, cart, glterrain,
-         sessionrestore, sessionrestore_no_auto_restore
+         sessionrestore, sessionrestore_no_auto_restore,
+         damp
          ]
 test_dict = dict([(i.name(), i) for i in tests])
