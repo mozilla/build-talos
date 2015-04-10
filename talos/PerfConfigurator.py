@@ -294,7 +294,7 @@ the highest value.
         'browser.safebrowsing.malware.enabled': False,
         'browser.search.isUS': True,
         'browser.search.countryCode': 'US',
-        'browser.selfsupport.url': 'https://127.0.0.1/selfsupport-dummy/',
+        'browser.selfsupport.url': 'http://127.0.0.1/selfsupport-dummy/',
         'extensions.update.url': 'http://127.0.0.1/extensions-dummy/updateURL',
         'extensions.update.background.url': 'http://127.0.0.1/extensions-dummy/updateBackgroundURL',
         'extensions.blocklist.enabled': False,
