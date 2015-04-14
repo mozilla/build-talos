@@ -9,6 +9,7 @@ import os
 import utils
 
 KEY_XRE = '{xre}'
+DEFAULT_DURATION = 100.0
 
 class Whitelist:
     # we need to find the root dir of the profile at runtime
@@ -97,7 +98,7 @@ class Whitelist:
     def checkDuration(self, test, file_name_index, file_duration_index):
         errors = {}
         for idx, (row_key, row_value) in utils.indexed_items(test.iteritems()):
-            if row_value[file_duration_index] > 1.0:
+            if row_value[file_duration_index] > DEFAULT_DURATION:
                 filename = self.sanitize_filename(row_key[file_name_index])
                 if filename in self.listmap and \
                    'ignoreduration' in self.listmap[filename]:
@@ -107,7 +108,7 @@ class Whitelist:
 
                 if filename not in errors:
                     errors[filename] = []
-                errors[filename].append("Duration %s > 1.0" % row_value[file_duration_index])
+                errors[filename].append("Duration %s > %S" % (row_value[file_duration_index]), DEFAULT_DURATION)
         return errors
 
     def filter(self, test, file_name_index):
