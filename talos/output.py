@@ -567,7 +567,10 @@ class DatazillaOutput(Output):
         """test options for datazilla"""
 
         options = {}
-        test_options = ['rss', 'tpchrome', 'tpmozafterpaint', 'tpcycles', 'tppagecycles', 'tprender', 'tploadaboutblank', 'tpdelay', 'responsiveness', 'shutdown']
+        test_options = ['rss', 'cycles', 'tpmozafterpaint', 'responsiveness', 'shutdown']
+        if 'tpmanifest' in test.test_config:
+          test_options += ['tpchrome', 'tpcycles', 'tppagecycles', 'tprender', 'tploadaboutblank', 'tpdelay']
+
         for option in test_options:
             if option not in test.test_config:
                 continue
