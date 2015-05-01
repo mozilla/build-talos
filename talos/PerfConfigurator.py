@@ -260,6 +260,7 @@ the highest value.
         'browser.dom.window.dump.enabled': True,
         'browser.EULA.override': True,
         'browser.link.open_newwindow': 2,
+        'browser.reader.detectedFirstArticle': True,
         'browser.shell.checkDefaultBrowser': False,
         'browser.warnOnQuit': False,
         'browser.tabs.remote.autostart': False,
