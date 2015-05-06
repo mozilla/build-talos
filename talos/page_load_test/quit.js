@@ -70,10 +70,10 @@ function canQuitApplication()
 
 function goQuitApplication()
 {
-  if (ipcMode == true) {
-    contentAsyncEvent("QuitApplication");
-    return;
-  }
+  // If we're running in a remote browser, emit an event for a
+  // frame script to pick up to quit the whole browser.
+  var event = new CustomEvent("TalosQuitApplication", {bubbles:true});
+  document.dispatchEvent(event);
 
   const privs = 'UniversalPreferencesRead UniversalPreferencesWrite ' +
     'UniversalXPConnect';
