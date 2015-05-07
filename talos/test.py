@@ -624,6 +624,24 @@ class tsvgr(tsvg):
     tpcycles = 1
     tppagecycles = 25
 
+class tsvgm(tsvg):
+    """
+    Like the tsvg test this is an svg-only number that measures SVG
+    rendering performance. Unlike tsvg, this test is row-based instead
+    of column based.
+    """
+    tpmanifest = '${talos}/page_load_test/svgx/svgm.manifest'
+    tpcycles = 1
+    tppagecycles = 7
+    tpmozafterpaint = False
+    sps_profile_interval = 10
+    sps_profile_entries = 1000000
+    """ASAP mode"""
+    preferences = {'layout.frame_rate': 0,
+                   'docshell.event_starvation_delay_hint': 1,
+                   'dom.send_after_paint_to_content': False}
+    filters = [["ignore_first", [2]], ['median', []]]
+
 class tsvgx(tsvg):
     """
     Like the tsvg test this is an svg-only number that measures SVG
