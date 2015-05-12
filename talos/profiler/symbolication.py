@@ -120,7 +120,7 @@ class ProfileSymbolicator:
   def integrate_symbol_zip_from_file(self, filename):
     if self.have_integrated(filename):
       return
-    f = open(filename, 'r')
+    f = open(filename, 'rb')
     zf = zipfile.ZipFile(f)
     self.integrate_symbol_zip(zf)
     f.close()
