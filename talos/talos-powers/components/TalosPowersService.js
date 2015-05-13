@@ -42,6 +42,7 @@ TalosPowersService.prototype = {
   },
 
   uninit() {
+    Services.obs.removeObserver(this, "sessionstore-windows-restored", false);
     Services.obs.removeObserver(this, "xpcom-shutdown", false);
   },
 
