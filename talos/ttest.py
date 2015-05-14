@@ -461,7 +461,7 @@ class TTest(object):
                     browser = TalosProcess.TalosProcess(command_args,
                                                         env=dict(os.environ.items() + additional_env_vars.items()),
                                                         logfile=browser_config['browser_log'],
-                                                        suppress_javascript_errors=True,
+                                                        supress_javascript_errors=True,
                                                         wait_for_quit_timeout=5)
                     browser.run(timeout=timeout)
                     pid = browser.pid
