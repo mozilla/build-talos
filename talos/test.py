@@ -650,10 +650,12 @@ class tsvgx(tsvg):
     """
     tpmanifest = '${talos}/page_load_test/svgx/svgx.manifest'
     tpcycles = 1
-    tppagecycles = 25
+    tppagecycles = 5
     tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 1000000
+    linux_counters = ['Private Bytes', 'XRes', 'Main_RSS']
+
     """ASAP mode"""
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
