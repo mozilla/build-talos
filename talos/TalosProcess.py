@@ -22,14 +22,14 @@ class TalosProcess(ProcessHandler):
                        env=None,
                        ignore_children=False,
                        logfile=None,
-                       supress_javascript_errors=False,
+                       suppress_javascript_errors=False,
                        wait_for_quit_timeout=5,
                        **kwargs):
 
         self.firstTime = int(time.time()) * 1000
         self.logfile = logfile
         self.results_file = None
-        self.supress_javascript_errors = supress_javascript_errors
+        self.suppress_javascript_errors = suppress_javascript_errors
         self.wait_for_quit_timeout = wait_for_quit_timeout
         if env is None:
             env = os.environ.copy()
@@ -85,7 +85,8 @@ class TalosProcess(ProcessHandler):
             thread.setDaemon(True) # don't hang on quit
             thread.start()
 
-        if self.supress_javascript_errors and line.startswith('JavaScript error:'):
+        if self.suppress_javascript_errors and (line.startswith('JavaScript error:') or
+                                               line.startswith('JavaScript warning:')):
             return
 
         print line
