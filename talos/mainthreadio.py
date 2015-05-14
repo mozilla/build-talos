@@ -33,7 +33,7 @@ KEY_RUN_COUNT = 'RunCount'
 LEAKED_SYMLINK_PREFIX = "::\\{"
 
 PATH_SUBSTITUTIONS = {'profile': '{profile}', 'firefox': '{xre}',
-                      'desktop': '{desktop}', 'talos': '{talos}',
+                      'desktop': '{desktop}',
                       'fonts': '{fonts}', 'appdata':' {appdata}'}
 NAME_SUBSTITUTIONS = {'installtime': '{time}', 'prefetch': '{prefetch}',
                       'thumbnails': '{thumbnails}',

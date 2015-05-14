@@ -12,6 +12,8 @@
  "{profile}\\content-prefs.sqlite": {"mincount": 6, "maxcount": 6, "minbytes": 65768, "maxbytes": 65768}, 
  "{profile}\\extensions.ini": {"mincount": 2, "maxcount": 2, "minbytes": 8192, "maxbytes": 8192},
  "{profile}\\extensions\\pageloader@mozilla.org\\chrome.manifest": {"mincount": 2, "maxcount": 2, "minbytes": 600, "maxbytes": 600},
+ "{profile}\\extensions\\talos-powers@mozilla.org\\chrome.manifest": {"mincount": 2, "maxcount": 2, "minbytes": 600, "maxbytes": 600},
+ "{profile}\\extensions\\talos-powers@mozilla.org\\chrome\\talos-powers-content.js": {"mincount": 2, "maxcount": 2, "minbytes": 2000, "maxbytes": 2000},
  "{profile}\\mimetypes.rdf": {"mincount": 2, "maxcount": 2, "minbytes": 8192, "maxbytes": 8192},
  "{firefox}\\profiles.ini": {"mincount": 2, "maxcount": 2, "minbytes": 8192, "maxbytes": 8192},
  "c:\\program files\\nvidia corporation\\3d vision\\nvstereoapii.dll": {"mincount": 0, "maxcount": 4, "minbytes": 2, "maxbytes": 33792},
