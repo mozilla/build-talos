@@ -229,19 +229,51 @@ class ProfileSymbolicator:
   def symbolicate_profile(self, profile_json):
     if "libs" not in profile_json:
       return
+    if profile_json["meta"].get("version", 2) == 3:
+      self.symbolicate_profile_v3(profile_json)
+    else:
+      self.symbolicate_profile_v2(profile_json)
     for i, thread in enumerate(profile_json["threads"]):
       if isinstance(thread, basestring):
         thread_json = json.loads(thread)
         self.symbolicate_profile(thread_json)
         profile_json["threads"][i] = json.dumps(thread_json)
+
+  def symbolicate_profile_v2(self, profile_json):
     shared_libraries = json.loads(profile_json["libs"])
     shared_libraries.sort(key=lambda lib: lib["start"])
-    addresses = self._find_addresses(profile_json)
+    addresses = self._find_addresses_v2(profile_json)
     symbols_to_resolve = self._assign_symbols_to_libraries(addresses, shared_libraries)
     symbolication_table = self._resolve_symbols(symbols_to_resolve)
-    self._substitute_symbols(profile_json, symbolication_table)
+    self._substitute_symbols_v2(profile_json, symbolication_table)
 
-  def _find_addresses(self, profile_json):
+  def symbolicate_profile_v3(self, profile_json):
+    shared_libraries = json.loads(profile_json["libs"])
+    shared_libraries.sort(key=lambda lib: lib["start"])
+    addresses = self._find_addresses_v3(profile_json)
+    symbols_to_resolve = self._assign_symbols_to_libraries(addresses, shared_libraries)
+    # print symbols_to_resolve
+    symbolication_table = self._resolve_symbols(symbols_to_resolve)
+    self._substitute_symbols_v3(profile_json, symbolication_table)
+
+  def _find_addresses_v3(self, profile_json):
+    addresses = set()
+    for thread in profile_json["threads"]:
+      if isinstance(thread, basestring):
+        continue
+      for s in thread["stringTable"]:
+        if s[0:2] == "0x":
+          addresses.add(s)
+    return addresses
+
+  def _substitute_symbols_v3(self, profile_json, symbolication_table):
+    for thread in profile_json["threads"]:
+      if isinstance(thread, basestring):
+        continue
+      for i, s in enumerate(thread["stringTable"]):
+        thread["stringTable"][i] = symbolication_table.get(s, s)
+
+  def _find_addresses_v2(self, profile_json):
     addresses = set()
     for thread in profile_json["threads"]:
       for sample in thread["samples"]:
@@ -301,7 +333,7 @@ class ProfileSymbolicator:
     symbolicated_stack = request.Symbolicate(0)
     return dict(zip(all_symbols, symbolicated_stack))
 
-  def _substitute_symbols(self, profile_json, symbolication_table):
+  def _substitute_symbols_v2(self, profile_json, symbolication_table):
     for thread in profile_json["threads"]:
       for sample in thread["samples"]:
         for frame in sample["frames"]:
