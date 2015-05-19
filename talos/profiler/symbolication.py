@@ -229,6 +229,11 @@ class ProfileSymbolicator:
   def symbolicate_profile(self, profile_json):
     if "libs" not in profile_json:
       return
+    for i, thread in enumerate(profile_json["threads"]):
+      if isinstance(thread, basestring):
+        thread_json = json.loads(thread)
+        self.symbolicate_profile(thread_json)
+        profile_json["threads"][i] = json.dumps(thread_json)
     shared_libraries = json.loads(profile_json["libs"])
     shared_libraries.sort(key=lambda lib: lib["start"])
     addresses = self._find_addresses(profile_json)
