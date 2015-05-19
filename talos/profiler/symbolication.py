@@ -22,7 +22,7 @@ class OSXSymbolDumper:
     if not os.path.exists(self.dump_syms_bin):
       raise Exception("No dump_syms_mac binary in this directory")
 
-  def store_symbols(self, lib_path, output_filename_without_extension):
+  def store_symbols(self, lib_path, expected_breakpad_id, output_filename_without_extension):
     """
     Returns the filename at which the .sym file was created, or None if no
     symbols were dumped.
@@ -41,14 +41,26 @@ class OSXSymbolDumper:
                               stderr=subprocess.PIPE)
       stdout, stderr = proc.communicate()
       if proc.returncode != 0:
-        return
+        return None
+
+      module = stdout.splitlines()[0]
+      bits = module.split(' ', 4)
+      if len(bits) != 5:
+        return None
+      _, platform, cpu_arch, actual_breakpad_id, debug_file = bits
+
+      if actual_breakpad_id != expected_breakpad_id:
+        return None
+
       f = open(output_filename, "w")
       f.write(stdout)
       f.close()
       return output_filename
 
     for arch in get_archs(lib_path):
-      return process_file(arch)
+      result = process_file(arch)
+      if result is not None:
+        return result
     return None
 
 class LinuxSymbolDumper:
@@ -57,7 +69,7 @@ class LinuxSymbolDumper:
     if not self.nm:
       raise Exception("Could not find nm, necessary for symbol dumping")
 
-  def store_symbols(self, lib_path, output_filename_without_extension):
+  def store_symbols(self, lib_path, breakpad_id, output_filename_without_extension):
     """
     Returns the filename at which the .sym file was created, or None if no
     symbols were dumped.
@@ -207,7 +219,7 @@ class ProfileSymbolicator:
       os.makedirs(store_path)
 
     # Dump the symbols.
-    sym_file = self.symbol_dumper.store_symbols(lib_path, output_filename_without_extension)
+    sym_file = self.symbol_dumper.store_symbols(lib_path, lib["breakpadId"], output_filename_without_extension)
     if sym_file:
       rootlen = len(os.path.join(output_dir, '_')) - 1
       output_filename = sym_file[rootlen:]
