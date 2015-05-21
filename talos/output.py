@@ -15,8 +15,8 @@ import tempfile
 import time
 import urllib
 import utils
+
 from StringIO import StringIO
-from dzclient import DatazillaRequest, DatazillaResult, DatazillaResultsCollection
 
 def filesizeformat(bytes):
     """
@@ -210,9 +210,13 @@ class GraphserverOutput(Output):
 
                     # exclude counters whose values are tuples (bad for graphserver)
                     if len(values) > 0 and isinstance(values[0], list):
+                        print "Not uploading counter data for %s" % counterName
+                        print values
                         continue
 
                     if test.mainthread() and 'mainthreadio' in counterName:
+                        print "Not uploading Mainthread IO data for %s" % counterName
+                        print values
                         continue
 
                     # counter values
@@ -379,190 +383,53 @@ two lines for 'VALUES' payloads. You received:
             print 'RETURN: %s' % link_format % (url, linkName)
 
 
-class DatazillaOutput(Output):
-    """send output to datazilla"""
-
-    def __init__(self, results, authfile=None):
+class PerfherderOutput(Output):
+    def __init__(self, results):
         Output.__init__(self, results)
-        self.authfile = authfile
-        self.oauth = None
-        if authfile is not None:
-            # get datazilla oauth credentials
-            if '://' in authfile: # authfile is a URL
-                try:
-                    contents = urllib.urlopen(authfile).read()
-                    fd, authfile = tempfile.mkstemp(suffix='.py')
-                    os.write(fd, contents)
-                    os.close(fd)
-                except Exception, e:
-                    raise utils.TalosError(str(e))
-
-            assert os.path.exists(authfile), "Auth file not found: %s" % authfile
-            module_name = 'passwords'
-            module = imp.load_source(module_name, authfile)
-            self.oauth = getattr(module, 'datazillaAuth', None)
-            if self.oauth is None:
-                utils.info("File '%s' does not contain datazilla oauth information", authfile)
 
     def output(self, results, results_url, tbpl_output):
-        """output to the results_url
-        - results : DatazillaResults instance
-        - results_url : http:// or file:// URL
+        """output to the a file if results_url starts with file://
+        - results : json instance
+        - results_url : file:// URL
         """
-
-        # print out where we're sending
-        utils.info("Outputting datazilla results to %s", results_url)
 
         # parse the results url
         results_url_split = utils.urlsplit(results_url)
         results_scheme, results_server, results_path, _, _ = results_url_split
 
-        utils.info("TALOSDATA: %s" % json.dumps(results.datasets()))
-        if results_scheme in ('http', 'https'):
-            self.post(results, results_server, results_path, results_scheme, tbpl_output)
-        elif results_scheme == 'file':
-            f = file(results_path, 'w')
-            f.write(json.dumps(results.datasets(), indent=2, sort_keys=True))
-            f.close()
-        else:
-            raise NotImplementedError("%s: %s - only http://, https://, and file:// supported" % (self.__class__.__name__, results_url))
-
-    def __call__(self):
-
-        # platform
-        machine = self.test_machine()
-
-        # build information
-        browser_config = self.results.browser_config
-
-        # a place to put results
-        res = DatazillaResult()
-
-        for test in self.results.results:
-            suite = "%s" % test.name()
-            res.add_testsuite(suite, options=self.run_options(test))
-
-            # serialize test results
-            results = {}
-            if not test.using_xperf:
-                for result in test.results:
-                    # XXX this will not work for manifests which list
-                    # the same page name twice. It also ignores cycles
-                    for page, val in result.raw_values():
-                        if page == 'NULL':
-                            results.setdefault(test.name(), []).extend(val)
-                        else:
-                            results.setdefault(page, []).extend(val)
-                for result, values in results.items():
-                    res.add_test_results(suite, result, values)
-
-                # counters results_aux data
-                for cd in test.all_counter_results:
-                    for name, vals in cd.items():
-                        res.add_talos_auxiliary(suite, name, vals)
-            else:
-                # specific xperf_aux data
-                for cd in test.all_counter_results:
-                    for name, vals in cd.items():
-                        res.add_xperf_results(suite, name, vals)
-
-        # make a datazilla test result collection
-        if browser_config['develop'] and not browser_config['sourcestamp']:
-            browser_config['sourcestamp'] = ''
-        collection = DatazillaResultsCollection(machine_name=machine['name'],
-                                                os=machine['os'],
-                                                os_version=machine['osversion'],
-                                                platform=machine['platform'],
-                                                build_name=browser_config['browser_name'],
-                                                version=browser_config['browser_version'],
-                                                revision=browser_config['sourcestamp'],
-                                                branch=browser_config['branch_name'],
-                                                id=browser_config['buildid'],
-                                                test_date=self.results.date)
-        collection.add_datazilla_result(res)
-        return collection
+        # This is the output that treeherder expects to find when parsing the log file
+        utils.info("TALOSDATA: %s" % json.dumps(results))
+        if results_scheme in ('file'):
+            json.dump(results, file(results_path, 'w'), indent=2, sort_keys=True)
 
     def post(self, results, server, path, scheme, tbpl_output):
-        """post the data to datazilla"""
+        """conform to current code- not needed for perfherder"""
+        pass
 
-        # datazilla project
-        project = path.strip('/')
-        url = '%s://%s/%s' % (scheme, server, project)
-
-        # oauth credentials
-        oauth_key = None
-        oauth_secret = None
-        if self.oauth:
-            project_oauth = self.oauth.get(project)
-            if project_oauth:
-                required = ['oauthKey', 'oauthSecret']
-                if set(required).issubset(project_oauth.keys()):
-                    oauth_key = project_oauth['oauthKey']
-                    oauth_secret = project_oauth['oauthSecret']
-                else:
-                    utils.info("%s not found for project '%s' in '%s' (found: %s)", required, project, self.authfile, project_oauth.keys())
+    # TODO: this is copied directly from the old datazilla output. Using it 
+    # as we have established platform names already
+    def test_machine(self):
+        """return test machine platform in a form appropriate to datazilla"""
+        if self.results.remote:
+            # TODO: figure out how to not hardcode this, specifically the version !!
+            # should probably come from the agent (sut/adb) and passed in
+            platform = "Android"
+            processor = "ARMv7"
+            if 'panda' in self.results.title:
+                version = "4.0.4"
             else:
-                utils.info("No oauth credentials found for project '%s' in '%s'", project, self.authfile)
-        utils.info("datazilla: %s//%s/%s; oauth=%s", scheme, server, project, bool(oauth_key and oauth_secret))
+                version = "unknown"
+        else:
+            platform = mozinfo.os
+            version = mozinfo.version
+            processor = mozinfo.processor
+            if self.results.title.endswith(".e") and not version.endswith('.e'):
+                # we are running this against e10s builds
+                version = '%s.e' % (version,)
 
-        # submit the request
-        req = DatazillaRequest.create(scheme, server, project, oauth_key, oauth_secret, results)
-        responses = req.submit()
+        return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
 
-        # print error responses
-        for response in responses:
-            if response.status != 200:
-                # use lower-case string because buildbot is sensitive to upper case error
-                # as in 'INTERNAL SERVER ERROR'
-                # https://bugzilla.mozilla.org/show_bug.cgi?id=799576
-                reason = response.reason.lower()
-                print "Error posting to %s: %s %s" % (url, response.status, reason)
-            else:
-                res = response.read()
-                print "Datazilla response is: %s" % res.lower()
-
-        # TBPL output
-        # URLs are in the form of
-        # https://datazilla.mozilla.org/?start=1379423909&stop=1380028709&product=Firefox&repository=Mozilla-Inbound&os=linux&os_version=Ubuntu%2012.04&test=a11yr&x86=false&project=talos
-        if results.branch and results.revision:
-            # compute url
-            now = str(datetime.datetime.now())
-            diff = str(datetime.datetime.now() - datetime.timedelta(days=7))
-            jsend = int(time.mktime(time.strptime(now.split('.')[0], "%Y-%m-%d %H:%M:%S")))
-            jsstart = int(time.mktime(time.strptime(diff.split('.')[0], "%Y-%m-%d %H:%M:%S")))
-
-            params = {}
-            if results.platform == 'x86':
-                params['x86_64'] = 'false'
-            else:
-                params['x86'] = 'false'
-
-            if results.revision and results.revision != 'NULL':
-                params['graph_search'] = results.revision
-
-            params['start'] = jsstart
-            params['stop'] = jsend
-            params['product'] = results.build_name
-            params['repository'] = results.branch
-            params['os'] = results.os.lower()
-            # As per bug 957166, we need to Capitalize Android
-            if params['os'] == 'android':
-                params['os'] = 'Android'
-
-            params['os_version'] = results.os_version
-            params['project'] = project
-            query = '?%s' % '&'.join(['%s=%s' % (key, urllib.quote(str(value))) for key, value in params.items()])
-
-            url = '%(scheme)s://%(server)s%(query)s' % dict(scheme=scheme,
-                                                                    server=server,
-                                                                    query=query)
-
-            # build TBPL output
-            # XXX this will not work for multiple URLs :(
-            for dataset in results.datasets():
-                url = "%s&test=%s" % (url, dataset['testrun']['suite'])
-                utils.info("Datazilla results at %s", url)
-
+    #TODO: this is copied from datazilla output code, do we need all of this?
     def run_options(self, test):
         """test options for datazilla"""
 
@@ -580,32 +447,87 @@ class DatazillaOutput(Output):
                                      for extension in test.extensions]
         return options
 
-    def test_machine(self):
-        """return test machine platform in a form appropriate to datazilla"""
-        if self.results.remote:
-            # TODO: figure out how to not hardcode this, specifically the version !!
-            # should probably come from the agent (sut/adb) and passed in
-            platform = "Android"
-            processor = "ARMv7"
-            if 'tegra' in self.results.title:
-                version = "2.2"
-            elif 'panda' in self.results.title:
-                version = "4.0.4"
-            elif 'apcio' in self.results.title:
-                processor = "ARMv6"
-                version = "2.3"
-            else:
-                version = "unknown"
-        else:
-            platform = mozinfo.os
-            version = mozinfo.version
-            processor = mozinfo.processor
-            if self.results.title.endswith(".e") and not version.endswith('.e'):
-                # we are running this against e10s builds
-                version = '%s.e' % (version,)
 
-        return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
+    def __call__(self):
+
+        # platform
+        machine = self.test_machine()
+
+        # build information
+        browser_config = self.results.browser_config
+
+        test_results = []
+
+        for test in self.results.results:
+            test_result = {'test_machine': {},
+                         'testrun': {},
+                         'results': {},
+                         'talos_counters': {},
+                         'test_build': {}}
+
+            test_result['testrun']['suite'] = test.name()
+            test_result['testrun']['options'] = options=self.run_options(test)
+            test_result['testrun']['date'] = self.results.date
+
+            # serialize test results
+            results = {}
+            if not test.using_xperf:
+                for result in test.results:
+                    # XXX this will not work for manifests which list
+                    # the same page name twice. It also ignores cycles
+                    for page, val in result.raw_values():
+                        if page == 'NULL':
+                            results.setdefault(test.name(), []).extend(val)
+                        else:
+                            results.setdefault(page, []).extend(val)
+                for result, values in results.items():
+                    test_result['results'][result] = values
+
+            # counters results_aux data
+            for cd in test.all_counter_results:
+                for name, vals in cd.items():
+                    # We want to add the xperf data as talos_counters
+                    # exclude counters whose values are tuples (bad for graphserver)
+                    if len(vals) > 0 and isinstance(vals[0], list):
+                        continue
+
+                    # mainthread IO is a list of filenames and accesses, we do not
+                    # report this as a counter
+                    if 'mainthreadio' in name:
+                        continue
+
+                    if test.using_xperf:
+                        test_result['talos_counters'][name] = {"mean": vals[0]}
+                    else:
+                        # calculate mean and max value
+                        varray = []
+                        counter_mean = 0
+                        counter_max = 0
+                        if len(vals) > 0:
+                            for v in vals:
+                                varray.append(float(v))
+                            counter_mean = "%.2f" % filter.mean(varray)
+                            counter_max = "%.2f" % max(varray)
+                        test_result['talos_counters'][name] = {"mean": counter_mean, "max": counter_max}
+
+
+            if browser_config['develop'] and not browser_config['sourcestamp']:
+                browser_config['sourcestamp'] = ''
+
+            test_result['test_build'] = {'version': browser_config['browser_version'],
+                                     'revision': browser_config['sourcestamp'],
+                                     'id': browser_config['buildid'],
+                                     'branch': browser_config['branch_name'],
+                                     'name': browser_config['browser_name']}
+
+            test_result['test_machine'] = {'platform': machine['platform'],
+                                       'osversion': machine['osversion'],
+                                       'os': machine['os'],
+                                       'name': machine['name']}
+
+            test_results.append(test_result)
+        return test_results
 
 # available output formats
-formats = {'datazilla_urls': DatazillaOutput,
+formats = {'datazilla_urls': PerfherderOutput,
            'results_urls': GraphserverOutput}

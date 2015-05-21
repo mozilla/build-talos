@@ -637,6 +637,10 @@ class TTest(object):
 
             # include global (cross-cycle) counters
             test_results.all_counter_results.extend([{key: value} for key, value in global_counters.items()])
+            for c in test_results.all_counter_results:
+              for key, value in c.items():
+                print "COUNTER: %s" % key
+                print value
 
             # return results
             return test_results

@@ -51,12 +51,10 @@ class PerfConfigurator(Configuration):
         ('results_urls', {'help': 'URL of graphserver or file:// url for local output',
                          'flags': ['--results_url'],
                          'type': list}),
-        ('datazilla_urls', {'help': 'URL of datazilla server of file:// url for local output',
+        ('datazilla_urls', {'help': 'Deprecated',
                             'flags': ['--datazilla-url'],
                             'type': list}),
-        ('authfile', {'help': """File of the form
-http://hg.mozilla.org/build/buildbot-configs/file/default/mozilla/passwords.py.template
-for datazilla auth.  Should have keys 'oauthSecret' and 'oauthKey'"""}),
+        ('authfile', {'help': "Deprecated"}),
 
         # XXX activeTests should really use a list-thingy but can't because of
         # the one-off ':' separation :/
@@ -899,12 +897,6 @@ the highest value.
         results_urls = dict([(key, self.config[key]) for key in outputs
                              if key in self.config])
         results_options = {}
-        options = {'datazilla_urls': ['authfile']}
-        for key, values in options.items():
-            for item in values:
-                value = self.config.get(item)
-                if value:
-                    results_options.setdefault(key, {})[item] = value
         return results_urls, results_options
 
     def browser_config(self):

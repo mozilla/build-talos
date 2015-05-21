@@ -33,10 +33,6 @@ mozbase_packages = [ ('mozcrash', '0.13'),
                      ('mozprofile', '0.23'),
 ]
 
-# datazilla client dependency
-datazilla_client = [('https://raw.github.com/mozilla/datazilla_client/master/dzclient/client.py',
-                     'dzclient.py')]
-
 # PyYAML dependency
 yaml_src = 'http://pyyaml.org/export/360/pyyaml/trunk/lib/yaml/'
 yaml_files = ['composer.py',
@@ -84,7 +80,7 @@ httplib2_oauth2 = [('%s/%s' % (httplib2_src, f), 'oauth2/httplib2/%s' % f)
                    for f in httplib2_files]
 
 # all dependencies
-manifest = datazilla_client + yaml + oauth2 + httplib2_oauth2
+manifest = yaml + oauth2 + httplib2_oauth2
 manifest = [(url, destination.replace('/', os.path.sep)) for url, destination in manifest]
 
 def unpack_pypi_module(modulename, version, destdir):
