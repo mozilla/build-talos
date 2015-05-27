@@ -130,6 +130,7 @@
  "{AppData}": {},
  "{AppData}\\local": {},
  "{AppData}\\local\\temp": {},
+ "{AppData}\\locallow\\mozilla": {},
  "{AppData}\\Roaming": {},
  "{AppData}\\roaming\\temp": {},
  "{AppData}\\roaming\\mozilla": {},
