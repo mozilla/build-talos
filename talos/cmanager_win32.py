@@ -4,23 +4,27 @@
 
 from cmanager import CounterManager
 from ctypes import windll
-from ctypes.wintypes import DWORD, HANDLE, LPSTR, LPCSTR, LPCWSTR, Structure, pointer, LONG
-from ctypes import byref, create_string_buffer, memmove, Union, c_double, c_longlong
+from ctypes.wintypes import DWORD, HANDLE, LPSTR, LPCSTR, LPCWSTR, Structure, \
+    pointer, LONG
+from ctypes import byref, create_string_buffer, memmove, Union, c_double, \
+    c_longlong
 import struct
 from utils import TalosError
 pdh = windll.pdh
 
 _LONGLONG = c_longlong
 
-class _PDH_COUNTER_PATH_ELEMENTS_A(Structure):
-    _fields_ = [("szMachineName",LPSTR),
-                ("szObjectName",LPSTR),
-                ("szInstanceName", LPSTR),
-                ("szParentInstance",LPSTR),
-                ("dwInstanceIndex", DWORD),
-                ("szCounterName",LPSTR)]
 
-_PDH_MORE_DATA = -2147481646 # the need more space error
+class _PDH_COUNTER_PATH_ELEMENTS_A(Structure):
+    _fields_ = [("szMachineName", LPSTR),
+                ("szObjectName", LPSTR),
+                ("szInstanceName", LPSTR),
+                ("szParentInstance", LPSTR),
+                ("dwInstanceIndex", DWORD),
+                ("szCounterName", LPSTR)]
+
+_PDH_MORE_DATA = -2147481646  # the need more space error
+
 
 def _getExpandedCounterPaths(processName, counterName):
     '''
@@ -29,8 +33,11 @@ def _getExpandedCounterPaths(processName, counterName):
     '''
     pcchPathListLength = DWORD(0)
     szWildCardPath = LPSTR('\\process(%s)\\%s' % (processName, counterName))
-    if pdh.PdhExpandCounterPathA(szWildCardPath, LPSTR(None),
-                                        pointer(pcchPathListLength)) != _PDH_MORE_DATA:
+    if pdh.PdhExpandCounterPathA(
+        szWildCardPath,
+        LPSTR(None),
+        pointer(pcchPathListLength)
+    ) != _PDH_MORE_DATA:
         return None
 
     pathListLength = pcchPathListLength.value
@@ -42,7 +49,7 @@ def _getExpandedCounterPaths(processName, counterName):
     memmove(buffer, szExpandedPathList, pcchPathListLength.value)
 
     paths = []
-    i=0
+    i = 0
     path = ''
     for j in range(0, pcchPathListLength.value):
         c = struct.unpack_from('c', buffer, offset=j)[0]
@@ -58,26 +65,32 @@ def _getExpandedCounterPaths(processName, counterName):
 
     return paths
 
+
 class _PDH_Counter_Union(Union):
     _fields_ = [('longValue', LONG),
                 ('doubleValue', c_double),
                 ('largeValue', _LONGLONG),
                 ('AnsiStringValue', LPCSTR),
                 ('WideStringValue', LPCWSTR)]
+
+
 class _PDH_FMT_COUNTERVALUE(Structure):
     _fields_ = [('CStatus', DWORD),
-                ('union', _PDH_Counter_Union),]
+                ('union', _PDH_Counter_Union)]
+
 _PDH_FMT_LONG = 0x00000100
+
 
 class WinCounterManager(CounterManager):
 
-    def __init__(self, process, counters=None, childProcess="plugin-container"):
+    def __init__(self, process, counters=None,
+                 childProcess="plugin-container"):
         CounterManager.__init__(self)
         self.childProcess = childProcess
         self.registeredCounters = {}
         self.registerCounters(counters)
-        # PDH might need to be "refreshed" if it has been queried while the browser
-        # is closed
+        # PDH might need to be "refreshed" if it has been queried while the
+        # browser is closed
         pdh.PdhEnumObjectsA(None, None, 0, 1, 0, True)
 
         for counter in self.registeredCounters:
@@ -85,40 +98,45 @@ class WinCounterManager(CounterManager):
                 # Add the counter path for the default process.
                 self._addCounter(process, 'process', counter)
             except TalosError:
-                # Assume that this is a memory counter for the system, not a process
-                # counter
-                # If we got an error that has nothing to do with that, the exception
-                # will almost certainly be re-raised
+                # Assume that this is a memory counter for the system,
+                # not a process counter
+                # If we got an error that has nothing to do with that,
+                # the exception will almost certainly be re-raised
                 self._addCounter(process, 'Memory', counter)
 
             self._updateCounterPathsForChildProcesses(counter)
 
     def _addCounter(self, processName, counterType, counterName):
         pCounterPathElements = _PDH_COUNTER_PATH_ELEMENTS_A(
-          LPSTR(None),
-          LPSTR(counterType),
-          LPSTR(processName),
-          LPSTR(None),
-          DWORD(-1),
-          LPSTR(counterName))
+            LPSTR(None),
+            LPSTR(counterType),
+            LPSTR(processName),
+            LPSTR(None),
+            DWORD(-1),
+            LPSTR(counterName)
+        )
 
         pcchbufferSize = DWORD(0)
 
-        # First run we just try to get the buffer size so we can allocate a string
-        # big enough to fill it
+        # First run we just try to get the buffer size so we can allocate a
+        # string big enough to fill it
         if pdh.PdhMakeCounterPathA(pointer(pCounterPathElements),
                                    LPCSTR(0), pointer(pcchbufferSize),
                                    DWORD(0)) != _PDH_MORE_DATA:
-            raise TalosError("Could not create counter path for counter %s for %s" %
-                             (counterName, processName))
+            raise TalosError(
+                "Could not create counter path for counter %s for %s"
+                % (counterName, processName)
+            )
 
         szFullPathBuffer = LPCSTR('\0'*pcchbufferSize.value)
         # Then we run to get the actual value
         if pdh.PdhMakeCounterPathA(pointer(pCounterPathElements),
                                    szFullPathBuffer, pointer(pcchbufferSize),
                                    DWORD(0)) != 0:
-            raise TalosError("Could not create counter path for counter %s for %s" %
-                             (counterName, processName))
+            raise TalosError(
+                "Could not create counter path for counter %s for %s"
+                % (counterName, processName)
+            )
 
         path = szFullPathBuffer.value
 
@@ -141,7 +159,8 @@ class WinCounterManager(CounterManager):
             if counter.strip() == 'Main_RSS':
                 continue
 
-            # mainthread_io is collected from the browser via environment variables
+            # mainthread_io is collected from the browser via environment
+            # variables
             if counter.strip() == 'mainthread_io':
                 continue
 
@@ -152,8 +171,8 @@ class WinCounterManager(CounterManager):
         # is running.  If any of these paths are not in our counter list,
         # add them to our counter query and append them to the counter list,
         # so that we'll begin tracking their statistics.  We don't need to
-        # worry about removing invalid paths from the list, as getCounterValue()
-        # will generate a value of 0 for those.
+        # worry about removing invalid paths from the list, as
+        # getCounterValue() will generate a value of 0 for those.
         hq = self.registeredCounters[counter][0]
         oldCounterListLength = len(self.registeredCounters[counter][1])
 
@@ -170,10 +189,14 @@ class WinCounterManager(CounterManager):
             if not alreadyInCounterList:
                 try:
                     newhc = HANDLE()
-                    if pdh.PdhAddCounterA(hq, expandedPath, 0, byref(newhc)) != 0:
-                        raise TalosError("Could not add expanded win32 counter %s" %
-                                         expandedPath)
-                    self.registeredCounters[counter][1].append((newhc, expandedPath))
+                    if pdh.PdhAddCounterA(hq, expandedPath, 0,
+                                          byref(newhc)) != 0:
+                        raise TalosError(
+                            "Could not add expanded win32 counter %s"
+                            % expandedPath
+                        )
+                    self.registeredCounters[counter][1].append((newhc,
+                                                                expandedPath))
                 except:
                     continue
 
@@ -193,7 +216,8 @@ class WinCounterManager(CounterManager):
         self._updateCounterPathsForChildProcesses(counter)
         hq = self.registeredCounters[counter][0]
 
-        # we'll just ignore the return value here, in case no counters are valid anymore
+        # we'll just ignore the return value here, in case no counters
+        # are valid anymore
         pdh.PdhCollectQueryData(hq)
 
         aggregateValue = 0
@@ -204,7 +228,8 @@ class WinCounterManager(CounterManager):
 
             # if we can't get a value, just assume a value of 0
             if pdh.PdhGetFormattedCounterValue(hc, _PDH_FMT_LONG,
-                                               byref(dwType), byref(value)) == 0:
+                                               byref(dwType),
+                                               byref(value)) == 0:
                 aggregateValue += value.union.longValue
 
         return aggregateValue

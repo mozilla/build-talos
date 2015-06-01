@@ -9,13 +9,15 @@ from cmanager import CounterManager
 from mozprocess import pid as mozpid
 import sys
 
+
 def GetProcessData(pid):
     """Runs a ps on the process identified by pid and returns the output line
       as a list (pid, vsz, rss)
     """
     command = ['ps -o pid,vsize,rss -p'+str(pid)]
     try:
-        handle = subprocess.Popen(command, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+        handle = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                  universal_newlines=True, shell=True)
         handle.wait()
         data = handle.stdout.readlines()
     except:
@@ -30,17 +32,19 @@ def GetProcessData(pid):
     if line[0] == str(pid):
         return line
 
+
 def GetPrivateBytes(pid):
-    """Calculate the amount of private, writeable memory allocated to a process.
+    """Calculate the amount of private, writeable memory allocated to a
+    process.
     """
     psData = GetProcessData(pid)
-    return int(psData[1]) * 1024 #convert to bytes
+    return int(psData[1]) * 1024  # convert to bytes
 
 
 def GetResidentSize(pid):
     """Retrieve the current resident memory for a given process"""
     psData = GetProcessData(pid)
-    return int(psData[2]) * 1024 #convert to bytes
+    return int(psData[2]) * 1024  # convert to bytes
 
 
 class MacCounterManager(CounterManager):
@@ -57,8 +61,8 @@ class MacCounterManager(CounterManager):
 
     def __init__(self, process, counters=None):
         """Args:
-             counters: A list of counters to monitor. Any counters whose name does
-             not match a key in 'counterDict' will be ignored.
+             counters: A list of counters to monitor. Any counters whose name
+             does not match a key in 'counterDict' will be ignored.
         """
 
         CounterManager.__init__(self)
@@ -72,10 +76,12 @@ class MacCounterManager(CounterManager):
     def getCounterValue(self, counterName):
         """Returns the last value of the counter 'counterName'"""
         if counterName not in self.registeredCounters:
-            print "Warning: attempting to collect counter %s and it is not registered" % counterName
+            print ("Warning: attempting to collect counter %s and it is not"
+                   " registered" % counterName)
             return
 
         try:
             return self.registeredCounters[counterName][0](self.pid)
         except Exception, e:
-            print "Error in collecting counter: %s, pid: %s, exception: %s" % (counterName, self.pid, e)
+            print ("Error in collecting counter: %s, pid: %s, exception: %s"
+                   % (counterName, self.pid, e))

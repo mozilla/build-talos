@@ -10,11 +10,12 @@ import shutil
 import time
 import utils
 import copy
-from utils import TalosError,MakeDirectoryContentsWritable
+from utils import TalosError, MakeDirectoryContentsWritable
+
 
 class FFProcess(object):
     testAgent = None
-    extra_prog=["crashreporter"] #list of extra programs to be killed
+    extra_prog = ["crashreporter"]  # list of extra programs to be killed
 
     def TerminateProcesses(self, pids, timeout):
         """Helper function to terminate processes with the given pids
@@ -44,20 +45,24 @@ class FFProcess(object):
         return pids
 
     def cleanupProcesses(self, pids, browser_wait):
-        #kill any remaining browser processes
-        #returns string of which process_names were terminated and with what signal
+        # kill any remaining browser processes
+        # returns string of which process_names were terminated and with
+        # what signal
 
         utils.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
         terminate_result = self.TerminateProcesses(pids, browser_wait)
-        #check if anything is left behind
+        # check if anything is left behind
         if self.checkProcesses(pids):
-            #this is for windows machines.  when attempting to send kill messages to win processes the OS
-            # always gives the process a chance to close cleanly before terminating it, this takes longer
+            # this is for windows machines.  when attempting to send kill
+            # messages to win processes the OS
+            # always gives the process a chance to close cleanly before
+            # terminating it, this takes longer
             # and we need to give it a little extra time to complete
             time.sleep(browser_wait)
             process_pids = self.checkProcesses(pids)
             if process_pids:
-                raise TalosError("failed to cleanup process with PID: %s" % process_pids)
+                raise TalosError(
+                    "failed to cleanup process with PID: %s" % process_pids)
 
         return terminate_result
 
@@ -70,14 +75,15 @@ class FFProcess(object):
         user_js_filename = os.path.join(profile_dir, 'user.js')
         user_js_file = open(user_js_filename, 'a+')
 
-        #NOTE: this should be sufficient for defining a docroot
+        # NOTE: this should be sufficient for defining a docroot
         scheme = "http://"
-        if (server.startswith('http://') or
-            server.startswith('chrome://') or
-            server.startswith('file:///')):
+        if server.startswith('http://') or \
+                server.startswith('chrome://') or \
+                server.startswith('file:///'):
             scheme = ""
         elif (server.find('://') >= 0):
-            raise TalosError("Unable to parse user defined webserver: '%s'" % (server))
+            raise TalosError(
+                "Unable to parse user defined webserver: '%s'" % (server))
 
         url = urlparse.urlparse('%s%s' % (scheme, server))
 
@@ -85,19 +91,21 @@ class FFProcess(object):
         if not url.port or port < 0:
             port = 80
 
-        #TODO: p2 is hardcoded, how do we determine what prefs.js has hardcoded?
+        # TODO: p2 is hardcoded, how do we determine what prefs.js
+        # has hardcoded?
         remoteCode = """
-user_pref("capability.principal.codebase.p2.granted", "UniversalPreferencesWrite UniversalXPConnect UniversalPreferencesRead");
+user_pref("capability.principal.codebase.p2.granted", \
+"UniversalPreferencesWrite UniversalXPConnect UniversalPreferencesRead");
 user_pref("capability.principal.codebase.p2.id", "http://%(server)s");
 user_pref("capability.principal.codebase.p2.subjectName", "");
-""" % { "server": server, "host": url.hostname, "port": int(port) }
+""" % {"server": server, "host": url.hostname, "port": int(port)}
         user_js_file.write(remoteCode)
         user_js_file.close()
 
-    ### functions for dealing with files
-    ### these should really go in mozfile:
-    ### https://bugzilla.mozilla.org/show_bug.cgi?id=774916
-    ### These really don't have anything to do with process management
+    # functions for dealing with files
+    # these should really go in mozfile:
+    # https://bugzilla.mozilla.org/show_bug.cgi?id=774916
+    # These really don't have anything to do with process management
 
     def copyFile(self, fromfile, toDir):
         if not os.path.isfile(os.path.join(toDir, os.path.basename(fromfile))):
@@ -109,7 +117,6 @@ user_pref("capability.principal.codebase.p2.subjectName", "");
     def removeDirectory(self, dir):
         MakeDirectoryContentsWritable(dir)
         mozfile.rmtree(dir)
-
 
     def getFile(self, handle, localFile=""):
         fileData = ''

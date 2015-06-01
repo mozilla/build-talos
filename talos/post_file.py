@@ -1,15 +1,19 @@
-#http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/146306
+# http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/146306
 #   Submitter: Wade Leftwich
 # Licensing:
 #   according to http://aspn.activestate.com/ASPN/Cookbook/Python
-#   "Except where otherwise noted, recipes in the Python Cookbook are published under the Python license ."
-#   This recipe is covered under the Python license: http://www.python.org/license
+#   "Except where otherwise noted, recipes in the Python Cookbook
+#    are published under the Python license ."
+#   This recipe is covered under the Python license:
+#   http://www.python.org/license
 
-import httplib, mimetypes
+import httplib
+import mimetypes
+import urlparse
 import socket
 from socket import error, herror, gaierror, timeout
 socket.setdefaulttimeout(None)
-import urlparse
+
 
 def link_exists(host, selector, scheme='http'):
     url = "%s://%s%s" % (scheme, host, selector)
@@ -17,7 +21,7 @@ def link_exists(host, selector, scheme='http'):
     found = 0
     msg = "ping"
     try:
-        h = httplib.HTTP(host)  ## Make HTTPConnection Object
+        h = httplib.HTTP(host)  # Make HTTPConnection Object
         h.putrequest('HEAD', selector)
         h.putheader('content-type', "text/plain")
         h.putheader('content-length', str(len(msg)))
@@ -29,10 +33,12 @@ def link_exists(host, selector, scheme='http'):
         if errcode == 200:
             found = 1
         else:
-            print "WARNING: graph server Status %d %s : %s" % (errcode, errmsg, url)
+            print ("WARNING: graph server Status %d %s : %s"
+                   % (errcode, errmsg, url))
     except Exception, e:
         print "WARNING: graph server ", e.__class__,  e, url
     return found
+
 
 def test_links(*urls):
     """ensure urls exist"""
@@ -41,14 +47,17 @@ def test_links(*urls):
     for url in urls:
         url_split = urlparse.urlsplit(url)
         scheme, server, path, _, _ = url_split
-        if scheme in ('http', 'https') and not link_exists(server, path, scheme):
+        if scheme in ('http', 'https') and \
+                not link_exists(server, path, scheme):
             print 'WARNING: graph server link does not exist: %s' % url
+
 
 def post_multipart(host, selector, fields=(), files=()):
     """
     Post fields and files to an http host as multipart/form-data.
     fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    files is a sequence of (name, filename, value) elements for data to be
+    uploaded as files
     Return the server's response page.
     """
     try:
@@ -61,7 +70,12 @@ def post_multipart(host, selector, fields=(), files=()):
         # Summarized results to the official graph server
         content_type, body = encode_multipart_formdata(fields, files)
 
-        headers = {"Content-Type": content_type, "Content-length": str(len(body)), "Host": host, "Accept": "text/plain"}
+        headers = {
+            "Content-Type": content_type,
+            "Content-length": str(len(body)),
+            "Host": host,
+            "Accept": "text/plain"
+        }
         conn = httplib.HTTPConnection(host)
         conn.request("POST", selector, body, headers)
         response = conn.getresponse()
@@ -74,10 +88,12 @@ def post_multipart(host, selector, fields=(), files=()):
         print "WARNING: graph server unreachable"
         raise
 
+
 def encode_multipart_formdata(fields, files):
     """
     fields is a sequence of (name, value) elements for regular form fields.
-    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    files is a sequence of (name, filename, value) elements for data to be
+    uploaded as files
     Return (content_type, body) ready for httplib.HTTP instance
     """
     BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
@@ -90,7 +106,8 @@ def encode_multipart_formdata(fields, files):
         L.append(value)
     for (key, filename, value) in files:
         L.append('--' + BOUNDARY)
-        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"'
+                 % (key, filename))
         L.append('Content-Type: %s' % get_content_type(filename))
         L.append('')
         L.append(value)
@@ -99,6 +116,7 @@ def encode_multipart_formdata(fields, files):
     body = CRLF.join(L)
     content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
     return content_type, body
+
 
 def get_content_type(filename):
     return mimetypes.guess_type(filename)[0] or 'application/octet-stream'

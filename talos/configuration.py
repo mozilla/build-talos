@@ -27,25 +27,32 @@ __all__ = ['Configuration',
            'ConfigurationProviderException',
            'TypeCastException']
 
-### exceptions
+# exceptions
+
 
 class UnknownOptionException(Exception):
-    """exception raised when a non-configuration value is present in the configuration"""
+    """exception raised when a non-configuration value is present in
+    the configuration"""
+
 
 class MissingValueException(Exception):
     """exception raised when a required value is missing"""
 
+
 class TypeCastException(Exception):
-    """exception raised when a configuration item cannot be coerced to a type"""
+    """exception raised when a configuration item cannot be coerced to a
+    type"""
 
 
-### configuration provider for serialization/deserialization
+# configuration provider for serialization/deserialization
 
 configuration_provider = None
+
 
 class YAML(object):
     extensions = ['yml', 'yaml']
     dump_args = {'default_flow_style': False}
+
     def read(self, filename):
         f = file(filename)
         config = yaml.load(f)
@@ -80,7 +87,8 @@ __all__.extend('YAML')
 # - for taking command-line arguments from a file
 # - for .ini files
 
-### plugins for option types
+# plugins for option types
+
 
 class BaseCLI(object):
     """base_cli for all option types"""
@@ -105,6 +113,7 @@ class BaseCLI(object):
     def take_action(self, value):
         return value
 
+
 class BoolCLI(BaseCLI):
 
     def __call__(self, name, value):
@@ -114,7 +123,7 @@ class BoolCLI(BaseCLI):
         flags = value.get('flags')
 
         args, kw = BaseCLI.__call__(self, name, value)
-        kw['help'] = help # reset
+        kw['help'] = help  # reset
         if value.get('default'):
             kw['action'] = 'store_false'
             if not flags:
@@ -127,16 +136,19 @@ class BoolCLI(BaseCLI):
                 kw['help'] = 'enable %s' % name
         return args, kw
 
+
 class ListCLI(BaseCLI):
 
     def __call__(self, name, value):
         args, kw = BaseCLI.__call__(self, name, value)
 
         # TODO: could use 'extend'
-        # - http://hg.mozilla.org/build/mozharness/file/5f44ba08f4be/mozharness/base/config.py#l41
+        # - http://hg.mozilla.org/build/mozharness/file/5f44ba08f4be
+        # /mozharness/base/config.py#l41
 
         kw['action'] = 'append'
         return args, kw
+
 
 class IntCLI(BaseCLI):
 
@@ -145,12 +157,14 @@ class IntCLI(BaseCLI):
         kw['type'] = int
         return args, kw
 
+
 class FloatCLI(BaseCLI):
 
     def __call__(self, name, value):
         args, kw = BaseCLI.__call__(self, name, value)
         kw['type'] = float
         return args, kw
+
 
 class DictCLI(ListCLI):
 
@@ -168,7 +182,10 @@ class DictCLI(ListCLI):
 
     def take_action(self, value):
         if self.delimeter not in value:
-            raise AssertionError("Each value must be delimited by '%s': %s" % (self.delimeter, value))
+            raise AssertionError(
+                "Each value must be delimited by '%s': %s"
+                % (self.delimeter, value)
+            )
         return value.split(self.delimeter, 1)
 
 types = {bool:  BoolCLI(),
@@ -177,16 +194,17 @@ types = {bool:  BoolCLI(),
          list:  ListCLI(),
          dict:  DictCLI(),
          str:   BaseCLI(),
-         None:  BaseCLI()} # default
+         None:  BaseCLI()}  # default
 
-__all__ += [i.__class__.__name__ for i in types.values()]
+__all__ += [i.__class__.__name__ for i in types.values()]  # noqa
+
 
 class Configuration(argparse.ArgumentParser):
     """declarative configuration object"""
 
-    options = {}         # configuration basis definition
-    load_option = 'load' # where to put the load option
-    extend = set()       # if dicts/lists should be extended
+    options = {}  # configuration basis definition
+    load_option = 'load'  # where to put the load option
+    extend = set()  # if dicts/lists should be extended
 
     def __init__(self, types=types, load=None, dump='--dump', **parser_args):
 
@@ -203,7 +221,7 @@ class Configuration(argparse.ArgumentParser):
         self.config = {}
         self.configuration_provider = configuration_provider
         self.types = types
-        self.added = set() # set of items added to the configuration
+        self.added = set()  # set of items added to the configuration
 
         # setup optionparser
         if 'description' not in parser_args:
@@ -214,8 +232,8 @@ class Configuration(argparse.ArgumentParser):
         # add option(s) for configuration_provider
         if load:
             self.add_argument(load,
-                            dest=self.load_option, action='append',
-                            help="load configuration from a file")
+                              dest=self.load_option, action='append',
+                              help="load configuration from a file")
 
         # add an option for dumping
         if configuration_provider and dump:
@@ -223,11 +241,11 @@ class Configuration(argparse.ArgumentParser):
                 dump = [dump]
             dump = list(dump)
             self.add_argument(*dump, **dict(dest='dump',
-                                          help="Output configuration file; Formats: yml"))
+                                            help="Output configuration file;"
+                                                 " Formats: yml"))
 
-
-    ### methods for iteration
-    ### TODO: make the class a real iterator
+    # methods for iteration
+    # TODO: make the class a real iterator
 
     def items(self):
         # allow options to be a list of 2-tuples
@@ -235,7 +253,7 @@ class Configuration(argparse.ArgumentParser):
             return self.options.items()
         return self.options
 
-    ### methods for validating configuration
+    # methods for validating configuration
 
     def check(self, config):
         """
@@ -245,7 +263,8 @@ class Configuration(argparse.ArgumentParser):
         # ensure options in configuration are in self.options
         unknown_options = [i for i in config if i not in self.option_dict]
         if unknown_options:
-            raise UnknownOptionException("Unknown options: %s" % ', '.join(unknown_options))
+            raise UnknownOptionException(
+                "Unknown options: %s" % ', '.join(unknown_options))
 
         # ensure options are of the right type (if specified)
         for key, value in config.items():
@@ -264,7 +283,10 @@ class Configuration(argparse.ArgumentParser):
                     try:
                         config[key] = _type(value)
                     except BaseException, e:
-                        raise TypeCastException("Could not coerce %s, %s, to type %s: %s" % (key, value, _type.__name__, e))
+                        raise TypeCastException(
+                            "Could not coerce %s, %s, to type %s: %s"
+                            % (key, value, _type.__name__, e)
+                        )
 
         return config
 
@@ -278,13 +300,14 @@ class Configuration(argparse.ArgumentParser):
                     if isinstance(required, basestring):
                         required_message = required
                     else:
-                        required_message = "Parameter %s is required but not present" % key
+                        required_message = \
+                            "Parameter %s is required but not present" % key
                     # TODO: this should probably raise all missing values vs
                     # one by one
                     raise MissingValueException(required_message)
         # TODO: configuration should be locked after this is called
 
-    ### methods for adding configuration
+    # methods for adding configuration
 
     def default_config(self):
         """configuration defaults"""
@@ -323,7 +346,7 @@ class Configuration(argparse.ArgumentParser):
             if key in self.extend and key in self.config:
                 type1 = type(self.config[key])
                 type2 = type(value)
-                assert type1 == type2 # XXX hack
+                assert type1 == type2  # XXX hack
                 if type1 == dict:
                     self.config[key].update(value)
                 elif type1 == list:
@@ -334,9 +357,8 @@ class Configuration(argparse.ArgumentParser):
                 self.config[key] = value
             self.added.add(key)
 
-
-    ### methods for argparse
-    ### XXX could go in a subclass
+    # methods for argparse
+    # XXX could go in a subclass
 
     def cli_formatter(self, option):
         if option in self.option_dict:
@@ -423,7 +445,7 @@ class Configuration(argparse.ArgumentParser):
         config = []
         config.append(args)
 
-        args.__dict__.update({'configuration_files':positional_args})
+        args.__dict__.update({'configuration_files': positional_args})
 
         # return parsed arguments
         return args
@@ -439,7 +461,7 @@ class Configuration(argparse.ArgumentParser):
             # TODO: have a way of specifying format other than filename
             self.serialize(dump)
 
-    ### serialization/deserialization
+    # serialization/deserialization
 
     def serialize(self, filename, full=False):
         """

@@ -9,7 +9,9 @@ import sys
 import xtalos
 import subprocess
 
-def start(xperf_path, xperf_providers, xperf_stackwalk, xperf_user_providers, etl_filename, debug=False):
+
+def start(xperf_path, xperf_providers, xperf_stackwalk, xperf_user_providers,
+          etl_filename, debug=False):
 
     xperf_cmd = [xperf_path,
                  '-on', '+'.join(xperf_providers),
@@ -26,6 +28,7 @@ def start(xperf_path, xperf_providers, xperf_stackwalk, xperf_user_providers, et
     if debug:
         print "executing '%s'" % subprocess.list2cmdline(xperf_cmd)
     subprocess.call(xperf_cmd)
+
 
 def start_from_config(config_file=None, debug=False, **kwargs):
     """start from a YAML config file"""
@@ -51,7 +54,8 @@ def start_from_config(config_file=None, debug=False, **kwargs):
 
     # ensure path to xperf actually exists
     if not os.path.exists(kwargs['xperf_path']):
-        raise xtalos.XTalosError("ERROR: xperf_path '%s' does not exist" % kwargs['xperf_path'])
+        raise xtalos.XTalosError("ERROR: xperf_path '%s' does not exist"
+                                 % kwargs['xperf_path'])
 
     # make calling arguments
     args = dict([(key, kwargs[key]) for key in required.keys()])
@@ -59,6 +63,7 @@ def start_from_config(config_file=None, debug=False, **kwargs):
 
     # call start
     start(**args)
+
 
 def main(args=sys.argv[1:]):
 
@@ -73,6 +78,7 @@ def main(args=sys.argv[1:]):
                           **args.__dict__)
     except xtalos.XTalosError, e:
         parser.error(str(e))
+
 
 if __name__ == "__main__":
     main()

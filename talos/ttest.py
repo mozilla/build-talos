@@ -39,6 +39,7 @@ from ffprocess_mac import MacProcess
 from ffsetup import FFSetup
 import TalosProcess
 
+
 class TTest(object):
 
     _ffsetup = None
@@ -46,7 +47,7 @@ class TTest(object):
     _pids = []
     platform_type = ''
 
-    def __init__(self, remote = False):
+    def __init__(self, remote=False):
         cmanager, platformtype, ffprocess = self.getPlatformType(remote)
         self.CounterManager = cmanager
         self.platform_type = platformtype
@@ -59,7 +60,7 @@ class TTest(object):
     def getPlatformType(self, remote):
 
         _ffprocess = None
-        if remote == True:
+        if remote is True:
             platform_type = 'remote_'
             import cmanager
             CounterManager = cmanager.CounterManager
@@ -69,11 +70,11 @@ class TTest(object):
             platform_type = 'linux_'
             _ffprocess = LinuxProcess()
         elif platform.system() in ("Windows", "Microsoft"):
-            if '5.1' in platform.version(): #winxp
+            if '5.1' in platform.version():  # winxp
                 platform_type = 'win_'
-            elif '6.1' in platform.version(): #w7
+            elif '6.1' in platform.version():  # w7
                 platform_type = 'w7_'
-            elif '6.2' in platform.version(): #w8
+            elif '6.2' in platform.version():  # w8
                 platform_type = 'w8_'
             else:
                 raise TalosError('unsupported windows version')
@@ -88,7 +89,7 @@ class TTest(object):
         return CounterManager, platform_type, _ffprocess
 
     def initializeLibraries(self, browser_config):
-        if browser_config['remote'] == True:
+        if browser_config['remote'] is True:
             cmanager, platform_type, ffprocess = self.getPlatformType(False)
 
             from ffprocess_remote import RemoteProcess
@@ -101,15 +102,17 @@ class TTest(object):
 
     def createProfile(self, profile_path, preferences, extensions, webserver):
         # Create the new profile
-        temp_dir, profile_dir = self._ffsetup.CreateTempProfileDir(profile_path,
-                                                     preferences,
-                                                     extensions,
-                                                     webserver)
+        temp_dir, profile_dir = \
+            self._ffsetup.CreateTempProfileDir(profile_path,
+                                               preferences,
+                                               extensions,
+                                               webserver)
         utils.debug("created profile")
         return profile_dir, temp_dir
 
     def initializeProfile(self, profile_dir, browser_config):
-        res, pid = self._ffsetup.InitializeNewProfile(profile_dir, browser_config)
+        res, pid = \
+            self._ffsetup.InitializeNewProfile(profile_dir, browser_config)
         if pid:
             self._pids.append(pid)
         if not res:
@@ -124,11 +127,13 @@ class TTest(object):
         # file into it.
         self._hostproc.removeDirectory(dir)
 
-    def cleanupAndCheckForCrashes(self, browser_config, profile_dir, test_name):
+    def cleanupAndCheckForCrashes(self, browser_config, profile_dir,
+                                  test_name):
         """cleanup browser processes and process crashes if found"""
 
         # cleanup processes
-        self._ffprocess.cleanupProcesses(self._pids, browser_config['browser_wait'])
+        self._ffprocess.cleanupProcesses(self._pids,
+                                         browser_config['browser_wait'])
 
         # find stackwalk binary
         if platform.system() in ('Windows', 'Microsoft'):
@@ -144,8 +149,10 @@ class TTest(object):
         else:
             # no minidump_stackwalk available for your platform
             return
-        stackwalkbin = os.path.join(os.path.dirname(__file__), 'breakpad', *stackwalkpaths)
-        assert os.path.exists(stackwalkbin), "minidump_stackwalk binary not found: %s" % stackwalkbin
+        stackwalkbin = os.path.join(os.path.dirname(__file__), 'breakpad',
+                                    *stackwalkpaths)
+        assert os.path.exists(stackwalkbin), \
+            "minidump_stackwalk binary not found: %s" % stackwalkbin
 
         if browser_config['remote'] is True:
             # favour using Java exceptions in the logcat over minidumps
@@ -160,14 +167,18 @@ class TTest(object):
                 minidumpdir = tempfile.mkdtemp()
                 try:
                     if self._ffprocess.testAgent.dirExists(remoteminidumpdir):
-                        self._ffprocess.testAgent.getDirectory(remoteminidumpdir, minidumpdir)
+                        self._ffprocess.testAgent.\
+                            getDirectory(remoteminidumpdir, minidumpdir)
                 except mozdevice.DMError:
-                    print "Remote Device Error: Error getting crash minidumps from device"
+                    print ("Remote Device Error: Error getting crash minidumps"
+                           " from device")
                     raise
-                found = mozcrash.check_for_crashes(minidumpdir,
-                                                   browser_config['symbols_path'],
-                                                   stackwalk_binary=stackwalkbin,
-                                                   test_name=test_name)
+                found = mozcrash.check_for_crashes(
+                    minidumpdir,
+                    browser_config['symbols_path'],
+                    stackwalk_binary=stackwalkbin,
+                    test_name=test_name
+                )
                 self._hostproc.removeDirectory(minidumpdir)
 
             # cleanup dumps on remote
@@ -196,11 +207,13 @@ class TTest(object):
             fHandle.write("rawhost=http://%s\n" % browser_config['webserver'])
             envstr = ""
             delim = ""
-            # This is not foolproof and the ideal solution would be to have one env/line instead of a single string
+            # This is not foolproof and the ideal solution would be to have
+            # one env/line instead of a single string
             for key, value in browser_config.get('env', {}).items():
                 try:
                     value.index(',')
-                    print "Error: Found an ',' in our value, unable to process value."
+                    print ("Error: Found an ',' in our value, unable to"
+                           " process value.")
                 except ValueError:
                     envstr += "%s%s=%s" % (delim, key, value)
                     delim = ","
@@ -208,17 +221,23 @@ class TTest(object):
             fHandle.write("envvars=%s\n" % envstr)
             fHandle.close()
 
-            self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "fennec_ids.txt"))
-            self._ffprocess.testAgent.removeFile(os.path.join(deviceRoot, "robotium.config"))
+            self._ffprocess.testAgent.removeFile(
+                os.path.join(deviceRoot, "fennec_ids.txt"))
+            self._ffprocess.testAgent.removeFile(
+                os.path.join(deviceRoot, "robotium.config"))
             self._ffprocess.testAgent.removeFile(remoteLog)
-            self._ffprocess.testAgent.pushFile("robotium.config", os.path.join(deviceRoot, "robotium.config"))
-            self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'], os.path.join(deviceRoot, "fennec_ids.txt"))
+            self._ffprocess.testAgent.pushFile("robotium.config",
+                                               os.path.join(deviceRoot,
+                                                            "robotium.config"))
+            self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'],
+                                               os.path.join(deviceRoot,
+                                                            "fennec_ids.txt"))
         except mozdevice.DMError:
             print "Remote Device Error: Error copying files for robocop setup"
             raise
 
-
-    def testCleanup(self, browser_config, profile_dir, test_config, cm, temp_dir):
+    def testCleanup(self, browser_config, profile_dir, test_config, cm,
+                    temp_dir):
         try:
             if os.path.isfile(browser_config['browser_log']):
                 results_file = open(browser_config['browser_log'], "r")
@@ -228,9 +247,12 @@ class TTest(object):
 
             if profile_dir:
                 try:
-                    self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
+                    self.cleanupAndCheckForCrashes(browser_config,
+                                                   profile_dir,
+                                                   test_config['name'])
                 except TalosError:
-                    # ignore this error since we have already checked for crashes earlier
+                    # ignore this error since we have already checked for
+                    # crashes earlier
                     pass
 
             if temp_dir:
@@ -238,11 +260,11 @@ class TTest(object):
         except TalosError, te:
             utils.debug("cleanup error: %s", te)
         except Exception:
-            utils.debug("unknown error during cleanup: %s" % (traceback.format_exc(),))
-
+            utils.debug("unknown error during cleanup: %s"
+                        % (traceback.format_exc(),))
 
     def collectCounters(self):
-        #set up the counters for this test
+        # set up the counters for this test
         if self.counters:
             while not self.isFinished:
                 time.sleep(self.resolution)
@@ -256,11 +278,14 @@ class TTest(object):
 
     def runTest(self, browser_config, test_config):
         """
-            Runs an url based test on the browser as specified in the browser_config dictionary
+            Runs an url based test on the browser as specified in the
+            browser_config dictionary
 
         Args:
-            browser_config:  Dictionary of configuration options for the browser (paths, prefs, etc)
-            test_config   :  Dictionary of configuration for the given test (url, cycles, counters, etc)
+            browser_config:  Dictionary of configuration options for the
+                             browser (paths, prefs, etc)
+            test_config   :  Dictionary of configuration for the given
+                             test (url, cycles, counters, etc)
 
         """
         self.initializeLibraries(browser_config)
@@ -270,20 +295,25 @@ class TTest(object):
         self.resolution = test_config['resolution']
         utils.setEnvironmentVars(browser_config['env'])
         utils.setEnvironmentVars({'MOZ_CRASHREPORTER_NO_REPORT': '1'})
-        # for winxp e10s logging: https://bugzilla.mozilla.org/show_bug.cgi?id=1037445
-        utils.setEnvironmentVars({'MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA': '1'})
+        # for winxp e10s logging:
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=1037445
+        utils.setEnvironmentVars(
+            {'MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA': '1'})
         if browser_config['symbols_path']:
             utils.setEnvironmentVars({'MOZ_CRASHREPORTER': '1'})
         else:
             utils.setEnvironmentVars({'MOZ_CRASHREPORTER_DISABLE': '1'})
 
         # Crash on non-local network connections.
-        # Not enabled for Android tprovider due to yet to be diagnosed connections
-        # to safebrowsing.google.com.
+        # Not enabled for Android tprovider due to yet to be diagnosed
+        # connections to safebrowsing.google.com.
         if test_config['name'] != 'tprovider':
-            utils.setEnvironmentVars({'MOZ_DISABLE_NONLOCAL_CONNECTIONS': '1'})
+            utils.setEnvironmentVars(
+                {'MOZ_DISABLE_NONLOCAL_CONNECTIONS': '1'})
 
-        utils.setEnvironmentVars({"LD_LIBRARY_PATH" : os.path.dirname(browser_config['browser_path'])})
+        utils.setEnvironmentVars({
+            "LD_LIBRARY_PATH": os.path.dirname(browser_config['browser_path'])
+        })
 
         profile_dir = None
         temp_dir = None
@@ -292,39 +322,54 @@ class TTest(object):
             # add any provided directories to the installed browser
             for dir in browser_config['dirs']:
                 self._ffsetup.InstallInBrowser(browser_config['browser_path'],
-                                            browser_config['dirs'][dir])
+                                               browser_config['dirs'][dir])
 
             # make profile path work cross-platform
-            test_config['profile_path'] = os.path.normpath(test_config['profile_path'])
+            test_config['profile_path'] = \
+                os.path.normpath(test_config['profile_path'])
 
-            # add the mainthread_io to the environment variable, as defined in test.py configs
+            # add the mainthread_io to the environment variable, as defined
+            # in test.py configs
             here = os.path.dirname(os.path.realpath(__file__))
             if test_config['mainthread']:
                 mainthread_io = os.path.join(here, "mainthread_io.log")
-                utils.setEnvironmentVars({'MOZ_MAIN_THREAD_IO_LOG': mainthread_io})
+                utils.setEnvironmentVars(
+                    {'MOZ_MAIN_THREAD_IO_LOG': mainthread_io})
 
             preferences = copy.deepcopy(browser_config['preferences'])
             if 'preferences' in test_config and test_config['preferences']:
-                testPrefs = dict([(i, utils.parsePref(j)) for i, j in test_config['preferences'].items()])
+                testPrefs = dict(
+                    [(i, utils.parsePref(j))
+                     for i, j in test_config['preferences'].items()]
+                )
                 preferences.update(testPrefs)
 
             extensions = copy.deepcopy(browser_config['extensions'])
             if 'extensions' in test_config and test_config['extensions']:
                 extensions.append(test_config['extensions'])
 
-            profile_dir, temp_dir = self.createProfile(test_config['profile_path'],
-                                                       preferences,
-                                                       extensions,
-                                                       browser_config['webserver'])
+            profile_dir, temp_dir = self.createProfile(
+                test_config['profile_path'],
+                preferences,
+                extensions,
+                browser_config['webserver']
+            )
             self.initializeProfile(profile_dir, browser_config)
-            test_config['url'] = utils.interpolatePath(test_config['url'], profile_dir=profile_dir, firefox_path=browser_config['browser_path'])
+            test_config['url'] = utils.interpolatePath(
+                test_config['url'],
+                profile_dir=profile_dir,
+                firefox_path=browser_config['browser_path']
+            )
 
             if browser_config['fennecIDs']:
-                # This pushes environment variables to the device, be careful of placement
+                # This pushes environment variables to the device, be
+                # careful of placement
                 self.setupRobocopTests(browser_config, profile_dir)
 
             upload_dir = os.environ.get('MOZ_UPLOAD_DIR', None)
-            sps_profile = upload_dir and test_config.get('sps_profile', False) and not browser_config['remote']
+            sps_profile = upload_dir and \
+                test_config.get('sps_profile', False) and \
+                not browser_config['remote']
             sps_profile_dir = None
             profile_arcname = None
             profiling_info = None
@@ -333,18 +378,23 @@ class TTest(object):
             symbol_paths = {}
 
             if sps_profile:
-                # Create a temporary directory into which the tests can put their profiles.
-                # These files will be assembled into one big zip file later on, which is put
-                # into the MOZ_UPLOAD_DIR.
-                sps_profile_dir = tempfile.mkdtemp();
+                # Create a temporary directory into which the tests can put
+                # their profiles. These files will be assembled into one big
+                # zip file later on, which is put into the MOZ_UPLOAD_DIR.
+                sps_profile_dir = tempfile.mkdtemp()
 
-                sps_profile_interval = test_config.get('sps_profile_interval', 1)
-                sps_profile_entries = test_config.get('sps_profile_entries', 1000000)
+                sps_profile_interval = test_config.get('sps_profile_interval',
+                                                       1)
+                sps_profile_entries = test_config.get('sps_profile_entries',
+                                                      1000000)
                 sps_profile_threads = 'GeckoMain,Compositor'
 
-                # Make sure no archive already exists in the location where we plan to output
-                # our profiler archive
-                profile_arcname = os.path.join(upload_dir, "profile_{0}.sps.zip".format(test_config['name']))
+                # Make sure no archive already exists in the location where
+                # we plan to output our profiler archive
+                profile_arcname = os.path.join(
+                    upload_dir,
+                    "profile_{0}.sps.zip".format(test_config['name'])
+                )
                 try:
                     utils.info("Clearing archive {0}".format(profile_arcname))
                     os.remove(profile_arcname)
@@ -357,7 +407,11 @@ class TTest(object):
                     'WINDOWS': tempfile.mkdtemp()
                 }
 
-                utils.info("Activating Gecko Profiling. Temp. profile dir: {0}, interval: {1}, entries: {2}".format(sps_profile_dir, sps_profile_interval, sps_profile_entries))
+                utils.info("Activating Gecko Profiling. Temp. profile dir:"
+                           " {0}, interval: {1}, entries: {2}"
+                           .format(sps_profile_dir,
+                                   sps_profile_interval,
+                                   sps_profile_entries))
 
                 profiling_info = {
                     "sps_profile_interval": sps_profile_interval,
@@ -388,15 +442,24 @@ class TTest(object):
 
             if test_config['shutdown']:
                 global_counters['shutdown'] = []
-            if test_config.get('responsiveness') and platform.system() != "Linux":
-                # ignore responsiveness tests on linux until we fix Bug 710296
-                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
-                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
-                utils.setEnvironmentVars({'MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL': '10'})
+            if test_config.get('responsiveness') and \
+                    platform.system() != "Linux":
+                # ignore responsiveness tests on linux until we fix
+                # Bug 710296
+                utils.setEnvironmentVars(
+                    {'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
+                utils.setEnvironmentVars(
+                    {'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
+                utils.setEnvironmentVars(
+                    {'MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL': '10'})
                 global_counters['responsiveness'] = []
 
             # instantiate an object to hold test results
-            test_results = results.TestResults(test_config, global_counters, extensions=self._ffsetup.extensions)
+            test_results = results.TestResults(
+                test_config,
+                global_counters,
+                extensions=self._ffsetup.extensions
+            )
 
             for i in range(test_config['cycles']):
 
@@ -414,9 +477,11 @@ class TTest(object):
                 # the cycles
                 if test_config.get('reinstall', ''):
                     for keep in test_config['reinstall']:
-                        origin = os.path.join(test_config['profile_path'], keep)
+                        origin = os.path.join(test_config['profile_path'],
+                                              keep)
                         dest = os.path.join(profile_dir, keep)
-                        utils.debug("Reinstalling %s on top of %s", origin, dest)
+                        utils.debug("Reinstalling %s on top of %s", origin,
+                                    dest)
                         shutil.copy(origin, dest)
 
                 # check to see if the previous cycle is still hanging around
@@ -424,54 +489,75 @@ class TTest(object):
                     raise TalosError("previous cycle still running")
 
                 # Run the test
-                timeout = test_config.get('timeout', 7200) # 2 hours default
+                timeout = test_config.get('timeout', 7200)  # 2 hours default
                 if sps_profile:
-                    # When profiling, give the browser some extra time to dump the profile.
+                    # When profiling, give the browser some extra time
+                    # to dump the profile.
                     timeout += 5 * 60
 
-                command_args = utils.GenerateBrowserCommandLine(browser_config["browser_path"],
-                                                                browser_config["extra_args"],
-                                                                browser_config["deviceroot"],
-                                                                profile_dir,
-                                                                test_config['url'],
-                                                                profiling_info=profiling_info)
+                command_args = utils.GenerateBrowserCommandLine(
+                    browser_config["browser_path"],
+                    browser_config["extra_args"],
+                    browser_config["deviceroot"],
+                    profile_dir,
+                    test_config['url'],
+                    profiling_info=profiling_info
+                )
 
                 self.counter_results = None
                 mainthread_error_count = 0
                 if not browser_config['remote']:
                     if test_config['setup']:
                         # Generate bcontroller.yml for xperf
-                        talosconfig.generateTalosConfig(command_args, browser_config, test_config)
-                        setup = subprocess.Popen(['python'] + test_config['setup'].split(), env=os.environ.copy(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                        talosconfig.generateTalosConfig(command_args,
+                                                        browser_config,
+                                                        test_config)
+                        setup = subprocess.Popen(
+                            ['python'] + test_config['setup'].split(),
+                            env=os.environ.copy(),
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE
+                        )
                         stdout, stderr = setup.communicate()
-                        print "-----------------------------------------------------------------------------"
+                        print ("---------------------------------------"
+                               "--------------------------------------")
                         print "output of setup command:"
                         print stdout
                         print stderr
                         print "end of setup command output"
-                        print "-----------------------------------------------------------------------------"
+                        print ("---------------------------------------"
+                               "--------------------------------------")
 
                     self.isFinished = False
                     mm_httpd = None
 
                     if test_config['name'] == 'media_tests':
                         from startup_test.media import media_manager
-                        mm_httpd = media_manager.run_server(os.path.dirname(os.path.realpath(__file__)))
+                        mm_httpd = media_manager.run_server(
+                            os.path.dirname(os.path.realpath(__file__))
+                        )
 
-                    browser = TalosProcess.TalosProcess(command_args,
-                                                        env=dict(os.environ.items() + additional_env_vars.items()),
-                                                        logfile=browser_config['browser_log'],
-                                                        suppress_javascript_errors=True,
-                                                        wait_for_quit_timeout=5)
+                    browser = TalosProcess.TalosProcess(
+                        command_args,
+                        env=dict(os.environ.items() +
+                                 additional_env_vars.items()),
+                        logfile=browser_config['browser_log'],
+                        suppress_javascript_errors=True,
+                        wait_for_quit_timeout=5
+                    )
                     browser.run(timeout=timeout)
                     pid = browser.pid
                     self._pids.append(pid)
 
                     if self.counters:
-                        self.cm = self.CounterManager(browser_config['process'], self.counters)
-                        self.counter_results = dict([(counter, []) for counter in self.counters])
+                        self.cm = self.CounterManager(
+                            browser_config['process'],
+                            self.counters
+                        )
+                        self.counter_results = \
+                            dict([(counter, []) for counter in self.counters])
                         cmthread = Thread(target=self.collectCounters)
-                        cmthread.setDaemon(True) # don't hang on quit
+                        cmthread.setDaemon(True)  # don't hang on quit
                         cmthread.start()
 
                     # todo: ctrl+c doesn't close the browser windows
@@ -480,7 +566,9 @@ class TTest(object):
                     except KeyboardInterrupt:
                         browser.kill()
                         raise
-                    utils.info("Browser exited with error code: {0}".format(code))
+                    utils.info(
+                        "Browser exited with error code: {0}".format(code)
+                    )
                     browser = None
                     self.isFinished = True
 
@@ -490,11 +578,16 @@ class TTest(object):
                     if test_config['mainthread']:
                         rawlog = os.path.join(here, "mainthread_io.log")
                         if os.path.exists(rawlog):
-                            processedlog = os.path.join(here, 'mainthread_io.json')
-                            xre_path = os.path.dirname(browser_config['browser_path'])
+                            processedlog = \
+                                os.path.join(here, 'mainthread_io.json')
+                            xre_path = \
+                                os.path.dirname(browser_config['browser_path'])
                             mtio_py = os.path.join(here, 'mainthreadio.py')
-                            command = ['python', mtio_py, rawlog, processedlog, xre_path]
-                            mtio = subprocess.Popen(command, env=os.environ.copy(), stdout=subprocess.PIPE)
+                            command = ['python', mtio_py, rawlog,
+                                       processedlog, xre_path]
+                            mtio = subprocess.Popen(command,
+                                                    env=os.environ.copy(),
+                                                    stdout=subprocess.PIPE)
                             output, stderr = mtio.communicate()
                             for line in output.split('\n'):
                                 if line.strip() == "":
@@ -505,18 +598,28 @@ class TTest(object):
                             os.remove(rawlog)
 
                     if test_config['cleanup']:
-                        #HACK: add the pid to support xperf where we require the pid in post processing
-                        talosconfig.generateTalosConfig(command_args, browser_config, test_config, pid=pid)
-                        cleanup = TalosProcess.TalosProcess(['python'] + test_config['cleanup'].split(), env=os.environ.copy())
+                        # HACK: add the pid to support xperf where we require
+                        # the pid in post processing
+                        talosconfig.generateTalosConfig(command_args,
+                                                        browser_config,
+                                                        test_config,
+                                                        pid=pid)
+                        cleanup = TalosProcess.TalosProcess(
+                            ['python'] + test_config['cleanup'].split(),
+                            env=os.environ.copy()
+                        )
                         cleanup.run()
                         cleanup.wait()
 
-                    # allow mozprocess to terminate fully.  It appears our log file is partial unless we wait
+                    # allow mozprocess to terminate fully.
+                    # It appears our log file is partial unless we wait
                     time.sleep(5)
                 else:
-                    self._ffprocess.runProgram(browser_config, command_args, timeout=timeout)
+                    self._ffprocess.runProgram(browser_config, command_args,
+                                               timeout=timeout)
 
-                # For startup tests, we launch the browser multiple times with the same profile
+                # For startup tests, we launch the browser multiple times
+                # with the same profile
                 try:
                     os.remove(os.path.join(profile_dir, 'sessionstore.js'))
                 except:
@@ -533,19 +636,25 @@ class TTest(object):
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']
                 if not os.path.isfile(browser_log_filename):
-                    raise TalosError("no output from browser [%s]" % browser_log_filename)
+                    raise TalosError("no output from browser [%s]"
+                                     % browser_log_filename)
 
                 # check for xperf errors
                 if os.path.exists(browser_config['error_filename']) or \
                    mainthread_error_count > 0:
-                    raise TalosRegression("Talos has found a regression, if you have questions ask for help in irc on #perf")
+                    raise TalosRegression(
+                        "Talos has found a regression, if you have questions"
+                        " ask for help in irc on #perf"
+                    )
 
                 # add the results from the browser output
                 try:
-                    test_results.add(browser_log_filename, counter_results=self.counter_results)
+                    test_results.add(browser_log_filename,
+                                     counter_results=self.counter_results)
                 except Exception as e:
-                    # Log the exception, but continue. One way to get here is if the browser hangs,
-                    # and we'd still like to get symbolicated profiles in that case.
+                    # Log the exception, but continue. One way to get here
+                    # is if the browser hangs, and we'd still like to get
+                    # symbolicated profiles in that case.
                     utils.info(e)
 
                 if sps_profile:
@@ -553,99 +662,143 @@ class TTest(object):
                         # Trace-level logging (verbose)
                         "enableTracing": 0,
                         # Fallback server if symbol is not found locally
-                        "remoteSymbolServer": "http://symbolapi.mozilla.org:80/",
+                        "remoteSymbolServer":
+                            "http://symbolapi.mozilla.org:80/",
                         # Maximum number of symbol files to keep in memory
                         "maxCacheEntries": 2000000,
-                        # Frequency of checking for recent symbols to cache (in hours)
+                        # Frequency of checking for recent symbols to
+                        # cache (in hours)
                         "prefetchInterval": 12,
                         # Oldest file age to prefetch (in hours)
                         "prefetchThreshold": 48,
-                        # Maximum number of library versions to pre-fetch per library
+                        # Maximum number of library versions to pre-fetch
+                        # per library
                         "prefetchMaxSymbolsPerLib": 3,
                         # Default symbol lookup directories
                         "defaultApp": "FIREFOX",
                         "defaultOs": "WINDOWS",
-                        # Paths to .SYM files, expressed internally as a mapping of app or platform names
-                        # to directories
-                        # Note: App & OS names from requests are converted to all-uppercase internally
+                        # Paths to .SYM files, expressed internally as a
+                        # mapping of app or platform names to directories
+                        # Note: App & OS names from requests are converted
+                        # to all-uppercase internally
                         "symbolPaths": symbol_paths
                     })
 
                     if browser_config['symbols_path']:
                         if mozfile.is_url(browser_config['symbols_path']):
-                            symbolicator.integrate_symbol_zip_from_url(browser_config['symbols_path'])
+                            symbolicator\
+                                .integrate_symbol_zip_from_url(
+                                    browser_config['symbols_path']
+                                )
                         else:
-                            symbolicator.integrate_symbol_zip_from_file(browser_config['symbols_path'])
+                            symbolicator\
+                                .integrate_symbol_zip_from_file(
+                                    browser_config['symbols_path']
+                                )
 
-                    missing_symbols_zip = os.path.join(upload_dir, "missingsymbols.zip")
+                    missing_symbols_zip = os.path.join(upload_dir,
+                                                       "missingsymbols.zip")
 
                     try:
                         mode = zipfile.ZIP_DEFLATED
                     except:
                         mode = zipfile.ZIP_STORED
                     with zipfile.ZipFile(profile_arcname, 'a', mode) as arc:
-                        # Collect all individual profiles that the test has put into sps_profile_dir.
+                        # Collect all individual profiles that the test
+                        # has put into sps_profile_dir.
                         for profile_filename in os.listdir(sps_profile_dir):
                             testname = profile_filename
                             if testname.endswith(".sps"):
                                 testname = testname[0:-4]
-                            profile_path = os.path.join(sps_profile_dir, profile_filename)
+                            profile_path = os.path.join(sps_profile_dir,
+                                                        profile_filename)
                             try:
                                 profile_file = open(profile_path, 'r')
                                 profile = json.load(profile_file)
                                 profile_file.close()
-                                symbolicator.dump_and_integrate_missing_symbols(profile, missing_symbols_zip)
+                                symbolicator\
+                                    .dump_and_integrate_missing_symbols(
+                                        profile,
+                                        missing_symbols_zip
+                                    )
                                 symbolicator.symbolicate_profile(profile)
                                 sps.save_profile(profile, profile_path)
-                                profile = None # Free up memory
+                                profile = None  # Free up memory
                             except MemoryError as e:
-                                utils.info("Ran out of memory while trying to symbolicate profile {0} (cycle {1})".format(profile_path, i))
+                                utils.info(
+                                    "Ran out of memory while trying"
+                                    " to symbolicate profile {0} (cycle {1})"
+                                    .format(profile_path, i)
+                                )
                             except Exception as e:
                                 utils.info(e)
-                                utils.info("Encountered an exception during profile symbolication {0} (cycle {1})".format(profile_path, i))
-                            profile = None # Free up memory
+                                utils.info(
+                                    "Encountered an exception during profile"
+                                    " symbolication {0} (cycle {1})"
+                                    .format(profile_path, i)
+                                )
+                            profile = None  # Free up memory
 
-                            # Our zip will contain one directory per subtest, and each subtest
-                            # directory will contain one or more cycle_i.sps files.
-                            # For example, with test_config['name'] == 'tscrollx',
-                            #  profile_filename == 'iframe.svg.sps', i == 0, we'll get
-                            #  path_in_zip == 'profile_tscrollx/iframe.svg/cycle_0.sps'.
+                            # Our zip will contain one directory per subtest,
+                            # and each subtest directory will contain one or
+                            # more cycle_i.sps files. For example, with
+                            # test_config['name'] == 'tscrollx',
+                            # profile_filename == 'iframe.svg.sps', i == 0,
+                            # we'll get path_in_zip ==
+                            # 'profile_tscrollx/iframe.svg/cycle_0.sps'.
                             cycle_name = "cycle_{0}.sps".format(i)
-                            path_in_zip = os.path.join("profile_{0}".format(test_config['name']), testname, cycle_name)
-                            utils.info("Adding profile {0} to archive {1}".format(path_in_zip, profile_arcname))
+                            path_in_zip = \
+                                os.path.join(
+                                    "profile_{0}".format(test_config['name']),
+                                    testname,
+                                    cycle_name
+                                )
+                            utils.info(
+                                "Adding profile {0} to archive {1}"
+                                .format(path_in_zip, profile_arcname)
+                            )
                             try:
                                 arc.write(profile_path, path_in_zip)
                             except Exception as e:
                                 utils.info(e)
-                                utils.info("Failed to copy profile {0} as {1} to archive {2}".format(profile_path, path_in_zip, profile_arcname))
+                                utils.info(
+                                    "Failed to copy profile {0} as {1} to"
+                                    " archive {2}".format(profile_path,
+                                                          path_in_zip,
+                                                          profile_arcname)
+                                )
 
-                #clean up any stray browser processes
-                self.cleanupAndCheckForCrashes(browser_config, profile_dir, test_config['name'])
-                #clean up the bcontroller process
+                # clean up any stray browser processes
+                self.cleanupAndCheckForCrashes(browser_config, profile_dir,
+                                               test_config['name'])
+                # clean up the bcontroller process
 
             # cleanup
             self.cleanupProfile(temp_dir)
             utils.restoreEnvironmentVars()
             if sps_profile:
-                # For some reason, on Windows, big profiles are sometimes locked
-                # by another process even after all Firefox processes have been
-                # terminated. Allow up to 10 minutes for the file lock to be
-                # released.
+                # For some reason, on Windows, big profiles are sometimes
+                # locked by another process even after all Firefox processes
+                # have been terminated. Allow up to 10 minutes for the file
+                # lock to be released.
                 utils.rmtree_until_timeout(sps_profile_dir, 20 * 60)
                 for symbol_path in symbol_paths.values():
                     utils.rmtree_until_timeout(symbol_path, 20 * 60)
 
             # include global (cross-cycle) counters
-            test_results.all_counter_results.extend([{key: value} for key, value in global_counters.items()])
+            test_results.all_counter_results.extend(
+                [{key: value} for key, value in global_counters.items()]
+            )
             for c in test_results.all_counter_results:
-              for key, value in c.items():
-                print "COUNTER: %s" % key
-                print value
+                for key, value in c.items():
+                    print "COUNTER: %s" % key
+                    print value
 
             # return results
             return test_results
 
         except Exception, e:
             self.counters = vars().get('cm', self.counters)
-            self.testCleanup(browser_config, profile_dir, test_config, self.counters, temp_dir)
+            self.testCleanup(browser_config, profile_dir, test_config,
+                             self.counters, temp_dir)
             raise

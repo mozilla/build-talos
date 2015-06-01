@@ -8,10 +8,11 @@ try:
 except:
     pass
 
+
 class Win32Process(FFProcess):
 
     _directory_write_mode = 0777
-    extra_prog=FFProcess.extra_prog[:] + ['dwwim']
+    extra_prog = FFProcess.extra_prog[:] + ['dwwim']
 
     def _TerminateProcess(self, pid, timeout):
         wpk.kill_pid(pid)

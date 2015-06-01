@@ -4,7 +4,8 @@
 
 import json
 
+
 def save_profile(profile, filename):
-  f = open(filename, "w")
-  json.dump(profile, f)
-  f.close()
+    f = open(filename, "w")
+    json.dump(profile, f)
+    f.close()

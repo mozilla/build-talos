@@ -46,8 +46,8 @@ class MacProcess(FFProcess):
 
         # check for data
         # select() does not seem to work well with pipes.
-        # after data is available once it *always* thinks there is data available
-        # readline() will continue to return an empty string however
+        # after data is available once it *always* thinks there is data
+        # available readline() will continue to return an empty string however
         # so we can use this behavior to work around the problem
         while select([handle], [], [], 0)[0]:
             line = handle.readline()

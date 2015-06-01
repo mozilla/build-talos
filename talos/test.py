@@ -2,9 +2,10 @@
 test definitions for Talos
 """
 
+
 class Test(object):
     """abstract base class for a Talos test case"""
-    cycles = None # number of cycles
+    cycles = None  # number of cycles
     keys = []
     desktop = True
     mobile = True
@@ -16,7 +17,7 @@ class Test(object):
 
     @classmethod
     def description(cls):
-        if cls.__doc__ == None:
+        if cls.__doc__ is None:
             return "No documentation available yet."
         else:
             doc = cls.__doc__
@@ -51,11 +52,9 @@ class Test(object):
         return '\n'.join(lines)
 
 
-
-### ts-style startup tests (ts, twinopen, ts_cold, etc)
-### The overall test number is calculated by excluding the max opening time
-### and taking an average of the remaining numbers.
-
+# ts-style startup tests (ts, twinopen, ts_cold, etc)
+# The overall test number is calculated by excluding the max opening time
+# and taking an average of the remaining numbers.
 class TsBase(Test):
     """abstract base class for ts-style tests"""
     keys = [
@@ -68,10 +67,11 @@ class TsBase(Test):
                          # Otherwise, ignore shutdown data
                          # (__startTimestamp/__endTimestamp is still
                          # required but ignored).
-        'profile_path',  # The path containing the template profile. This directory
-                         # is copied to the temporary profile during initialization of
-                         # the test. If some of the files may be overwritten by Firefox
-                         # and need to be reinstalled before each pass, use key |reinstall|
+        'profile_path',  # The path containing the template profile. This
+                         # directory is copied to the temporary profile during
+                         # initialization of the test. If some of the files may
+                         # be overwritten by Firefox and need to be reinstalled
+                         # before each pass, use key |reinstall|
         'sps_profile',
         'sps_profile_interval',
         'sps_profile_entries',
@@ -87,11 +87,13 @@ class TsBase(Test):
         'setup',
         'cleanup',
         'fennecIDs',
-        'reinstall',     # A list of files from the profile directory that should be copied to
-                         # the temporary profile prior to running each cycle, to avoid one cycle
-                         # overwriting the data used by the next another cycle (may be used e.g. for
-                         # sessionstore.js to ensure that all cycles use the exact same sessionstore.js,
-                         # rather than a more recent copy).
+        'reinstall',     # A list of files from the profile directory that
+                         # should be copied to the temporary profile prior to
+                         # running each cycle, to avoid one cycle overwriting
+                         # the data used by the next another cycle (may be used
+                         # e.g. for sessionstore.js to ensure that all cycles
+                         # use the exact same sessionstore.js, rather than a
+                         # more recent copy).
     ]
 
 
@@ -110,6 +112,7 @@ class ts(TsBase):
     url = 'startup_test/startup_test.html'
     shutdown = True
 
+
 class ts_paint(ts):
     """
     Launches tspaint_test.html with the current timestamp in the url,
@@ -126,12 +129,14 @@ class ts_paint(ts):
     mainthread = False
     responsiveness = False
 
+
 class ts_paint_cold(ts_paint):
     """
     Clears the disk cache before running the ts_paint tests.
     """
     setup = "${talos}/startup_test/cold/setup.py"
     mobile = False
+
 
 class tpaint(TsBase):
     """
@@ -143,11 +148,12 @@ class tpaint(TsBase):
     """
     url = 'file://${talos}/startup_test/tpaint.html?auto=1'
     timeout = 300
-    mobile = False # XUL based tests with local files.
+    mobile = False  # XUL based tests with local files.
     sps_profile_interval = 1
     sps_profile_entries = 2000000
     tpmozafterpaint = True
     filters = [["ignore_first", [5]], ['median', []]]
+
 
 class tresize(TsBase):
     """
@@ -162,53 +168,70 @@ class tresize(TsBase):
     tpmozafterpaint = True
     filters = [["ignore_first", [5]], ['median', []]]
 
+
 # mobile ts-type tests
 class trobopan(TsBase):
     """
     Panning performance test. Value is square of frame delays (ms greater
     than 25 ms) encountered while panning. Lower values are better.
     """
-    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testPan ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
+    url = ('am instrument -w -e deviceroot %s -e class'
+           ' ${robocopTestPackage}.tests.testPan'
+           ' ${robocopTestName}/${robocopTestPackage}'
+           '.FennecInstrumentationTestRunner')
     cycles = 5
     timeout = 300
     desktop = False
     tpchrome = False
     fennecIDs = True
+
 
 class tcheckerboard(TsBase):
     """
     Simple measure of 'checkerboarding'. Lower values are better.
     """
-    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testCheck ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
+    url = ('am instrument -w -e deviceroot %s -e class'
+           ' ${robocopTestPackage}.tests.testCheck'
+           ' ${robocopTestName}/${robocopTestPackage}'
+           '.FennecInstrumentationTestRunner')
     cycles = 5
     timeout = 300
     desktop = False
     tpchrome = False
     fennecIDs = True
 
+
 class tprovider(TsBase):
     """
     A mobile ts_type test (docstring to be updated)
     """
-    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testBrowserProviderPerf ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
+    url = ('am instrument -w -e deviceroot %s -e class'
+           ' ${robocopTestPackage}.tests.testBrowserProviderPerf'
+           ' ${robocopTestName}/${robocopTestPackage}'
+           '.FennecInstrumentationTestRunner')
     cycles = 5
     timeout = 300
     desktop = False
     tpchrome = False
     fennecIDs = True
+
 
 class tcheck2(TsBase):
     """
     Measure of 'checkerboarding' during simulation of real user interaction
     with page. Lower values are better.
     """
-    url = 'am instrument -w -e deviceroot %s -e class ${robocopTestPackage}.tests.testCheck2 ${robocopTestName}/${robocopTestPackage}.FennecInstrumentationTestRunner'
+    url = ('am instrument -w -e deviceroot %s -e class'
+           ' ${robocopTestPackage}.tests.testCheck2'
+           ' ${robocopTestName}/${robocopTestPackage}'
+           '.FennecInstrumentationTestRunner')
     cycles = 5
     timeout = 300
     desktop = False
     tpchrome = False
     fennecIDs = True
     tpdisable_e10s = True
+
 
 class sessionrestore(ts):
     """
@@ -226,7 +249,8 @@ class sessionrestore(ts):
     shutdown = False
     reinstall = ['sessionstore.js']
     # Restore the session
-    preferences = { 'browser.startup.page': 3 }
+    preferences = {'browser.startup.page': 3}
+
 
 class sessionrestore_no_auto_restore(sessionrestore):
     """
@@ -237,9 +261,10 @@ class sessionrestore_no_auto_restore(sessionrestore):
     3. Measure the delta between firstPaint and sessionRestored.
     """
     # Restore about:home
-    preferences = { 'browser.startup.page': 1 }
+    preferences = {'browser.startup.page': 1}
 
-### Media Test
+
+# Media Test
 class media_tests(TsBase):
     """
     Media Performance Tests
@@ -250,43 +275,53 @@ class media_tests(TsBase):
     url = 'http://localhost:16932/startup_test/media/html/media_tests.html'
     timeout = 360
 
-### pageloader tests(tp5, tdhtml, etc)
+# pageloader tests(tp5, tdhtml, etc)
 
-### The overall test number is determined by first calculating the median
-### page load time for each page in the set (excluding the max page load
-### per individual page). The max median from that set is then excluded and
-### the average is taken; that becomes the number reported to the tinderbox
-### waterfall.
+# The overall test number is determined by first calculating the median
+# page load time for each page in the set (excluding the max page load
+# per individual page). The max median from that set is then excluded and
+# the average is taken; that becomes the number reported to the tinderbox
+# waterfall.
+
 
 class PageloaderTest(Test):
     """abstract base class for a Talos Pageloader test"""
-    tpmanifest = None # test manifest
-    tpcycles = 1 # number of time to run each page
+    tpmanifest = None  # test manifest
+    tpcycles = 1  # number of time to run each page
     cycles = None
     timeout = None
     filters = None
-    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome', 'tpmozafterpaint', 'tploadnocache',
-            'rss', 'mainthread', 'resolution', 'cycles', 'sps_profile', 'sps_profile_interval', 'sps_profile_entries',
-            'tptimeout', 'win_counters', 'w7_counters', 'linux_counters', 'mac_counters', 'tpscrolltest',
-            'remote_counters', 'xperf_counters', 'timeout', 'shutdown', 'responsiveness', 'profile_path',
-            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'filters', 'preferences',
-            'extensions', 'setup', 'cleanup','fennecIDs', 'test_name_extension'
-            ]
+    keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome',
+            'tpmozafterpaint', 'tploadnocache', 'rss', 'mainthread',
+            'resolution', 'cycles', 'sps_profile', 'sps_profile_interval',
+            'sps_profile_entries', 'tptimeout', 'win_counters', 'w7_counters',
+            'linux_counters', 'mac_counters', 'tpscrolltest',
+            'remote_counters', 'xperf_counters', 'timeout', 'shutdown',
+            'responsiveness', 'profile_path', 'xperf_providers',
+            'xperf_user_providers', 'xperf_stackwalk', 'filters',
+            'preferences', 'extensions', 'setup', 'cleanup', 'fennecIDs',
+            'test_name_extension']
+
 
 class tart(PageloaderTest):
     """
     Tab Animation Regression Test
     Tests tab animation on these cases:
-    1. Simple: single new tab of about:blank open/close without affecting (shrinking/expanding) other tabs.
+    1. Simple: single new tab of about:blank open/close without affecting
+       (shrinking/expanding) other tabs.
     2. icon: same as above with favicons and long title instead of about:blank.
-    3. Newtab: newtab open with thumbnails preview - without affecting other tabs, with and without preload.
-    4. Fade: opens a tab, then measures fadeout/fadein (tab animation without the overhead of opening/closing a tab).
+    3. Newtab: newtab open with thumbnails preview - without affecting other
+       tabs, with and without preload.
+    4. Fade: opens a tab, then measures fadeout/fadein (tab animation without
+       the overhead of opening/closing a tab).
     - Case 1 is tested with DPI scaling of 1.
     - Case 2 is tested with DPI scaling of 1.0 and 2.0.
     - Case 3 is tested with the default scaling of the test system.
-    - Case 4 is tested with DPI scaling of 2.0 with the "icon" tab (favicon and long title).
+    - Case 4 is tested with DPI scaling of 2.0 with the "icon" tab
+      (favicon and long title).
     - Each animation produces 3 test results:
-      - error: difference between the designated duration and the actual completion duration from the trigger.
+      - error: difference between the designated duration and the actual
+        completion duration from the trigger.
       - half: average interval over the 2nd half of the animation.
       - all: average interval over all recorded intervals.
     """
@@ -298,24 +333,31 @@ class tart(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 1000000
-    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
-    """ ASAP mode """
-    """ The recording API is broken with OMTC before ~2013-11-27 """
-    """ After ~2013-11-27, disabling OMTC will also implicitly disable OGL HW composition """
-    """ to disable OMTC with older firefox builds, also set 'layers.offmainthreadcomposition.enabled': False """
+    win_counters = w7_counters = linux_counters = mac_counters = \
+        remote_counters = None
+    """
+    ASAP mode
+    The recording API is broken with OMTC before ~2013-11-27
+    After ~2013-11-27, disabling OMTC will also implicitly disable
+    OGL HW composition to disable OMTC with older firefox builds, also
+    set 'layers.offmainthreadcomposition.enabled': False
+    """
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
+
 class cart(PageloaderTest):
     """
     Customize Animation Regression Test
-    Tests Australis customize animations (default DPI scaling). Uses the TART addon but with a different URL.
+    Tests Australis customize animations (default DPI scaling). Uses the
+    TART addon but with a different URL.
     Reports the same animation values as TART (.half/.all/.error).
     All comments for TART also apply here (e.g. for ASAP+OMTC, etc)
     Subtests are:
-    1-customize-enter - from triggering customize mode until it's ready for the user
+    1-customize-enter - from triggering customize mode until it's ready for
+    the user
     2-customize-exit  - exiting customize
     3-customize-enter-css - only the CSS animation part of entering customize
     """
@@ -327,8 +369,11 @@ class cart(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 1
     sps_profile_entries = 10000000
-    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
-    """ ASAP mode """
+    win_counters = w7_counters = linux_counters = mac_counters = \
+        remote_counters = None
+    """
+    ASAP mode
+    """
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
@@ -349,14 +394,18 @@ class damp(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 1000000
-    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
+    win_counters = w7_counters = linux_counters = mac_counters = \
+        remote_counters = None
     filters = [["ignore_first", [1]], ['median', []]]
+
 
 class glterrain(PageloaderTest):
     """
-    Simple rotating WebGL scene with moving light source over a textured terrain.
+    Simple rotating WebGL scene with moving light source over a
+    textured terrain.
     Measures average frame intervals.
-    The same sequence is measured 4 times for combinations of alpha and antialias as canvas properties.
+    The same sequence is measured 4 times for combinations of alpha and
+    antialias as canvas properties.
     Each of these 4 runs is reported as a different test name.
     """
     tpmanifest = '${talos}/page_load_test/webgl/glterrain.manifest'
@@ -366,12 +415,14 @@ class glterrain(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 2000000
-    win_counters = w7_counters = linux_counters = mac_counters = remote_counters = None
+    win_counters = w7_counters = linux_counters = mac_counters = \
+        remote_counters = None
     """ ASAP mode """
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
+
 
 class tp(PageloaderTest):
     """
@@ -386,10 +437,12 @@ class tp(PageloaderTest):
     tpcycles = None
     resolution = 20
     win_counters = ['Working Set', 'Private Bytes', '% Processor Time']
-    w7_counters = ['Working Set', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
+    w7_counters = ['Working Set', 'Private Bytes', '% Processor Time',
+                   'Modified Page List Bytes']
     linux_counters = ['Private Bytes', 'Main_RSS', 'XRes']
     mac_counters = ['Main_RSS']
     shutdown = True
+
 
 class tp4m(tp):
     """
@@ -405,6 +458,7 @@ class tp4m(tp):
     win_counters = w7_counters = linux_counters = mac_counters = None
     remote_counters = ['Main_RSS']
     timeout = 1800
+
 
 class tp5n(tp):
     """
@@ -428,11 +482,19 @@ class tp5n(tp):
     linux_counters = []
     remote_counters = []
     mac_counters = []
-    xperf_counters = ['main_startup_fileio', 'main_startup_netio', 'main_normal_fileio', 'main_normal_netio', 'nonmain_startup_fileio', 'nonmain_normal_fileio', 'nonmain_normal_netio', 'mainthread_readcount', 'mainthread_readbytes', 'mainthread_writecount', 'mainthread_writebytes']
-    xperf_providers = ['PROC_THREAD', 'LOADER', 'HARD_FAULTS', 'FILENAME', 'FILE_IO', 'FILE_IO_INIT']
-    xperf_user_providers = ['Mozilla Generic Provider', 'Microsoft-Windows-TCPIP']
-    xperf_stackwalk = ['FileCreate', 'FileRead', 'FileWrite', 'FileFlush', 'FileClose']
-    mobile = False # too many files to run, we will hit OOM
+    xperf_counters = ['main_startup_fileio', 'main_startup_netio',
+                      'main_normal_fileio', 'main_normal_netio',
+                      'nonmain_startup_fileio', 'nonmain_normal_fileio',
+                      'nonmain_normal_netio', 'mainthread_readcount',
+                      'mainthread_readbytes', 'mainthread_writecount',
+                      'mainthread_writebytes']
+    xperf_providers = ['PROC_THREAD', 'LOADER', 'HARD_FAULTS', 'FILENAME',
+                       'FILE_IO', 'FILE_IO_INIT']
+    xperf_user_providers = ['Mozilla Generic Provider',
+                            'Microsoft-Windows-TCPIP']
+    xperf_stackwalk = ['FileCreate', 'FileRead', 'FileWrite', 'FileFlush',
+                       'FileClose']
+    mobile = False  # too many files to run, we will hit OOM
     filters = [["ignore_first", [1]], ['median', []]]
     timeout = 1800
     setup = '${talos}/xtalos/start_xperf.py -c ${talos}/bcontroller.yml'
@@ -455,15 +517,17 @@ class tp5o(PageloaderTest):
     mainthread = False
     tpmanifest = '${talos}/page_load_test/tp5n/tp5o.manifest'
     win_counters = ['Main_RSS', 'Private Bytes', '% Processor Time']
-    w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time', 'Modified Page List Bytes']
+    w7_counters = ['Main_RSS', 'Private Bytes', '% Processor Time',
+                   'Modified Page List Bytes']
     linux_counters = ['Private Bytes', 'XRes', 'Main_RSS']
     mac_counters = ['Main_RSS']
     responsiveness = True
     sps_profile_interval = 2
     sps_profile_entries = 4000000
-    mobile = False # too many files to run, we will hit OOM
+    mobile = False  # too many files to run, we will hit OOM
     filters = [["ignore_first", [5]], ['median', []]]
     timeout = 1800
+
 
 class tp5o_scroll(PageloaderTest):
     """
@@ -493,14 +557,17 @@ class tdhtml(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/dhtml/dhtml.manifest'
     tpcycles = 5
 
+
 class tsvg(PageloaderTest):
     """
     An svg-only number that measures SVG rendering performance.
     """
     tpmanifest = '${talos}/page_load_test/svg/svg.manifest'
     tpcycles = 5
-    """ ASAP mode - keeping old pref (new is 0), since tsvg is being deprecated and we don't want to modify talos results for it now """
+    """ ASAP mode - keeping old pref (new is 0), since tsvg is being deprecated
+        and we don't want to modify talos results for it now """
     preferences = {'layout.frame_rate': 10000}
+
 
 class tsvg_opacity(PageloaderTest):
     """
@@ -508,6 +575,7 @@ class tsvg_opacity(PageloaderTest):
     """
     tpmanifest = '${talos}/page_load_test/svg_opacity/svg_opacity.manifest'
     tpcycles = 5
+
 
 class v8_7(PageloaderTest):
     """
@@ -525,6 +593,7 @@ class v8_7(PageloaderTest):
     tpmozafterpaint = False
     preferences = {'dom.send_after_paint_to_content': False}
 
+
 class kraken(PageloaderTest):
     """
     This is the Kraken javascript benchmark taken verbatim and slightly
@@ -538,6 +607,7 @@ class kraken(PageloaderTest):
     tpmozafterpaint = False
     preferences = {'dom.send_after_paint_to_content': False}
     filters = [['mean', []]]
+
 
 class tcanvasmark(PageloaderTest):
     """
@@ -555,6 +625,7 @@ class tcanvasmark(PageloaderTest):
     preferences = {'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
 
+
 class tscroll(PageloaderTest):
     """
     This test does some scrolly thing.
@@ -562,9 +633,11 @@ class tscroll(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 5
 
+
 class dromaeo(PageloaderTest):
     """abstract base class for dramaeo tests"""
     filters = [['dromaeo', []]]
+
 
 class dromaeo_css(dromaeo):
     """
@@ -577,6 +650,7 @@ class dromaeo_css(dromaeo):
     sps_profile_interval = 2
     sps_profile_entries = 10000000
     tpmanifest = '${talos}/page_load_test/dromaeo/css.manifest'
+
 
 class dromaeo_dom(dromaeo):
     """
@@ -591,6 +665,7 @@ class dromaeo_dom(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/dom.manifest'
     tpdisable_e10s = True
 
+
 class a11y(PageloaderTest):
     """
     This test ensures basic a11y tables and permutations do not cause
@@ -601,8 +676,11 @@ class a11y(PageloaderTest):
     tpcycles = 5
     sps_profile_interval = 10
     sps_profile_entries = 300000
-    mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
+    # we don't make a11y.manifest have urls, it just has dhtml.html instead
+    # of http://ip:port/dhtml.html
+    mobile = False
     filters = [["ignore_first", [1]], ['median', []]]
+
 
 # 'r' tests are row based vs column based.
 class tdhtmlr(tdhtml):
@@ -615,6 +693,7 @@ class tdhtmlr(tdhtml):
     tpcycles = 1
     tppagecycles = 25
 
+
 class tsvgr(tsvg):
     """
     Like the tsvg test this is an svg-only number that measures SVG
@@ -623,6 +702,7 @@ class tsvgr(tsvg):
     """
     tpcycles = 1
     tppagecycles = 25
+
 
 class tsvgm(tsvg):
     """
@@ -642,6 +722,7 @@ class tsvgm(tsvg):
                    'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [2]], ['median', []]]
 
+
 class tsvgx(tsvg):
     """
     Like the tsvg test this is an svg-only number that measures SVG
@@ -660,6 +741,7 @@ class tsvgx(tsvg):
                    'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [5]], ['median', []]]
 
+
 class tsvgr_opacity(tsvg_opacity):
     """
     Like the tsvg_opacity test this is an svg-only number that measures SVG
@@ -672,6 +754,7 @@ class tsvgr_opacity(tsvg_opacity):
     sps_profile_entries = 10000000
     filters = [["ignore_first", [5]], ['median', []]]
 
+
 class tscrollr(PageloaderTest):
     """
     Like tscroll, this test does some scrolly thing. Unlike tscroll, this
@@ -680,6 +763,7 @@ class tscrollr(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 1
     tppagecycles = 25
+
 
 class tscrollx(PageloaderTest):
     """
@@ -698,6 +782,7 @@ class tscrollx(PageloaderTest):
                    'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [5]], ['median', []]]
 
+
 class a11yr(PageloaderTest):
     """
     Like a11y, this test ensures basic a11y tables and permutations do not
@@ -709,7 +794,9 @@ class a11yr(PageloaderTest):
     tppagecycles = 25
     tpmozafterpaint = True
     preferences = {'dom.send_after_paint_to_content': False}
-    mobile = False # we don't make a11y.manifest have urls, it just has dhtml.html instead of http://ip:port/dhtml.html
+    # we don't make a11y.manifest have urls, it just has dhtml.html instead
+    # of http://ip:port/dhtml.html
+    mobile = False
 
 # global test data
 tests = [ts_paint, ts, tsvg, tdhtml, ts_paint_cold,

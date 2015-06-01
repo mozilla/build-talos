@@ -2,8 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json, urllib, httplib
-import datetime, time
+import json
+import urllib
+import httplib
+import datetime
+import time
 from argparse import ArgumentParser
 import sys
 import os
@@ -14,18 +17,56 @@ selector = '/api/test/runs'
 debug = 1
 
 branch_map = {}
-branch_map['Try']     = {'pgo':    {'id': 23, 'name': 'Try'},
-                         'nonpgo': {'id': 113, 'name': 'Try'}}
-branch_map['Firefox'] = {'pgo':    {'id': 1,  'name': 'Firefox'},
-                         'nonpgo': {'id': 94, 'name': 'Firefox-Non-PGO'}}
-branch_map['Inbound'] = {'pgo':    {'id': 63, 'name': 'Mozilla-Inbound'},
-                         'nonpgo': {'id': 131, 'name': 'Mozilla-Inbound-Non-PGO'}}
-branch_map['Aurora']  = {'pgo':    {'id': 52, 'name': 'Mozilla-Aurora'}}
-branch_map['Beta']    = {'pgo':    {'id': 53, 'name': 'Mozilla-Beta'}}
-branch_map['Cedar']   = {'pgo':    {'id': 26, 'name': 'Cedar'},
-                         'nonpgo': {'id': 26, 'name': 'Cedar'}}
-branch_map['UX']      = {'pgo':    {'id': 59, 'name': 'UX'},
-                         'nonpgo': {'id': 137, 'name': 'UX-Non-PGO'}}
+branch_map['Try'] = {
+    'pgo': {
+        'id': 23, 'name': 'Try'
+    },
+    'nonpgo': {
+        'id': 113, 'name': 'Try'
+    }
+}
+branch_map['Firefox'] = {
+    'pgo': {
+        'id': 1, 'name': 'Firefox'
+    },
+    'nonpgo': {
+        'id': 94, 'name': 'Firefox-Non-PGO'
+    }
+}
+branch_map['Inbound'] = {
+    'pgo': {
+        'id': 63, 'name': 'Mozilla-Inbound'
+    },
+    'nonpgo': {
+        'id': 131, 'name': 'Mozilla-Inbound-Non-PGO'
+    }
+}
+branch_map['Aurora'] = {
+    'pgo': {
+        'id': 52, 'name': 'Mozilla-Aurora'
+    }
+}
+branch_map['Beta'] = {
+    'pgo': {
+        'id': 53, 'name': 'Mozilla-Beta'
+    }
+}
+branch_map['Cedar'] = {
+    'pgo': {
+        'id': 26, 'name': 'Cedar'
+    },
+    'nonpgo': {
+        'id': 26, 'name': 'Cedar'
+    }
+}
+branch_map['UX'] = {
+    'pgo': {
+        'id': 59, 'name': 'UX'
+    },
+    'nonpgo': {
+        'id': 137, 'name': 'UX-Non-PGO'
+    }
+}
 branches = ['Try', 'Firefox', 'Inbound', 'Aurora', 'Beta', 'Cedar', 'UX']
 
 # TODO: pull test names and reverse_tests from test.py in the future
@@ -44,8 +85,9 @@ test_map['tp5o'] = {'id': 255, 'tbplname': 'tp5o_paint'}
 test_map['tp5o_scroll'] = {'id': 323, 'tbplname': 'tp5o_scroll'}
 test_map['tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
 test_map['tscrollx'] = {'id': 287, 'tbplname': 'tscrollx'}
-test_map['sessionrestore'] = {'id': 313, 'tbplname':'sessionrestore'}
-test_map['sessionrestore_no_auto_restore'] = {'id': 315, 'tbplname':'sessionrestore_no_auto_restore'}
+test_map['sessionrestore'] = {'id': 313, 'tbplname': 'sessionrestore'}
+test_map['sessionrestore_no_auto_restore'] = \
+    {'id': 315, 'tbplname': 'sessionrestore_no_auto_restore'}
 test_map['tart'] = {'id': 293, 'tbplname': 'tart'}
 test_map['cart'] = {'id': 309, 'tbplname': 'cart'}
 test_map['tcanvasmark'] = {'id': 289, 'tbplname': 'tcanvasmark'}
@@ -57,30 +99,41 @@ test_map['remote-troboprovider'] = {'id': 200, 'tbplname': 'tprovider'}
 test_map['remote-tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
 test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'tp4m'}
 
-tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr', 'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart', 'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore', 'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll', 'media_tests' ]
-android_tests = ['remote-trobocheck2', 'remote-trobopan', 'remote-troboprovider', 'remote-tsvgx', 'remote-tp4m_nochrome']
+tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr',
+         'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart',
+         'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore',
+         'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll',
+         'media_tests']
+android_tests = ['remote-trobocheck2', 'remote-trobopan',
+                 'remote-troboprovider', 'remote-tsvgx',
+                 'remote-tp4m_nochrome']
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8_7', 'canvasmark']
 
 platform_map = {}
-platform_map['Linux'] = 33 #14 - 14 is the old fedora, we are now on Ubuntu slaves
+# 14 - 14 is the old fedora, we are now on Ubuntu slaves
+platform_map['Linux'] = 33
 platform_map['Linux (e10s)'] = 41
-platform_map['Linux64'] = 35 #15 - 15 is the old fedora, we are now on Ubuntu slaves
+# 15 - 15 is the old fedora, we are now on Ubuntu slaves
+platform_map['Linux64'] = 35
 platform_map['Linux64 (e10s)'] = 43
-platform_map['Win7'] = 25 # 12 is for non-ix
+platform_map['Win7'] = 25  # 12 is for non-ix
 platform_map['Win7 (e10s)'] = 47
 platform_map['Win8'] = 31
 platform_map['Win8 (e10s)'] = 49
-platform_map['WinXP'] = 37 # 1 is for non-ix
+platform_map['WinXP'] = 37  # 1 is for non-ix
 platform_map['WinXP (e10s)'] = 45
-platform_map['OSX64'] = 21 #10.6
+platform_map['OSX64'] = 21  # 10.6
 platform_map['OSX64 (e10s)'] = 51
-platform_map['OSX10.8'] = 24 #TODO: 10.8 will be gone in the near future
+platform_map['OSX10.8'] = 24  # TODO: 10.8 will be gone in the near future
 platform_map['OSX10.8 (e10s)'] = 53
 platform_map['OSX10.10'] = 55
-platform_map['OSX10.10 (e10s)'] = 55 #TODO: a placeholder for now
+platform_map['OSX10.10 (e10s)'] = 55  # TODO: a placeholder for now
 platform_map['Android'] = 29
-platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8', 'Android']
-platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)', 'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)', 'OSX10.8 (e10s)']
+platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8',
+             'Android']
+platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)',
+                  'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)',
+                  'OSX10.8 (e10s)']
 
 disabled_tests = {}
 disabled_tests['Linux'] = ['media_tests', 'tp5n']
@@ -89,15 +142,27 @@ disabled_tests['Win7'] = ['media_tests']
 disabled_tests['Win7 (e10s)'] = ['media_tests']
 disabled_tests['Win8'] = ['media_tests', 'tp5n']
 disabled_tests['Win8 (e10s)'] = ['media_tests', 'tp5n']
-disabled_tests['WinXP'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5n']
-disabled_tests['WinXP (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5n']
+disabled_tests['WinXP'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
+                           'kraken', 'v8_7', 'tp5n']
+disabled_tests['WinXP (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
+                                  'kraken', 'v8_7', 'tp5n']
 disabled_tests['Win64'] = ['media_tests', 'tp5n']
-disabled_tests['OSX64'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint', 'a11yr', 'sessionrestore', 'sessionrestore_no_auto_restore', 'tsvgr_opacity', 'tart', 'cart', 'tp5o', 'tp5n']
-disabled_tests['OSX64 (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css', 'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint', 'a11yr', 'sessionrestore', 'sessionrestore_no_auto_restore', 'tsvgr_opacity', 'tart', 'cart', 'tp5o', 'tp5n']
+disabled_tests['OSX64'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
+                           'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint',
+                           'a11yr', 'sessionrestore',
+                           'sessionrestore_no_auto_restore', 'tsvgr_opacity',
+                           'tart', 'cart', 'tp5o', 'tp5n']
+disabled_tests['OSX64 (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
+                                  'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint',
+                                  'a11yr', 'sessionrestore',
+                                  'sessionrestore_no_auto_restore',
+                                  'tsvgr_opacity', 'tart', 'cart', 'tp5o',
+                                  'tp5n']
 disabled_tests['OSX10.8'] = ['media_tests', 'tp5n']
 disabled_tests['OSX10.8 (e10s)'] = ['media_tests', 'tp5n']
 disabled_tests['OSX10.10'] = ['media_tests', 'tp5n']
 disabled_tests['OSX10.10 (e10s)'] = ['media_tests', 'tp5n']
+
 
 def getListOfTests(platform, tests):
     if platform in disabled_tests:
@@ -107,12 +172,16 @@ def getListOfTests(platform, tests):
                 tests.remove(t)
     return tests
 
+
 def getGraphData(testid, branchid, platformid):
     body = {"id": testid, "branchid": branchid, "platformid": platformid}
     if debug >= 3:
         print "Querying graph server for: %s" % body
     params = urllib.urlencode(body)
-    headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
+    headers = {
+        "Content-type": "application/x-www-form-urlencoded",
+        "Accept": "text/plain"
+    }
     conn = httplib.HTTPConnection(SERVER)
     conn.request("POST", selector, params, headers)
     response = conn.getresponse()
@@ -128,6 +197,7 @@ def getGraphData(testid, branchid, platformid):
     if data['stat'] == 'fail':
         return None
     return data
+
 
 # TODO: consider moving this to mozinfo or datazilla_client
 def getDatazillaPlatform(os, platform, osversion, product):
@@ -157,7 +227,7 @@ def getDatazillaPlatform(os, platform, osversion, product):
     return platform
 
 
-#TODO: move this to datazilla_client.
+# TODO: move this to datazilla_client.
 def getDatazillaCSET(revision, branchid):
     testdata = {}
     pgodata = {}
@@ -203,12 +273,13 @@ def getDatazillaCSET(revision, branchid):
            'sunspider' not in suite and \
            'dromaeo' not in suite and \
            testrun['testrun']['options']['tpmozafterpaint']:
-            if 'paint' not in suite: # handle tspaint_places_generated_*
+            if 'paint' not in suite:  # handle tspaint_places_generated_*
                 extension = "%s_paint" % extension
 
         suite = "%s%s" % (suite, extension)
 
-        # This is a hack that means we are running xperf since tp5n was replaced by tp5o
+        # This is a hack that means we are running xperf since tp5n was
+        # replaced by tp5o
         if platform == "Win" and suite == "tp5n_paint":
             xperfdata = testrun['results_xperf']
 
@@ -234,18 +305,22 @@ def getDatazillaCSET(revision, branchid):
         if pgo:
             pgodata[platform][suite] = float(sum(values)/len(values))
             if debug > 1:
-                print "%s: %s: %s (PGO)" % (platform, suite, pgodata[platform][suite])
+                print "%s: %s: %s (PGO)" % (platform, suite,
+                                            pgodata[platform][suite])
         else:
             testdata[platform][suite] = float(sum(values)/len(values))
             if debug > 1:
-                print "%s: %s: %s" % (platform, suite, testdata[platform][suite])
+                print "%s: %s: %s" % (platform, suite,
+                                      testdata[platform][suite])
 
     return testdata, pgodata, xperfdata
+
 
 def getDatazillaData(branchid):
     # TODO: resolve date, currently days_ago=7,
 
-    # https://datazilla.mozilla.org/refdata/pushlog/list/?days_ago=7&branches=Mozilla-Inbound
+    # https://datazilla.mozilla.org/refdata/pushlog/list
+    # /?days_ago=7&branches=Mozilla-Inbound
     conn = httplib.HTTPSConnection('datazilla.mozilla.org')
     cset = "/refdata/pushlog/list/?days_ago=14&branches=%s" % branchid
     conn.request("GET", cset)
@@ -255,8 +330,10 @@ def getDatazillaData(branchid):
     alldata = {}
 
     for item in jdata:
-        alldata[jdata[item]['revisions'][0]] = getDatazillaCSET(jdata[item]['revisions'][0], branchid)
+        alldata[jdata[item]['revisions'][0]] = \
+            getDatazillaCSET(jdata[item]['revisions'][0], branchid)
     return alldata
+
 
 def parseGraphResultsByDate(data, start, end):
     low = sys.maxint
@@ -278,7 +355,9 @@ def parseGraphResultsByDate(data, start, end):
     if count > 0:
         average = filter.mean(vals)
         geomean = filter.geometric_mean(vals)
-    return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
+    return {'low': low, 'high': high, 'avg': average, 'geomean': geomean,
+            'count': count, 'data': vals}
+
 
 def parseGraphResultsByChangeset(data, changeset):
     low = sys.maxint
@@ -302,14 +381,26 @@ def parseGraphResultsByChangeset(data, changeset):
     if count > 0:
         average = filter.mean(vals)
         geomean = filter.geometric_mean(vals)
-    return {'low': low, 'high': high, 'avg': average, 'geomean': geomean, 'count': count, 'data': vals}
+    return {'low': low, 'high': high, 'avg': average, 'geomean': geomean,
+            'count': count, 'data': vals}
 
-def compareResults(revision, branch, masterbranch, skipdays, history, platforms, tests, pgo=False, printurl=False, compare_e10s=False, dzdata=None, pgodzdata=None, verbose=False, masterrevision=None, doPrint=False):
-    startdate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=(skipdays+history))).timetuple()))
-    enddate = int(time.mktime((datetime.datetime.now() - datetime.timedelta(days=skipdays)).timetuple()))
+
+def compareResults(revision, branch, masterbranch, skipdays, history,
+                   platforms, tests, pgo=False, printurl=False,
+                   compare_e10s=False, dzdata=None, pgodzdata=None,
+                   verbose=False, masterrevision=None, doPrint=False):
+    startdate = int(
+        time.mktime((datetime.datetime.now() -
+                     datetime.timedelta(days=(skipdays+history))).timetuple())
+    )
+    enddate = int(
+        time.mktime((datetime.datetime.now() -
+                     datetime.timedelta(days=skipdays)).timetuple())
+    )
 
     if doPrint:
-        print "   test      Master     gmean  stddev points  change      gmean  stddev points  graph-url"
+        print ("   test      Master     gmean  stddev points  change     "
+               " gmean  stddev points  graph-url")
 
     for p in platforms:
         output = ["\n%s:" % p]
@@ -350,12 +441,15 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
 
             data = getGraphData(test_map[t]['id'], bid, platform_map[p])
             if compare_e10s:
-                testdata = getGraphData(test_map[t]['id'], test_bid, platform_map[p + " (e10s)"])
+                testdata = getGraphData(test_map[t]['id'],
+                                        test_bid, platform_map[p + " (e10s)"])
             else:
-                testdata = getGraphData(test_map[t]['id'], test_bid, platform_map[p])
+                testdata = getGraphData(test_map[t]['id'],
+                                        test_bid, platform_map[p])
             if data and testdata:
                 if masterrevision:
-                    results = parseGraphResultsByChangeset(data, masterrevision)
+                    results = \
+                        parseGraphResultsByChangeset(data, masterrevision)
                 else:
                     results = parseGraphResultsByDate(data, startdate, enddate)
                 test = parseGraphResultsByChangeset(testdata, revision)
@@ -369,17 +463,23 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
                     if t in reverse_tests:
                         status = ':)'
 
-                if test['low'] == sys.maxint or results['low'] == sys.maxint or \
-                   test['high'] == 0  or results['high'] == 0:
+                if test['low'] == sys.maxint or \
+                        results['low'] == sys.maxint or \
+                        test['high'] == 0 or \
+                        results['high'] == 0:
                     output.append("   %-18s    No results found" % t)
                 else:
-                    numresults = len(results['data'])
-                    stddev_results = 0
                     string = "%2s %-18s" % (status, t)
                     for d in [results, test]:
-                        string += (" %7.1f +/- %2.0f%% (%s#)" % (d['geomean'], (100 * filter.stddev(d['data']) / d['geomean']), (len(d['data']))))
+                        string += (" %7.1f +/- %2.0f%% (%s#)"
+                                   % (d['geomean'],
+                                      (100 * filter.stddev(d['data']) /
+                                       d['geomean']), (len(d['data']))))
                         if d == results:
-                            string += "  [%+6.1f%%]  " % (((test['geomean'] / results['geomean']) - 1) * 100)
+                            string += "  [%+6.1f%%]  " % (
+                                ((test['geomean'] / results['geomean']) - 1) *
+                                100
+                            )
 
                     if dzval and pgodzval:
                         string = "    [%s] [PGO: %s]" % (dzval, pgodzval)
@@ -387,11 +487,21 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
                         urlbase = 'http://graphs.mozilla.org/graph.html#tests='
                         points = []
                         if compare_e10s:
-                            points.append("[%s,%s,%s]" % (test_map[t]['id'], bid, platform_map[p + " (e10s)"]))
-                        points.append("[%s,%s,%s]" % (test_map[t]['id'], bid, platform_map[p]))
-                        string += "    %s" % shorten("%s[%s]" % (urlbase, ','.join(points)))
+                            points.append("[%s,%s,%s]" % (
+                                test_map[t]['id'],
+                                bid,
+                                platform_map[p + " (e10s)"]
+                            ))
+                        points.append("[%s,%s,%s]" % (test_map[t]['id'],
+                                                      bid,
+                                                      platform_map[p]))
+                        string += "    %s" % shorten("%s[%s]" % (
+                            urlbase,
+                            ','.join(points)
+                        ))
                     # Output data for all tests in case of --verbose.
-                    # If not --verbose, then output in case of improvements or regression.
+                    # If not --verbose, then output in case of improvements
+                    # or regression.
                     if verbose or status != '':
                         output.append(string)
             else:
@@ -400,75 +510,98 @@ def compareResults(revision, branch, masterbranch, skipdays, history, platforms,
         if doPrint:
             print '\n'.join(output)
 
+
 class CompareOptions(ArgumentParser):
 
     def __init__(self):
         ArgumentParser.__init__(self)
 
         self.add_argument("--revision",
-                        action = "store", type = str, dest = "revision",
-                        default = None,
-                        help = "revision of the source you are testing")
+                          action="store", type=str, dest="revision",
+                          default=None,
+                          help="revision of the source you are testing")
 
         self.add_argument("--master-revision",
-                        action = "store", type = str, dest = "masterrevision",
-                        default = None,
-                        help = "revision of the masterbranch if you want to compare to a single push")
+                          action="store", type=str, dest="masterrevision",
+                          default=None,
+                          help="revision of the masterbranch if you want to"
+                               " compare to a single push")
 
         self.add_argument("--branch",
-                        action = "store", type = str, dest = "branch",
-                        default = "Try",
-                        help = "branch that your revision landed on which you are testing, default 'Try'.  Options are: %s" % (branches))
+                          action="store", type=str, dest="branch",
+                          default="Try",
+                          help="branch that your revision landed on which you"
+                               " are testing, default 'Try'."
+                               " Options are: %s" % (branches))
 
         self.add_argument("--masterbranch",
-                        action = "store", type = str, dest = "masterbranch",
-                        default = "Firefox",
-                        help = "master branch that you will be comparing against, default 'Firefox'.  Options are: %s" % (branches))
+                          action="store", type=str, dest="masterbranch",
+                          default="Firefox",
+                          help="master branch that you will be comparing"
+                               " against, default 'Firefox'."
+                               " Options are: %s" % (branches))
 
         self.add_argument("--skipdays",
-                        action = "store", type = int, dest = "skipdays",
-                        default = 0,
-                        help = "Specify the number of days to ignore results, default '0'.  Note: If a regression landed 4 days ago, use --skipdays=5")
+                          action="store", type=int, dest="skipdays",
+                          default=0,
+                          help="Specify the number of days to ignore results,"
+                               " default '0'.  Note: If a regression landed 4"
+                               " days ago, use --skipdays=5")
 
         self.add_argument("--history",
-                        action = "store", type = int, dest = "history",
-                        default = 14,
-                        help = "Specify the number of days in history to go back and get results.  If specified in conjunction with --skipdays, we will collect <history> days starting an extra <skipdays> in the past.  For example, if you have skipdays as 7 and history as 14, then we will collect data from 7-21 days in the past.  Default is 14 days")
+                          action="store", type=int, dest="history",
+                          default=14,
+                          help="Specify the number of days in history to go"
+                               " back and get results.  If specified in"
+                               " conjunction with --skipdays, we will collect"
+                               " <history> days starting an extra <skipdays>"
+                               " in the past.  For example, if you have"
+                               " skipdays as 7 and history as 14, then we will"
+                               " collect data from 7-21 days in the past."
+                               " Default is 14 days")
 
         self.add_argument("--platform",
-                        action = "append", type = str, dest = "platforms", metavar = "PLATFORMS",
-                        default = None, choices = platforms,
-                        help = "Specify a single platform to compare. This option can be specified multiple times and defaults to 'All' if not specified.  Options are: %s" % (platforms))
+                          action="append", type=str, dest="platforms",
+                          metavar="PLATFORMS", default=None, choices=platforms,
+                          help="Specify a single platform to compare. This"
+                               " option can be specified multiple times and"
+                               " defaults to 'All' if not specified."
+                               " Options are: %s" % (platforms))
 
         self.add_argument("--testname",
-                        action = "append", type = str, dest = "testnames", metavar = "TESTS",
-                        default = None, choices = tests,
-                        help = "Specify a single test to compare. This option can be specified multiple times and defaults to 'All' if not specified. Options are: %s" % (tests))
+                          action="append", type=str, dest="testnames",
+                          metavar="TESTS", default=None, choices=tests,
+                          help="Specify a single test to compare. This option"
+                               " can be specified multiple times and defaults"
+                               " to 'All' if not specified. Options are: %s"
+                               % (tests))
 
         self.add_argument("--print-graph-url",
-                        action = "store_true", dest = "printurl",
-                        default = False,
-                        help = "Print a url that can link to the data in graph server")
+                          action="store_true", dest="printurl",
+                          default=False,
+                          help="Print a url that can link to the data in graph"
+                               " server")
 
         self.add_argument("--pgo",
-                        action = "store_true", dest = "pgo",
-                        default = False,
-                        help = "Use PGO Branch if available")
+                          action="store_true", dest="pgo",
+                          default=False,
+                          help="Use PGO Branch if available")
 
         self.add_argument("--compare-e10s",
-                        action = "store_true", dest = "compare_e10s",
-                        default = False,
-                        help = "Compare e10s vs non-e10s")
+                          action="store_true", dest="compare_e10s",
+                          default=False,
+                          help="Compare e10s vs non-e10s")
 
         self.add_argument("--xperf",
-                        action = "store_true", dest = "xperf",
-                        default = False,
-                        help = "Print xperf information")
+                          action="store_true", dest="xperf",
+                          default=False,
+                          help="Print xperf information")
 
         self.add_argument("--verbose",
-                        action = "store_true", dest = "verbose",
-                        default = False,
-                        help = "Output information for all tests")
+                          action="store_true", dest="verbose",
+                          default=False,
+                          help="Output information for all tests")
+
 
 def main():
     global platforms, tests
@@ -481,11 +614,16 @@ def main():
     if args.testnames:
         tests = args.testnames
 
-    if args.masterbranch and not args.masterbranch in branches:
-        parser.error("ERROR: the masterbranch '%s' you specified does not exist in '%s'" % (args.masterbranch, branches))
+    if args.masterbranch and args.masterbranch not in branches:
+        parser.error(
+            "ERROR: the masterbranch '%s' you specified does not exist in '%s'"
+            % (args.masterbranch, branches)
+        )
 
-    if any(branch in args.branch or branch in args.masterbranch for branch in ['Aurora', 'Beta']) and not args.pgo:
-        parser.error("Error: please specify --pgo flag in case of Aurora/Beta branch")
+    if any(branch in args.branch or branch in args.masterbranch
+           for branch in ['Aurora', 'Beta']) and not args.pgo:
+        parser.error("Error: please specify --pgo flag in case of"
+                     " Aurora/Beta branch")
 
     branch = None
     if args.branch in branches:
@@ -494,7 +632,10 @@ def main():
         else:
             branch = branch_map[args.branch]['nonpgo']['name']
     else:
-        parser.error("ERROR: the branch '%s' you specified does not exist in '%s'" % (args.branch, branches))
+        parser.error(
+            "ERROR: the branch '%s' you specified does not exist in '%s'"
+            % (args.branch, branches)
+        )
 
     if args.skipdays:
         if args.skipdays > 30:
@@ -503,17 +644,23 @@ def main():
     if not args.revision:
         parser.error("ERROR: --revision is required")
 
-    #TODO: We need to ensure we have full coverage of the pushlog before we can do this.
+    # TODO: We need to ensure we have full coverage of the pushlog before we
+    # can do this.
 #    alldata = getDatazillaData(args.branch)
 #    datazilla, pgodatazilla, xperfdata = alldata[args.revision]
-    datazilla, pgodatazilla, xperfdata = getDatazillaCSET(args.revision, branch)
+    datazilla, pgodatazilla, xperfdata = \
+        getDatazillaCSET(args.revision, branch)
     if args.xperf:
         print xperfdata
     else:
-        compareResults(args.revision, args.branch, args.masterbranch, args.skipdays, args.history, platforms, tests, args.pgo, args.printurl, args.compare_e10s, datazilla, pgodatazilla, args.verbose, args.masterrevision, True)
+        compareResults(args.revision, args.branch, args.masterbranch,
+                       args.skipdays, args.history, platforms, tests,
+                       args.pgo, args.printurl, args.compare_e10s, datazilla,
+                       pgodatazilla, args.verbose, args.masterrevision, True)
+
 
 def shorten(url):
-    headers = {'content-type':'application/json'}
+    headers = {'content-type': 'application/json'}
     base_url = "www.googleapis.com"
 
     conn = httplib.HTTPSConnection(base_url)

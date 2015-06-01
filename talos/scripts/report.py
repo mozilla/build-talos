@@ -1,13 +1,15 @@
 from datetime import datetime
-import sys, os
+import sys
+import os
 import csv
 import numpy
 import collections
 import argparse
+import compare
 from calendar import day_name
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-import compare
+
 
 def get_branch(platform):
     if platform == 'Android' or platform.startswith('OSX'):
@@ -24,7 +26,10 @@ def get_all_test_tuples():
 
 
 def get_tuple(test, platform):
-    return [(compare.test_map[test]['id'], get_branch(platform), compare.platform_map[platform], test, platform)]
+    return [(compare.test_map[test]['id'],
+             get_branch(platform),
+             compare.platform_map[platform],
+             test, platform)]
 
 
 def generate_report(tuple_list, filepath, mode='variance'):
@@ -60,7 +65,9 @@ def generate_report(tuple_list, filepath, mode='variance'):
                 if mode == 'variance':
                     # removing top and bottom 10% to reduce outlier influence
                     tenth = len(days[day])/10
-                    average = numpy.average(sorted(days[day])[tenth:tenth*9 + 1])
+                    average = numpy.average(
+                        sorted(days[day])[tenth:tenth*9 + 1]
+                    )
                 elif mode == 'count':
                     average = numpy.average(days[day])
                 line.append("%.3f" % average)
@@ -79,6 +86,7 @@ def generate_report(tuple_list, filepath, mode='variance'):
         for line in avg:
             out = csv.writer(report, quoting=csv.QUOTE_ALL)
             out.writerow(line)
+
 
 def is_normal(y):
     # This is a crude initial attempt at detecting normal distributions
@@ -104,10 +112,12 @@ def is_normal(y):
             outliers.append(i)
     return outliers
 
+
 def main():
     parser = argparse.ArgumentParser(description="Generate weekdays reports")
     parser.add_argument("--test", help="show only the test named TEST")
-    parser.add_argument("--platform", help="show only the platform named PLATFORM")
+    parser.add_argument("--platform",
+                        help="show only the platform named PLATFORM")
     parser.add_argument("--mode", help="select mode", default='variance')
     args = parser.parse_args()
     tuple_list = get_all_test_tuples()
@@ -121,7 +131,7 @@ def main():
         f += '-%s' % args.test
 
     f += '-%s' % args.mode
-    generate_report(tuple_list, filepath=f + '.csv', mode = args.mode)
+    generate_report(tuple_list, filepath=f + '.csv', mode=args.mode)
 
 if __name__ == "__main__":
     main()

@@ -17,7 +17,9 @@ import re
 import utils
 import csv
 
-__all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults', 'BrowserLogResults']
+__all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults',
+           'BrowserLogResults']
+
 
 class TalosResults(object):
     """Container class for Talos results"""
@@ -42,7 +44,8 @@ class TalosResults(object):
         formats = output_formats.keys()
         missing = self.check_formats_exist(formats)
         if missing:
-            raise utils.TalosError("Output format(s) unknown: %s" % ','.join(missing))
+            raise utils.TalosError("Output format(s) unknown: %s"
+                                   % ','.join(missing))
 
         # perform per-format check
         for format, urls in output_formats.items():
@@ -80,7 +83,10 @@ class TalosResults(object):
             try:
                 _output = output.GraphserverOutput(self)
                 results = _output()
-                _output.output('file://%s' % os.path.join(os.getcwd(), 'results.out'), results)
+                _output.output(
+                    'file://%s' % os.path.join(os.getcwd(), 'results.out'),
+                    results
+                )
             except:
                 pass
             print '\nFAIL: %s' % str(e).replace('\n', '\nRETURN:')
@@ -123,7 +129,11 @@ class TestResults(object):
                 raise utils.TalosError("no output from browser [%s]" % results)
 
             # convert to a results class via parsing the browser log
-            browserLog = BrowserLogResults(filename=results, counter_results=counter_results, global_counters=self.global_counters)
+            browserLog = BrowserLogResults(
+                filename=results,
+                counter_results=counter_results,
+                global_counters=self.global_counters
+            )
             results = browserLog.results()
 
         self.using_xperf = browserLog.using_xperf
@@ -138,6 +148,7 @@ class TestResults(object):
 
         if counter_results:
             self.all_counter_results.append(counter_results)
+
 
 class Results(object):
     def filter(self, *filters):
@@ -182,7 +193,8 @@ class TsResults(Results):
         self.results = []
         index = 0
 
-        # Handle the case where we support a pagename in the results (new format)
+        # Handle the case where we support a pagename in the results
+        # (new format)
         for line in lines:
             result = {}
             r = line.strip().split(',')
@@ -191,7 +203,7 @@ class TsResults(Results):
                 continue
             result['index'] = index
             result['page'] = r[0]
-            #note: if we have len(r) >1, then we have pagename,raw_results
+            # note: if we have len(r) >1, then we have pagename,raw_results
             result['runs'] = [float(i) for i in r[1:]]
             self.results.append(result)
             index += 1
@@ -261,33 +273,44 @@ class BrowserLogResults(object):
     """parse the results from the browser log output"""
 
     # tokens for the report types
-    report_tokens = [('tsformat', ('__start_report', '__end_report')),
-                     ('tpformat', ('__start_tp_report', '__end_tp_report'))
-                     ]
+    report_tokens = [
+        ('tsformat', ('__start_report', '__end_report')),
+        ('tpformat', ('__start_tp_report', '__end_tp_report'))
+    ]
 
-    # tokens for timestamps, in order (attribute, (start_delimeter, end_delimter))
-    time_tokens = [('startTime', ('__startTimestamp', '__endTimestamp')),
-                   ('beforeLaunchTime', ('__startBeforeLaunchTimestamp', '__endBeforeLaunchTimestamp')),
-                   ('endTime', ('__startAfterTerminationTimestamp', '__endAfterTerminationTimestamp'))
-                   ]
+    # tokens for timestamps, in order (attribute, (start_delimeter,
+    # end_delimter))
+    time_tokens = [
+        ('startTime', ('__startTimestamp', '__endTimestamp')),
+        ('beforeLaunchTime', ('__startBeforeLaunchTimestamp',
+                              '__endBeforeLaunchTimestamp')),
+        ('endTime', ('__startAfterTerminationTimestamp',
+                     '__endAfterTerminationTimestamp'))
+    ]
 
     # regular expression for failure case if we can't parse the tokens
-    RESULTS_REGEX_FAIL = re.compile('__FAIL(.*?)__FAIL', re.DOTALL|re.MULTILINE)
+    RESULTS_REGEX_FAIL = re.compile('__FAIL(.*?)__FAIL',
+                                    re.DOTALL | re.MULTILINE)
 
     # regular expression for RSS results
     RSS_REGEX = re.compile('RSS:\s+([a-zA-Z0-9]+):\s+([0-9]+)$')
 
     # regular expression for responsiveness results
-    RESULTS_RESPONSIVENESS_REGEX = re.compile('MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*\.?\d*)$', re.DOTALL|re.MULTILINE)
+    RESULTS_RESPONSIVENESS_REGEX = re.compile(
+        'MOZ_EVENT_TRACE\ssample\s\d*?\s(\d*\.?\d*)$',
+        re.DOTALL | re.MULTILINE
+    )
 
     # classes for results types
     classes = {'tsformat': TsResults,
                'tpformat': PageloaderResults}
 
-    # If we are using xperf, we do not upload the regular results, only xperf counters
+    # If we are using xperf, we do not upload the regular results, only
+    # xperf counters
     using_xperf = False
 
-    def __init__(self, filename=None, results_raw=None, counter_results=None, global_counters=None):
+    def __init__(self, filename=None, results_raw=None, counter_results=None,
+                 global_counters=None):
         """
         - shutdown : whether to record shutdown results or not
         """
@@ -319,8 +342,9 @@ class BrowserLogResults(object):
 
             self.parse()
         except utils.TalosError:
-            # TODO: consider investigating this further or adding additional information
-            raise # reraise failing exception
+            # TODO: consider investigating this further or adding additional
+            # information
+            raise  # reraise failing exception
 
         # accumulate counter results
         self.counters(self.counter_results, self.global_counters)
@@ -344,7 +368,8 @@ class BrowserLogResults(object):
             previous_tokens = tokens
             break
         else:
-            self.error("Could not find report in browser output: %s" % self.report_tokens)
+            self.error("Could not find report in browser output: %s"
+                       % self.report_tokens)
 
         # parse the timestamps
         for attr, tokens in self.time_tokens:
@@ -354,13 +379,17 @@ class BrowserLogResults(object):
 
             # check for errors
             if not value:
-                self.error("Could not find %s in browser output: (tokens: %s)" % (attr, tokens))
+                self.error("Could not find %s in browser output: (tokens: %s)"
+                           % (attr, tokens))
             try:
                 value = int(value)
             except ValueError:
-                self.error("Could not cast %s to an integer: %s" % (attr, value))
+                self.error("Could not cast %s to an integer: %s"
+                           % (attr, value))
             if _last_token < position:
-                self.error("%s [character position: %s] found before %s [character position: %s]" % (tokens, _last_token, previous_tokens, position))
+                self.error("%s [character position: %s] found before %s"
+                           " [character position: %s]"
+                           % (tokens, _last_token, previous_tokens, position))
 
             # process
             setattr(self, attr, value)
@@ -370,11 +399,12 @@ class BrowserLogResults(object):
     def get_single_token(self, start_token, end_token):
         """browser logs should only have a single instance of token pairs"""
         try:
-            parts, last_token = utils.tokenize(self.results_raw, start_token, end_token)
+            parts, last_token = utils.tokenize(self.results_raw,
+                                               start_token, end_token)
         except AssertionError, e:
             self.error(str(e))
         if not parts:
-            return None, -1 # no match
+            return None, -1  # no match
         if len(parts) != 1:
             self.error("Multiple matches for %s,%s" % (start_token, end_token))
         return parts[0], last_token
@@ -383,11 +413,14 @@ class BrowserLogResults(object):
         """return results instance appropriate to the format detected"""
 
         if self.format not in self.classes:
-            raise utils.TalosError("Unable to find a results class for format: %s" % repr(self.format))
+            raise utils.TalosError(
+                "Unable to find a results class for format: %s"
+                % repr(self.format)
+            )
 
         return self.classes[self.format](self.browser_results)
 
-    ### methods for counters
+    # methods for counters
 
     def counters(self, counter_results=None, global_counters=None):
         """accumulate all counters"""
@@ -420,13 +453,15 @@ class BrowserLogResults(object):
 
         self.mainthread_io(counter_results)
 
-        if not set(counters).union(set(mainthread_counters)).intersection(counter_results.keys()):
+        if not set(counters).union(set(mainthread_counters))\
+                .intersection(counter_results.keys()):
             # no xperf counters to accumulate
             return
 
         filename = 'etl_output_thread_stats.csv'
         if not os.path.exists(filename):
-            print "Warning: we are looking for xperf results file %s, and didn't find it" % filename
+            print ("Warning: we are looking for xperf results file %s, and"
+                   " didn't find it" % filename)
             return
 
         contents = file(filename).read()
@@ -437,7 +472,8 @@ class BrowserLogResults(object):
             # Read CSV
             row = [i.strip() for i in row]
             if not header:
-                # We are assuming the first row is the header and all other data is counters
+                # We are assuming the first row is the header and all other
+                # data is counters
                 header = row
                 continue
             values = dict(zip(header, row))
@@ -456,7 +492,8 @@ class BrowserLogResults(object):
         if (set(mainthread_counters).intersection(counter_results.keys())):
             filename = 'etl_output.csv'
             if not os.path.exists(filename):
-                print "Warning: we are looking for xperf results file %s, and didn't find it" % filename
+                print ("Warning: we are looking for xperf results file"
+                       " %s, and didn't find it" % filename)
                 return
 
             contents = file(filename).read()
@@ -466,21 +503,23 @@ class BrowserLogResults(object):
             for row in reader:
                 row = [i.strip() for i in row]
                 if not header:
-                    # We are assuming the first row is the header and all other data is counters
+                    # We are assuming the first row is the header and all
+                    # other data is counters
                     header = row
                     continue
                 values = dict(zip(header, row))
                 for i, mainthread_counter in enumerate(mainthread_counters):
                     if int(values[mainthread_counter_keys[i]]) > 0:
-                        counter_results.setdefault(mainthread_counter, []).append(
-                            [int(values[mainthread_counter_keys[i]]),
-                            values['filename']])
+                        counter_results.setdefault(mainthread_counter, [])\
+                            .append([int(values[mainthread_counter_keys[i]]),
+                                     values['filename']])
 
     def rss(self, counter_results):
         """record rss counters in counter_results dictionary"""
 
         counters = ['Main', 'Content']
-        if not set(['%s_RSS' % i for i in counters]).intersection(counter_results.keys()):
+        if not set(['%s_RSS' % i for i in counters])\
+                .intersection(counter_results.keys()):
             # no RSS counters to accumulate
             return
         for line in self.results_raw.split('\n'):
@@ -497,7 +536,8 @@ class BrowserLogResults(object):
 
         # we want to measure mtio on xperf runs.
         # this will be shoved into the xperf results as we ignore those
-        SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
+        SCRIPT_DIR = \
+            os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
         filename = os.path.join(SCRIPT_DIR, 'mainthread_io.json')
         try:
             contents = file(filename).read()
@@ -509,7 +549,8 @@ class BrowserLogResults(object):
 
     def shutdown(self, counter_results):
         """record shutdown time in counter_results dictionary"""
-        counter_results.setdefault('shutdown', []).append(int(self.endTime - self.startTime))
+        counter_results.setdefault('shutdown', [])\
+            .append(int(self.endTime - self.startTime))
 
     def responsiveness(self):
         return self.RESULTS_RESPONSIVENESS_REGEX.findall(self.results_raw)

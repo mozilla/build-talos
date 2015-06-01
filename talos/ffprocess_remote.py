@@ -15,6 +15,7 @@ except:
 
 DEFAULT_PORT = 20701
 
+
 class RemoteProcess(FFProcess):
     testAgent = None
     rootdir = ''
@@ -43,17 +44,20 @@ class RemoteProcess(FFProcess):
         try:
             return self.testAgent.getProcessList()
         except mozdevice.DMError:
-            print "Remote Device Error: Error getting list of processes on remote device"
+            print ("Remote Device Error: Error getting list of processes"
+                   " on remote device")
             raise
 
     def ProcessesWithNames(self, *process_names):
         """Returns a list of processes running with the given name(s).
-           For the remote case (this file), we will look for activities intead of raw processname.
+           For the remote case (this file), we will look for activities
+           intead of raw processname.
 
         Useful to check whether a Browser process is still running
 
         Args:
-            process_names: String or strings containing process names, i.e. "firefox"
+            process_names: String or strings containing process names, i.e.
+                           "firefox"
 
         Returns:
             An array with a list of processes in the list which are running
@@ -67,10 +71,12 @@ class RemoteProcess(FFProcess):
         return processes_with_names
 
     def TerminateAllProcesses(self, timeout, *process_names):
-        """Helper function to terminate all processes with the given process name
+        """Helper function to terminate all processes with the given
+        process name
 
         Args:
-          process_name: String or strings containing the process name, i.e. "firefox"
+          process_name: String or strings containing the process name,
+                        i.e. "firefox"
         """
         result = ''
         for process_name in process_names:
@@ -78,14 +84,15 @@ class RemoteProcess(FFProcess):
                 self.testAgent.killProcess(process_name)
                 if result:
                     result = result + ', '
-                result += process_name + ': terminated by testAgent.killProcess'
+                result += \
+                    process_name + ': terminated by testAgent.killProcess'
             except mozdevice.DMError:
-                print "Remote Device Error: Error while killing process '%s'" % process_name
+                print ("Remote Device Error: Error while killing process '%s'"
+                       % process_name)
                 raise
         return result
 
-
-    def getFile(self, remote_filename, local_filename = None):
+    def getFile(self, remote_filename, local_filename=None):
         data = ''
         try:
             if self.testAgent.fileExists(remote_filename):
@@ -110,7 +117,8 @@ class RemoteProcess(FFProcess):
     def getLogcat(self):
         return self.testAgent.getLogcat()
 
-    def launchProcess(self, cmd, processname, outputFile = "process.txt", timeout = -1):
+    def launchProcess(self, cmd, processname, outputFile="process.txt",
+                      timeout=-1):
         try:
             cmds = cmd.split()
             waitTime = 30
@@ -130,7 +138,7 @@ class RemoteProcess(FFProcess):
                         break
                     total_time += 1
 
-                if (timed_out == True):
+                if timed_out is True:
                     return None
 
                 return handle
@@ -138,7 +146,7 @@ class RemoteProcess(FFProcess):
             print "Remote Device Error: Error launching process '%s'" % cmd
             raise
 
-    #currently this is only used during setup of newprofile from ffsetup.py
+    # currently this is only used during setup of newprofile from ffsetup.py
     def copyDirToDevice(self, localDir):
         head, tail = os.path.split(localDir)
 
@@ -156,7 +164,8 @@ class RemoteProcess(FFProcess):
         try:
             self.testAgent.removeDir(dir)
         except mozdevice.DMError:
-            print "Remote Device Error: Unable to remove directory on remote device"
+            print ("Remote Device Error: Unable to remove directory on"
+                   " remote device")
             raise
 
     def MakeDirectoryContentsWritable(self, dir):
@@ -176,25 +185,29 @@ class RemoteProcess(FFProcess):
         try:
             self.testAgent.pushFile(fromfile, toFile)
         except mozdevice.DMError:
-            print "Remote Device Error: Unable to copy file '%s' to directory '%s' on the remote device" % (fromfile, toDir)
+            print ("Remote Device Error: Unable to copy file '%s' to directory"
+                   " '%s' on the remote device" % (fromfile, toDir))
             raise
 
     def getCurrentTime(self):
-        #we will not raise an error here because the functions that depend on this do their own error handling
+        # we will not raise an error here because the functions that depend
+        # on this do their own error handling
         data = self.testAgent.getCurrentTime()
         return data
 
     def getDeviceRoot(self):
-        #we will not raise an error here because the functions that depend on this do their own error handling
+        # we will not raise an error here because the functions that depend
+        # on this do their own error handling
         data = self.testAgent.getDeviceRoot()
         return data
 
-
     def runProgram(self, browser_config, command_args, timeout=1200):
-        remoteLog = os.path.join(self.getDeviceRoot() + '/' + browser_config['browser_log'])
+        remoteLog = os.path.join(
+            self.getDeviceRoot() + '/' + browser_config['browser_log'])
         self.removeFile(remoteLog)
         # bug 816719, remove sessionstore.js so we don't interfere with talos
-        self.removeFile(os.path.join(self.getDeviceRoot(), "profile/sessionstore.js"))
+        self.removeFile(os.path.join(self.getDeviceRoot(),
+                                     "profile/sessionstore.js"))
 
         env = ""
         for key, value in browser_config['env'].items():
@@ -202,7 +215,10 @@ class RemoteProcess(FFProcess):
 
         self.recordLogcat()
         firstTime = time.time()
-        retVal = self.launchProcess(' '.join(command_args), browser_config['browser_path'], outputFile=remoteLog, timeout=timeout)
+        retVal = self.launchProcess(' '.join(command_args),
+                                    browser_config['browser_path'],
+                                    outputFile=remoteLog,
+                                    timeout=timeout)
         logcat = self.getLogcat()
         if logcat:
             with open('logcat.log', 'w') as f:
@@ -210,8 +226,16 @@ class RemoteProcess(FFProcess):
 
         data = self.getFile(remoteLog, browser_config['browser_log'])
         with open(browser_config['browser_log'], 'a') as logfile:
-            logfile.write("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % (firstTime * 1000))
-            logfile.write("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % int(time.time() * 1000))
+            logfile.write(
+                "__startBeforeLaunchTimestamp%d"
+                "__endBeforeLaunchTimestamp\n"
+                % (firstTime * 1000)
+            )
+            logfile.write(
+                "__startAfterTerminationTimestamp%d"
+                "__endAfterTerminationTimestamp\n"
+                % int(time.time() * 1000)
+            )
         if not retVal and data == '':
             raise TalosError("missing data from remote log file")
 

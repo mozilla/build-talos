@@ -17,40 +17,41 @@ import subprocess
 import threading
 
 here = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.abspath(os.path.join(here,os.pardir))
+parent = os.path.abspath(os.path.join(here, os.pardir))
 
 """
 Constants for audio tools, input and processed audio files
 For Linux platform, PulseAudio and LibSox are assumed to be
 installed.
 """
-_TOOLS_PATH_             = os.path.join(here,'tools')
-_TEST_PATH_              = os.path.join(here,'html')
-_PESQ_                   = os.path.join(_TOOLS_PATH_, 'PESQ')
-_MEDIA_TOOLS_            = os.path.join(_TOOLS_PATH_, 'MediaUtils')
-_INPUT_FILE_             = os.path.join(_TEST_PATH_, 'input16.wav')
+_TOOLS_PATH_ = os.path.join(here, 'tools')
+_TEST_PATH_ = os.path.join(here, 'html')
+_PESQ_ = os.path.join(_TOOLS_PATH_, 'PESQ')
+_MEDIA_TOOLS_ = os.path.join(_TOOLS_PATH_, 'MediaUtils')
+_INPUT_FILE_ = os.path.join(_TEST_PATH_, 'input16.wav')
 # These files are created and removed as part of test run
-_RECORDED_FILE_          = os.path.join(_TEST_PATH_, 'record.wav')
-_RECORDED_NO_SILENCE_    = os.path.join(_TEST_PATH_, 'record_no_silence.wav')
+_RECORDED_FILE_ = os.path.join(_TEST_PATH_, 'record.wav')
+_RECORDED_NO_SILENCE_ = os.path.join(_TEST_PATH_, 'record_no_silence.wav')
 
 # Constants used as parameters to Sox recorder and silence trimmer
-#TODO: Make these dynamically configurable
-_SAMPLE_RATE_             = '48000' # 48khz - seems to work with pacat better than 16khz
-_NUM_CHANNELS_            = '1'     # mono channel
-_SOX_ABOVE_PERIODS_       = '1'     # One period of silence in the beginning
-_SOX_ABOVE_DURATION_      = '2'     # Duration to trim till proper audio
-_SOX_ABOVE_THRESHOLD_     = '5%'    # Audio level to trim at the beginning
-_SOX_BELOW_PERIODS_       = '1'     # One period of silence in the beginning
-_SOX_BELOW_DURATION_      = '2'     # Duration to trim till proper audio
-_SOX_BELOW_THRESHOLD_     = '5%'    # Audio level to trim at the beginning
-_PESQ_SAMPLE_RATE_        ='+16000' # 16Khz
-_VOLUME_100_PERCENT_      = '65536' # Max volume
-_DEFAULT_REC_DURATION_    = 10      # Defaults to 10 seconds worth of recording
+# TODO: Make these dynamically configurable
+_SAMPLE_RATE_ = '48000'  # 48khz - seems to work with pacat better than 16khz
+_NUM_CHANNELS_ = '1'  # mono channel
+_SOX_ABOVE_PERIODS_ = '1'  # One period of silence in the beginning
+_SOX_ABOVE_DURATION_ = '2'  # Duration to trim till proper audio
+_SOX_ABOVE_THRESHOLD_ = '5%'  # Audio level to trim at the beginning
+_SOX_BELOW_PERIODS_ = '1'  # One period of silence in the beginning
+_SOX_BELOW_DURATION_ = '2'  # Duration to trim till proper audio
+_SOX_BELOW_THRESHOLD_ = '5%'  # Audio level to trim at the beginning
+_PESQ_SAMPLE_RATE_ = '+16000'  # 16Khz
+_VOLUME_100_PERCENT_ = '65536'  # Max volume
+_DEFAULT_REC_DURATION_ = 10  # Defaults to 10 seconds worth of recording
 
-"""
-  Thread to record audio
-"""
+
 class AudioRecorder(threading.Thread):
+    """
+    Thread to record audio
+    """
 
     def __init__(self, parent, output_file):
         self.output_file = output_file
@@ -67,10 +68,12 @@ class AudioRecorder(threading.Thread):
         self.rec_device = device
         # Adjust volume of the sink to 100%, since quality was
         # bit degraded when this was not done.
-        cmd = ['pacmd', 'set-source-volume', self.rec_device, _VOLUME_100_PERCENT_]
+        cmd = ['pacmd', 'set-source-volume', self.rec_device,
+               _VOLUME_100_PERCENT_]
         cmd = [str(s) for s in cmd]
         try:
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
             p.communicate()
         except:
             return False, "Audio Recorder : pacmd set-source-volume failed"
@@ -92,31 +95,34 @@ class AudioRecorder(threading.Thread):
         # audio from the sink self.rec_device
         pa_command = ['pacat', '-r', '-d', self.rec_device, '--format=s16le',
                       '--fix-rate', '--channels=1']
-        pa_command =  [str(s) for s in pa_command]
+        pa_command = [str(s) for s in pa_command]
 
         # Sox command to convert raw audio from PACAT output to .wav format"
-        sox_command = ['sox', '-t', 'raw', '-r',_SAMPLE_RATE_,'--encoding=signed-integer',
-                       '-Lb', 16,'-c', _NUM_CHANNELS_, '-', self.output_file, 'rate', '16000', 'trim', 0,
-                       self.rec_duration]
+        sox_command = ['sox', '-t', 'raw', '-r', _SAMPLE_RATE_,
+                       '--encoding=signed-integer', '-Lb', 16, '-c',
+                       _NUM_CHANNELS_, '-', self.output_file, 'rate',
+                       '16000', 'trim', 0, self.rec_duration]
 
-        sox_command =  [str(s) for s in sox_command]
+        sox_command = [str(s) for s in sox_command]
 
         # Run the commands the PIPE them together
         p1 = subprocess.Popen(pa_command, stdout=subprocess.PIPE)
-        p2 = subprocess.Popen(sox_command, stdin=p1.stdout, stdout=subprocess.PIPE)
+        p2 = subprocess.Popen(sox_command, stdin=p1.stdout,
+                              stdout=subprocess.PIPE)
         p2.communicate()[0]
         # No need to kill p2 since it is terminated as part of trim duration
         if p1:
             p1.kill()
 
-'''
-Utility class for managing pre and post recording operations
-It includes operations to
-  - start/stop audio recorder based on PusleAudio and SOX
-  - Trim the silence off the recorded audio based on SOX
-  - Compute PESQ scores
-'''
+
 class AudioUtils(object):
+    '''
+    Utility class for managing pre and post recording operations
+    It includes operations to
+      - start/stop audio recorder based on PusleAudio and SOX
+      - Trim the silence off the recorded audio based on SOX
+      - Compute PESQ scores
+    '''
 
     # Reference to the recorder thread.
     recorder = None
@@ -128,13 +134,12 @@ class AudioUtils(object):
         # This picks the first sink available
         cmd = ['pactl', 'list']
         output = subprocess.check_output(cmd)
-        result = re.search('\s*Name: (\S*\.monitor)',output)
+        result = re.search('\s*Name: (\S*\.monitor)', output)
         if result:
             self.recorder.setRecordingDevice(result.group(1))
             return True, "Recording Device: %s Set" % result.group(1)
         else:
             return False, "Unable to Set Recording Device"
-
 
     # Run PESQ on the audio reference file and recorded file
     def computePESQScore(self):
@@ -143,10 +148,12 @@ class AudioUtils(object):
         if not os.path.exists(_PESQ_):
             return False, "PESQ Tool not found"
 
-        cmd = [_PESQ_, _PESQ_SAMPLE_RATE_, _INPUT_FILE_, _RECORDED_NO_SILENCE_]
+        cmd = [_PESQ_, _PESQ_SAMPLE_RATE_, _INPUT_FILE_,
+               _RECORDED_NO_SILENCE_]
         output = subprocess.check_output(cmd)
-        #P.862 Prediction (Raw MOS, MOS-LQO):  = 2.392        2.009
-        result = re.search('Prediction.*= (\d{1}\.\d{3})\t(\d{1}\.\d{3})', output)
+        # P.862 Prediction (Raw MOS, MOS-LQO):  = 2.392        2.009
+        result = re.search('Prediction.*= (\d{1}\.\d{3})\t(\d{1}\.\d{3})',
+                           output)
         # delete the recorded file with no silence
         if os.path.exists(_RECORDED_NO_SILENCE_):
             os.remove(_RECORDED_NO_SILENCE_)
@@ -171,10 +178,10 @@ class AudioUtils(object):
 
         cmd = [_MEDIA_TOOLS_, '-c', 'snr', '-r', _INPUT_FILE_, '-t',
                _RECORDED_NO_SILENCE_]
-        cmd =  [str(s) for s in cmd]
+        cmd = [str(s) for s in cmd]
 
         output = subprocess.check_output(cmd)
-        #SNR_Delay=1.063,5
+        # SNR_Delay=1.063,5
         result = re.search('SNR_DELAY=(\d+\.\d+),(\d+)', output)
 
         # delete the recorded file with no silence
@@ -198,12 +205,12 @@ class AudioUtils(object):
         if self.recorder and self.recorder.is_alive():
             return False, "An Running Instance Of Recorder Found"
 
-        self.recorder = AudioRecorder(self,_RECORDED_FILE_)
+        self.recorder = AudioRecorder(self, _RECORDED_FILE_)
         if not self.recorder:
             return False, "Audio Recorder Setup Failed"
 
-        status,message = self.setupAudioDeviceForRecording()
-        if status == True:
+        status, message = self.setupAudioDeviceForRecording()
+        if status is True:
             self.recorder.setDuration(duration)
             self.recorder.start()
             # check if the thread did start
@@ -218,15 +225,17 @@ class AudioUtils(object):
     # beginning and towards the end of recorded audio.
     def stopRecording(self):
         self.recorder.join()
-        #clean up silence and delete the recorded file
+        # clean up silence and delete the recorded file
         """
         http://digitalcardboard.com/blog/2009/08/25/the-sox-of-silence/
-        ./sox record.wav out1.wav silence 1 2 5% 1 2 5% reverse silence 1 2 5%
+        ./sox record.wav out1.wav silence 1 2 5% 1 2 5% reverse silence
+        1 2 5%
         """
-        cmd = ['sox',_RECORDED_FILE_,_RECORDED_NO_SILENCE_,'silence',
-               _SOX_ABOVE_PERIODS_, _SOX_ABOVE_DURATION_, _SOX_ABOVE_THRESHOLD_,
-              'reverse', 'silence', _SOX_BELOW_PERIODS_, _SOX_BELOW_DURATION_,
-              _SOX_BELOW_THRESHOLD_, 'reverse']
+        cmd = ['sox', _RECORDED_FILE_, _RECORDED_NO_SILENCE_, 'silence',
+               _SOX_ABOVE_PERIODS_, _SOX_ABOVE_DURATION_,
+               _SOX_ABOVE_THRESHOLD_, 'reverse', 'silence',
+               _SOX_BELOW_PERIODS_, _SOX_BELOW_DURATION_,
+               _SOX_BELOW_THRESHOLD_, 'reverse']
         cmd = [str(s) for s in cmd]
         subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # Delete the recorded file

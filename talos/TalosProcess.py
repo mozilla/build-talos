@@ -10,6 +10,7 @@ import utils
 
 from utils import TalosError
 
+
 class TalosProcess(ProcessHandler):
     """
     Process handler for running peptests
@@ -17,14 +18,13 @@ class TalosProcess(ProcessHandler):
     After the browser prints __endTimestamp, we give it wait_for_quit_timeout
     seconds to quit and kill it if it's still alive at that point.
     """
-    def __init__(self, cmd,
-                       args=None, cwd=None,
-                       env=None,
-                       ignore_children=False,
-                       logfile=None,
-                       suppress_javascript_errors=False,
-                       wait_for_quit_timeout=5,
-                       **kwargs):
+    def __init__(self, cmd, args=None, cwd=None,
+                 env=None,
+                 ignore_children=False,
+                 logfile=None,
+                 suppress_javascript_errors=False,
+                 wait_for_quit_timeout=5,
+                 **kwargs):
 
         self.firstTime = int(time.time()) * 1000
         self.logfile = logfile
@@ -35,7 +35,9 @@ class TalosProcess(ProcessHandler):
             env = os.environ.copy()
 
         ProcessHandler.__init__(self, cmd, args=args, cwd=cwd, env=env,
-                                ignore_children=ignore_children, processOutputLine=self.processOutputLine, **kwargs)
+                                ignore_children=ignore_children,
+                                processOutputLine=self.processOutputLine,
+                                **kwargs)
 
     def logToFile(self, msg):
         if not self.logfile:
@@ -52,17 +54,35 @@ class TalosProcess(ProcessHandler):
 
     def waitForQuit(self):
         for i in range(1, self.wait_for_quit_timeout):
-            if self.proc.returncode != None:
-                self.logToFile("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % self.firstTime)
-                self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % (int(time.time()) * 1000))
+            if self.proc.returncode is not None:
+                self.logToFile(
+                    "__startBeforeLaunchTimestamp%d"
+                    "__endBeforeLaunchTimestamp\n"
+                    % self.firstTime
+                )
+                self.logToFile(
+                    "__startAfterTerminationTimestamp%d"
+                    "__endAfterTerminationTimestamp\n"
+                    % (int(time.time()) * 1000)
+                )
                 self.closeLogFile()
                 return
             time.sleep(1)
 
-        utils.info("Browser shutdown timed out after {0} seconds, terminating process.".format(self.wait_for_quit_timeout))
+        utils.info(
+            "Browser shutdown timed out after {0} seconds, terminating"
+            " process.".format(self.wait_for_quit_timeout)
+        )
         self.proc.kill()
-        self.logToFile("__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n" % self.firstTime)
-        self.logToFile("__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp\n" % (int(time.time()) * 1000))
+        self.logToFile(
+            "__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp\n"
+            % self.firstTime
+        )
+        self.logToFile(
+            "__startAfterTerminationTimestamp%d__endAfterTerminationTimestamp"
+            "\n"
+            % (int(time.time()) * 1000)
+        )
         self.closeLogFile()
 
     def onTimeout(self):
@@ -82,13 +102,13 @@ class TalosProcess(ProcessHandler):
         """
         if line.find('__endTimestamp') != -1:
             thread = Thread(target=self.waitForQuit)
-            thread.setDaemon(True) # don't hang on quit
+            thread.setDaemon(True)  # don't hang on quit
             thread.start()
 
-        if self.suppress_javascript_errors and (line.startswith('JavaScript error:') or
-                                               line.startswith('JavaScript warning:')):
+        if self.suppress_javascript_errors and \
+                (line.startswith('JavaScript error:') or
+                 line.startswith('JavaScript warning:')):
             return
 
         print line
         self.logToFile(line + "\n")
-

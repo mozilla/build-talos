@@ -36,22 +36,25 @@ usage of PESQ is replaced by the SNR computation.
 
 # This path is based on the ${talos}
 # This page gets loaded as default home page for running the media tests.
-__TEST_HTML_PAGE__ = "http://localhost:16932/startup_test/media/html/media_tests.html"
+__TEST_HTML_PAGE__ = \
+    "http://localhost:16932/startup_test/media/html/media_tests.html"
 
-"""
-ObjectDb serves as a global storage to hold object handles needed
-during manager's operation. It holds browser process handle, httpd
-server handle and reference to the Audio Utils object.
-"""
+
 class ObjectDb(object):
-    httpd_server = None
-    audio_utils  = None
+    """
+    ObjectDb serves as a global storage to hold object handles needed
+    during manager's operation. It holds browser process handle, httpd
+    server handle and reference to the Audio Utils object.
+    """
 
-"""
-URI Handlers and Parsers
-"""
+    httpd_server = None
+    audio_utils = None
+
+
+# URI Handlers and Parsers
 def errorMessage(message):
     return (500, {'ERROR': message})
+
 
 @mozhttpd.handlers.json_response
 def parseGETUrl(request):
@@ -64,6 +67,7 @@ def parseGETUrl(request):
     else:
         return errorMessage(request.path)
 
+
 # Handler for Server Configuration Commands
 def handleServerConfigRequest(request):
     # Stopping server is the only operation supported
@@ -72,6 +76,7 @@ def handleServerConfigRequest(request):
         return (200, {'ok': 'OK'})
     else:
         return errorMessage(request.path)
+
 
 # Handler Audio Resource Command
 def handleAudioRequest(request):
@@ -83,6 +88,7 @@ def handleAudioRequest(request):
     else:
         return errorMessage(request.path)
 
+
 # Handle all the audio recorder operations
 def parseAudioRecorderRequest(request):
     # check if there are params
@@ -90,24 +96,25 @@ def parseAudioRecorderRequest(request):
     if request.path.find('start') != -1:
         for items in params:
             (name, value) = items.split('=')
-            if name.startswith('timeout') == True:
-                status,message = ObjectDb.audio_utils.startRecording(value)
-                if status == True:
-                    return (200, {'Start-Recording' : message})
+            if name.startswith('timeout'):
+                status, message = ObjectDb.audio_utils.startRecording(value)
+                if status is True:
+                    return (200, {'Start-Recording': message})
                 else:
                     return errorMessage(message)
     elif request.path.find('stop') != -1:
         ObjectDb.audio_utils.stopRecording()
-        return (200, {'Stop-Recording' : 'Success'})
+        return (200, {'Stop-Recording': 'Success'})
     else:
         return errorMessage(request.path)
+
 
 # Parse SNR Request
 def parseSNRRequest(request):
     if request.path.find('compute') != -1:
-        status,message = ObjectDb.audio_utils.computeSNRAndDelay();
-        if status == True:
-            return (200, {'SNR-DELAY' : message})
+        status, message = ObjectDb.audio_utils.computeSNRAndDelay()
+        if status is True:
+            return (200, {'SNR-DELAY': message})
         else:
             return errorMessage(message)
     else:
@@ -119,16 +126,18 @@ def parseSNRRequest(request):
 def run_server(doc_root):
     ObjectDb.audio_utils = media_utils.AudioUtils()
 
-    httpd_server = mozhttpd.MozHttpd(port=16932, docroot=doc_root,
-                                     urlhandlers = [ { 'method'   : 'GET',
-                                                       'path'     : '/audio/',
-                                                       'function' : parseGETUrl },
-                                                     { 'method'   : 'GET',
-                                                       'path'     : '/server/?',
-                                                       'function' : parseGETUrl }])
+    httpd_server = mozhttpd.MozHttpd(
+        port=16932,
+        docroot=doc_root,
+        urlhandlers=[
+            {'method': 'GET', 'path': '/audio/', 'function': parseGETUrl},
+            {'method': 'GET', 'path': '/server/?', 'function': parseGETUrl}
+        ]
+    )
 
-    talos.utils.info("Server %s at %s:%s" ,
-      httpd_server.docroot, httpd_server.host, httpd_server.port)
+    talos.utils.info("Server %s at %s:%s",
+                     httpd_server.docroot, httpd_server.host,
+                     httpd_server.port)
     ObjectDb.httpd_server = httpd_server
     httpd_server.start()
     return httpd_server
@@ -146,7 +155,7 @@ if __name__ == "__main__":
     TODO: provide validation once stand-alone usage
     is supported
     """
-    parser.add_option("-t","--talos", dest="talos_path",
+    parser.add_option("-t", "--talos", dest="talos_path",
                       help="Talos Path to serves as docroot")
     (options, args) = parser.parse_args()
 

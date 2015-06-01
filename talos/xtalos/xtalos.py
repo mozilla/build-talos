@@ -6,14 +6,16 @@ import os
 import argparse
 import yaml
 
-DEBUG_CRITICAL =0
-DEBUG_ERROR =   1
+DEBUG_CRITICAL = 0
+DEBUG_ERROR = 1
 DEBUG_WARNING = 2
-DEBUG_INFO =    3
+DEBUG_INFO = 3
 DEBUG_VERBOSE = 4
+
 
 class XTalosError(Exception):
     """error related to xtalos invocation"""
+
 
 def options_from_config(options, config_file):
     """override options from a YAML config file; returns the dictionary
@@ -28,6 +30,7 @@ def options_from_config(options, config_file):
         options[obj] = yaml_config.get(obj, options[obj])
     return options
 
+
 class XtalosOptions(argparse.ArgumentParser):
 
     def __init__(self, **kwargs):
@@ -35,63 +38,76 @@ class XtalosOptions(argparse.ArgumentParser):
         defaults = {}
 
         self.add_argument("--pid", dest="processID",
-                        help="process ID of the process we launch")
+                          help="process ID of the process we launch")
         defaults["processID"] = None
 
         self.add_argument("-x", "--xperf", dest="xperf_path",
-                        help="location of xperf tool, defaults to 'xperf.exe'")
+                          help="location of xperf tool, defaults to"
+                               " 'xperf.exe'")
         defaults["xperf_path"] = "xperf.exe"
 
         self.add_argument("-e", "--etl_filename", dest="etl_filename",
-                        help = "Name of the .etl file to work with. Defaults to 'output.etl'")
+                          help="Name of the .etl file to work with."
+                               " Defaults to 'output.etl'")
         defaults["etl_filename"] = "test.etl"
 
         self.add_argument("-d", "--debug",
-                        type=int, dest="debug_level",
-                        help="debug level for output from tool (0-5, 5 being everything), defaults to 1")
+                          type=int, dest="debug_level",
+                          help="debug level for output from tool (0-5, 5"
+                               " being everything), defaults to 1")
         defaults["debug_level"] = 1
 
         self.add_argument("-o", "--output-file", dest="outputFile",
-                        help="Filename to write all output to, default is stdout")
+                          help="Filename to write all output to, default"
+                               " is stdout")
         defaults["outputFile"] = 'etl_output.csv'
 
         self.add_argument("-r", "--providers", dest="xperf_providers",
-                        action="append",
-                        help="xperf providers to collect data from")
+                          action="append",
+                          help="xperf providers to collect data from")
         defaults["xperf_providers"] = []
 
         self.add_argument("--user-providers", dest="xperf_user_providers",
-                        action="append",
-                        help="user mode xperf providers to collect data from")
+                          action="append",
+                          help="user mode xperf providers to collect data"
+                               " from")
         defaults["xperf_user_providers"] = []
 
         self.add_argument("-s", "--stackwalk", dest="xperf_stackwalk",
-                        action="append",
-                        help="xperf stackwalk arguments to collect")
+                          action="append",
+                          help="xperf stackwalk arguments to collect")
         defaults["xperf_stackwalk"] = []
 
         self.add_argument("-c", "--config-file", dest="configFile",
-                        help="Name of the yaml config file with test run and browser information")
+                          help="Name of the yaml config file with test run"
+                               " and browser information")
         defaults["configFile"] = None
 
         self.add_argument("-w", "--whitelist-file", dest="whitelist_file",
-                        help="Name of whitelist file")
+                          help="Name of whitelist file")
         defaults["whitelist_file"] = None
 
-        self.add_argument("-i", "--all-stages", dest="all_stages", action="store_true",
-                        help="Include all stages in file I/O output, not just startup")
+        self.add_argument("-i", "--all-stages", dest="all_stages",
+                          action="store_true",
+                          help="Include all stages in file I/O output,"
+                               "not just startup")
         defaults["all_stages"] = False
 
-        self.add_argument("-t", "--all-threads", dest="all_threads", action="store_true",
-                        help="Include all threads in file I/O output, not just main")
+        self.add_argument("-t", "--all-threads", dest="all_threads",
+                          action="store_true",
+                          help="Include all threads in file I/O output,"
+                               " not just main")
         defaults["all_threads"] = False
 
         self.add_argument("-a", "--approot", dest="approot",
-                        help="Provide the root directory of the application we are testing to find related files (i.e. dependentlibs.list)")
+                          help="Provide the root directory of the application"
+                               " we are testing to find related files (i.e."
+                               " dependentlibs.list)")
         defaults["approot"] = None
 
         self.add_argument("--error-filename", dest="error_filename",
-                        help="Filename to store the failures detected while runnning the test")
+                          help="Filename to store the failures detected"
+                               " while runnning the test")
         defaults["error_filename"] = None
 
         self.set_defaults(**defaults)

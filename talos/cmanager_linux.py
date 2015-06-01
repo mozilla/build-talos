@@ -42,7 +42,10 @@ def xrestop(binary='xrestop'):
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
     if process.returncode:
-        raise Exception("Unexpected error executing '%s':\n%s" % (subprocess.list2cmdline(command), stdout))
+        raise Exception(
+            "Unexpected error executing '%s':\n%s"
+            % (subprocess.list2cmdline(command), stdout)
+        )
 
     # process output
     retval = {}
@@ -72,7 +75,8 @@ def xrestop(binary='xrestop'):
 
 
 def GetPrivateBytes(pids):
-    """Calculate the amount of private, writeable memory allocated to a process.
+    """Calculate the amount of private, writeable memory allocated to a
+       process.
        This code was adapted from 'pmap.c', part of the procps project.
     """
     privateBytes = 0
@@ -84,9 +88,9 @@ def GetPrivateBytes(pids):
 
         for line in maps:
             # split up
-            (range,line) = line.split(" ", 1)
+            (range, line) = line.split(" ", 1)
 
-            (start,end) = range.split("-")
+            (start, end) = range.split("-")
             flags = line.split(" ", 1)[0]
 
             size = int(end, 16) - int(start, 16)
@@ -122,7 +126,8 @@ def GetResidentSize(pids):
 
 
 def GetXRes(pids):
-    """Returns the total bytes used by X or raises an error if total bytes is not available"""
+    """Returns the total bytes used by X or raises an error if total bytes
+    is not available"""
     XRes = 0
     xres_output = xrestop()
     for pid in pids:
@@ -153,13 +158,13 @@ class LinuxCounterManager(CounterManager):
                    "RSS": GetResidentSize,
                    "XRes": GetXRes}
 
-
     pollInterval = .25
 
-    def __init__(self, process, counters=None, childProcess="plugin-container"):
+    def __init__(self, process, counters=None,
+                 childProcess="plugin-container"):
         """Args:
-             counters: A list of counters to monitor. Any counters whose name does
-             not match a key in 'counterDict' will be ignored.
+             counters: A list of counters to monitor. Any counters whose name
+             does not match a key in 'counterDict' will be ignored.
         """
 
         CounterManager.__init__(self)

@@ -4,19 +4,15 @@
 
 """output formats for Talos"""
 
-import datetime
 import filter
-import imp
 import json
 import mozinfo
-import os
 import post_file
-import tempfile
 import time
-import urllib
 import utils
 
 from StringIO import StringIO
+
 
 def filesizeformat(bytes):
     """
@@ -29,7 +25,8 @@ def filesizeformat(bytes):
         if bytes < 1024:
             return "%.1f%s" % (bytes, f)
         bytes /= 1024
-    return "%.1fGB" % bytes #has to be GB
+    return "%.1fGB" % bytes  # has to be GB
+
 
 class Output(object):
     """abstract base class for Talos output"""
@@ -59,13 +56,17 @@ class Output(object):
         results_scheme, results_server, results_path, _, _ = results_url_split
 
         if results_scheme in ('http', 'https'):
-            self.post(results, results_server, results_path, results_scheme, tbpl_output)
+            self.post(results, results_server, results_path, results_scheme,
+                      tbpl_output)
         elif results_scheme == 'file':
             with open(results_path, 'w') as f:
                 for result in results:
                     f.write("%s\n" % result)
         else:
-            raise NotImplementedError("%s: %s - only http://, https://, and file:// supported" % (self.__class__.__name__, results_url))
+            raise NotImplementedError(
+                "%s: %s - only http://, https://, and file:// supported"
+                % (self.__class__.__name__, results_url)
+            )
 
     def post(self, results, server, path, scheme, tbpl_output):
         raise NotImplementedError("Abstract base class")
@@ -85,7 +86,8 @@ class Output(object):
     @classmethod
     def isMemoryMetric(cls, resultName):
         """returns if the result is a memory metric"""
-        memory_metric = ['memset', 'rss', 'pbytes', 'xres', 'modlistbytes', 'main_rss', 'content_rss'] #measured in bytes
+        memory_metric = ['memset', 'rss', 'pbytes', 'xres', 'modlistbytes',
+                         'main_rss', 'content_rss']  # measured in bytes
         return bool([i for i in memory_metric if i in resultName])
 
     @classmethod
@@ -121,7 +123,7 @@ class Output(object):
             score = reference[test] / mean
             scores.append(score)
             utils.info(" %s: %s", test, score * 100)
-        score =  100 * filter.geometric_mean(scores)
+        score = 100 * filter.geometric_mean(scores)
         utils.info("Score: %s", score)
         return score
 
@@ -142,8 +144,9 @@ class Output(object):
 
 class GraphserverOutput(Output):
 
-    retries = 5   # number of times to attempt to contact graphserver
-    info_format = ['title', 'testname', 'branch_name', 'sourcestamp', 'buildid', 'date']
+    retries = 5  # number of times to attempt to contact graphserver
+    info_format = ['title', 'testname', 'branch_name', 'sourcestamp',
+                   'buildid', 'date']
 
     @classmethod
     def check(cls, urls):
@@ -153,19 +156,21 @@ class GraphserverOutput(Output):
     def __call__(self):
         """
         results to send to graphserver:
-        construct all the strings of data, one string per test and one string  per counter
+        construct all the strings of data, one string per test and one string
+        per counter
         """
 
         result_strings = []
 
-        info_dict = dict(title=self.results.title,
-                         date=self.results.date,
-                         branch_name=self.results.browser_config['branch_name'],
-                         sourcestamp=self.results.browser_config['sourcestamp'],
-                         buildid=self.results.browser_config['buildid'],
-                         browser_name=self.results.browser_config['browser_name'],
-                         browser_version=self.results.browser_config['browser_version']
-                         )
+        info_dict = dict(
+            title=self.results.title,
+            date=self.results.date,
+            branch_name=self.results.browser_config['branch_name'],
+            sourcestamp=self.results.browser_config['sourcestamp'],
+            buildid=self.results.browser_config['buildid'],
+            browser_name=self.results.browser_config['browser_name'],
+            browser_version=self.results.browser_config['browser_version']
+        )
 
         for test in self.results.results:
             utils.debug("Working with test: %s", test.name())
@@ -173,13 +178,17 @@ class GraphserverOutput(Output):
             # get full name of test
             testname = test.name()
             if test.format == 'tpformat':
-                # for some reason, we append the test extension to tp results but not ts
-                # http://hg.mozilla.org/build/talos/file/170c100911b6/talos/run_tests.py#l176
+                # for some reason, we append the test extension to tp results
+                # but not ts
+                # http://hg.mozilla.org/build/talos/file/170c100911b6/talos
+                # /run_tests.py#l176
                 testname += test.extension()
 
-            utils.stamped_msg("Generating results file: %s" % test.name(), "Started")
+            utils.stamped_msg("Generating results file: %s" % test.name(),
+                              "Started")
 
-            # HACK: when running xperf, we upload xperf counters to the graph server but we do not want to
+            # HACK: when running xperf, we upload xperf counters to the graph
+            # server but we do not want to
             # upload the test results as they will confuse the graph server
             if not (test.format == 'tpformat' and test.using_xperf):
                 vals = []
@@ -188,34 +197,48 @@ class GraphserverOutput(Output):
                     _filters = self.results.filters
                     if 'filters' in test.test_config:
                         try:
-                            _filters = filter.filters_args(test.test_config['filters'])
+                            _filters = filter.filters_args(
+                                test.test_config['filters']
+                            )
                         except AssertionError, e:
                             raise utils.TalosError(str(e))
 
                     vals.extend(result.values(_filters))
-                result_strings.append(self.construct_results(vals, testname=testname, **info_dict))
-                utils.stamped_msg("Generating results file: %s" % test.name(), "Stopped")
+                result_strings.append(self.construct_results(vals,
+                                                             testname=testname,
+                                                             **info_dict))
+                utils.stamped_msg("Generating results file: %s" % test.name(),
+                                  "Stopped")
 
             # counter results
             for cd in test.all_counter_results:
                 for counter_type, values in cd.items():
                     # get the counter name
-                    counterName = '%s_%s' % (test.name() , self.shortName(counter_type))
+                    counterName = '%s_%s' % (test.name(),
+                                             self.shortName(counter_type))
                     if not values:
                         # failed to collect any data for this counter
-                        utils.stamped_msg("No results collected for: " + counterName, "Error")
-# NOTE: we are not going to enforce this warning for now as this happens too frequently: bugs 803413, 802475, 805925
-#                        raise utils.TalosError("Unable to proceed with missing counter '%s'" % counterName)
-# (jhammel: we probably should do this in e.g. results.py vs in graphserver-specific code anyway)
+                        utils.stamped_msg(
+                            "No results collected for: " + counterName,
+                            "Error"
+                        )
+# NOTE: we are not going to enforce this warning for now as this happens too
+# frequently: bugs 803413, 802475, 805925
+#                        raise utils.TalosError("Unable to proceed with missing
+# counter '%s'" % counterName)
+# (jhammel: we probably should do this in e.g. results.py vs in
+# graphserver-specific code anyway)
 
-                    # exclude counters whose values are tuples (bad for graphserver)
+                    # exclude counters whose values are tuples (bad for
+                    # graphserver)
                     if len(values) > 0 and isinstance(values[0], list):
                         print "Not uploading counter data for %s" % counterName
                         print values
                         continue
 
                     if test.mainthread() and 'mainthreadio' in counterName:
-                        print "Not uploading Mainthread IO data for %s" % counterName
+                        print ("Not uploading Mainthread IO data for %s"
+                               % counterName)
                         print values
                         continue
 
@@ -230,9 +253,11 @@ class GraphserverOutput(Output):
                     info['testname'] = counterName
 
                     # append the counter string
-                    utils.stamped_msg("Generating results file: %s" % counterName, "Started")
+                    utils.stamped_msg(
+                        "Generating results file: %s" % counterName, "Started")
                     result_strings.append(self.construct_results(vals, **info))
-                    utils.stamped_msg("Generating results file: %s" % counterName, "Stopped")
+                    utils.stamped_msg(
+                        "Generating results file: %s" % counterName, "Stopped")
 
         return result_strings
 
@@ -286,9 +311,12 @@ class GraphserverOutput(Output):
         else:
             for i, (val, page) in enumerate(vals):
                 try:
-                    buffer.write("%d,%.2f,%s\n" % (i,float(val), page))
+                    buffer.write("%d,%.2f,%s\n" % (i, float(val), page))
                 except ValueError:
-                    utils.info("We expected a numeric value and recieved '%s' instead" % val)
+                    utils.info(
+                        "We expected a numeric value and recieved '%s' instead"
+                        % val
+                    )
                     pass
 
         buffer.write("END")
@@ -303,22 +331,28 @@ class GraphserverOutput(Output):
                 links += line + '\n'
             utils.debug("process_Request line: %s", line)
         if not links:
-            raise utils.TalosError("send failed, graph server says:\n%s" % post)
+            raise utils.TalosError("send failed, graph server says:\n%s"
+                                   % post)
         return links
 
     def post(self, results, server, path, scheme, tbpl_output):
         """post results to the graphserver"""
 
         links = []
-        wait_time = 5 # number of seconds between each attempt
+        wait_time = 5  # number of seconds between each attempt
 
         for index, data_string in enumerate(results):
             times = 0
             msg = ""
             while times < self.retries:
-                utils.info("Posting result %d of %d to %s://%s%s, attempt %d", index, len(results), scheme, server, path, times)
+                utils.info("Posting result %d of %d to %s://%s%s, attempt %d",
+                           index, len(results), scheme, server, path, times)
                 try:
-                    links.append(self.process_Request(post_file.post_multipart(server, path, files=[("filename", "data_string", data_string)])))
+                    links.append(self.process_Request(
+                        post_file.post_multipart(server, path,
+                                                 files=[("filename",
+                                                         "data_string",
+                                                         data_string)])))
                     break
                 except utils.TalosError, e:
                     msg = str(e)
@@ -328,18 +362,21 @@ class GraphserverOutput(Output):
                 time.sleep(wait_time)
                 wait_time *= 2
             else:
-                raise utils.TalosError("Graph server unreachable (%d attempts)\n%s" % (self.retries, msg))
+                raise utils.TalosError(
+                    "Graph server unreachable (%d attempts)\n%s"
+                    % (self.retries, msg)
+                )
 
         # add TBPL output
         self.add_tbpl_output(links, tbpl_output, server, scheme)
-
 
     def add_tbpl_output(self, links, tbpl_output, server, scheme):
         """
         add graphserver links such that TBPL can parse them.
         graphserver returns a response like:
 
-          'tsvgr\tgraph.html#tests=[[224,113,14]]\ntsvgr\t2965.75\tgraph.html#tests=[[224,113,14]]\n'
+          'tsvgr\tgraph.html#tests=[[224,113,14]]\ntsvgr\t2965.75\tgraph.html
+          #tests=[[224,113,14]]\n'
 
         for each ts posted (tsvgr, in this case)
         """
@@ -351,21 +388,25 @@ class GraphserverOutput(Output):
 
         # XXX link_format to be deprecated; see
         # https://bugzilla.mozilla.org/show_bug.cgi?id=816634
-        link_format= '<a href=\'%s\'>%s</a>'
+        link_format = '<a href=\'%s\'>%s</a>'
 
         for response in links:
 
             # parse the response:
-            # graphserver returns one of two responses.  For 'AVERAGE' payloads,
-            # graphserver returns a line 'RETURN\t<test name>\t<value>\t<path segment>' :
-            # http://hg.mozilla.org/graphs/file/8884ef9418bf/server/pyfomatic/collect.py#l277
+            # graphserver returns one of two responses.  For 'AVERAGE' payloads
+            # graphserver returns a line
+            # 'RETURN\t<test name>\t<value>\t<path segment>' :
+            # http://hg.mozilla.org/graphs/file/8884ef9418bf/server/pyfomatic
+            # /collect.py#l277
             # For 'VALUES' payloads, graphserver prepends an additional line
             # 'RETURN\t<test name>\t<path segment>' :
-            # http://hg.mozilla.org/graphs/file/8884ef9418bf/server/pyfomatic/collect.py#l274
-            # see https://bugzilla.mozilla.org/show_bug.cgi?id=816634#c56 for a more
-            # verbose explanation
+            # http://hg.mozilla.org/graphs/file/8884ef9418bf/server/pyfomatic
+            # /collect.py#l274
+            # see https://bugzilla.mozilla.org/show_bug.cgi?id=816634#c56 for
+            # a more verbose explanation
             lines = [line.strip() for line in response.strip().splitlines()]
-            assert len(lines) in (1,2), """Should have one line for 'AVERAGE' payloads,
+            assert len(lines) in (1, 2), """\
+Should have one line for 'AVERAGE' payloads,
 two lines for 'VALUES' payloads. You received:
 %s""" % lines
             testname, result, path = lines[-1].split()
@@ -397,21 +438,24 @@ class PerfherderOutput(Output):
         results_url_split = utils.urlsplit(results_url)
         results_scheme, results_server, results_path, _, _ = results_url_split
 
-        # This is the output that treeherder expects to find when parsing the log file
+        # This is the output that treeherder expects to find when parsing the
+        # log file
         utils.info("TALOSDATA: %s" % json.dumps(results))
         if results_scheme in ('file'):
-            json.dump(results, file(results_path, 'w'), indent=2, sort_keys=True)
+            json.dump(results, file(results_path, 'w'), indent=2,
+                      sort_keys=True)
 
     def post(self, results, server, path, scheme, tbpl_output):
         """conform to current code- not needed for perfherder"""
         pass
 
-    # TODO: this is copied directly from the old datazilla output. Using it 
+    # TODO: this is copied directly from the old datazilla output. Using it
     # as we have established platform names already
     def test_machine(self):
         """return test machine platform in a form appropriate to datazilla"""
         if self.results.remote:
-            # TODO: figure out how to not hardcode this, specifically the version !!
+            # TODO: figure out how to not hardcode this, specifically the
+            # version !!
             # should probably come from the agent (sut/adb) and passed in
             platform = "Android"
             processor = "ARMv7"
@@ -423,20 +467,24 @@ class PerfherderOutput(Output):
             platform = mozinfo.os
             version = mozinfo.version
             processor = mozinfo.processor
-            if self.results.title.endswith(".e") and not version.endswith('.e'):
+            if self.results.title.endswith(".e") and \
+                    not version.endswith('.e'):
                 # we are running this against e10s builds
                 version = '%s.e' % (version,)
 
-        return dict(name=self.results.title, os=platform, osversion=version, platform=processor)
+        return dict(name=self.results.title, os=platform, osversion=version,
+                    platform=processor)
 
-    #TODO: this is copied from datazilla output code, do we need all of this?
+    # TODO: this is copied from datazilla output code, do we need all of this?
     def run_options(self, test):
         """test options for datazilla"""
 
         options = {}
-        test_options = ['rss', 'cycles', 'tpmozafterpaint', 'responsiveness', 'shutdown']
+        test_options = ['rss', 'cycles', 'tpmozafterpaint', 'responsiveness',
+                        'shutdown']
         if 'tpmanifest' in test.test_config:
-          test_options += ['tpchrome', 'tpcycles', 'tppagecycles', 'tprender', 'tploadaboutblank', 'tpdelay']
+            test_options += ['tpchrome', 'tpcycles', 'tppagecycles',
+                             'tprender', 'tploadaboutblank', 'tpdelay']
 
         for option in test_options:
             if option not in test.test_config:
@@ -446,7 +494,6 @@ class PerfherderOutput(Output):
             options['extensions'] = [{'name': extension}
                                      for extension in test.extensions]
         return options
-
 
     def __call__(self):
 
@@ -459,14 +506,16 @@ class PerfherderOutput(Output):
         test_results = []
 
         for test in self.results.results:
-            test_result = {'test_machine': {},
-                         'testrun': {},
-                         'results': {},
-                         'talos_counters': {},
-                         'test_build': {}}
+            test_result = {
+                'test_machine': {},
+                'testrun': {},
+                'results': {},
+                'talos_counters': {},
+                'test_build': {}
+            }
 
             test_result['testrun']['suite'] = test.name()
-            test_result['testrun']['options'] = options=self.run_options(test)
+            test_result['testrun']['options'] = self.run_options(test)
             test_result['testrun']['date'] = self.results.date
 
             # serialize test results
@@ -487,12 +536,13 @@ class PerfherderOutput(Output):
             for cd in test.all_counter_results:
                 for name, vals in cd.items():
                     # We want to add the xperf data as talos_counters
-                    # exclude counters whose values are tuples (bad for graphserver)
+                    # exclude counters whose values are tuples (bad for
+                    # graphserver)
                     if len(vals) > 0 and isinstance(vals[0], list):
                         continue
 
-                    # mainthread IO is a list of filenames and accesses, we do not
-                    # report this as a counter
+                    # mainthread IO is a list of filenames and accesses, we do
+                    # not report this as a counter
                     if 'mainthreadio' in name:
                         continue
 
@@ -508,22 +558,28 @@ class PerfherderOutput(Output):
                                 varray.append(float(v))
                             counter_mean = "%.2f" % filter.mean(varray)
                             counter_max = "%.2f" % max(varray)
-                        test_result['talos_counters'][name] = {"mean": counter_mean, "max": counter_max}
-
+                        test_result['talos_counters'][name] = {
+                            "mean": counter_mean,
+                            "max": counter_max
+                        }
 
             if browser_config['develop'] and not browser_config['sourcestamp']:
                 browser_config['sourcestamp'] = ''
 
-            test_result['test_build'] = {'version': browser_config['browser_version'],
-                                     'revision': browser_config['sourcestamp'],
-                                     'id': browser_config['buildid'],
-                                     'branch': browser_config['branch_name'],
-                                     'name': browser_config['browser_name']}
+            test_result['test_build'] = {
+                'version': browser_config['browser_version'],
+                'revision': browser_config['sourcestamp'],
+                'id': browser_config['buildid'],
+                'branch': browser_config['branch_name'],
+                'name': browser_config['browser_name']
+            }
 
-            test_result['test_machine'] = {'platform': machine['platform'],
-                                       'osversion': machine['osversion'],
-                                       'os': machine['os'],
-                                       'name': machine['name']}
+            test_result['test_machine'] = {
+                'platform': machine['platform'],
+                'osversion': machine['osversion'],
+                'os': machine['os'],
+                'name': machine['name']
+            }
 
             test_results.append(test_result)
         return test_results
