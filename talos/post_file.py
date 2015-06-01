@@ -47,8 +47,9 @@ def test_links(*urls):
     for url in urls:
         url_split = urlparse.urlsplit(url)
         scheme, server, path, _, _ = url_split
-        if scheme in ('http', 'https') and \
-                not link_exists(server, path, scheme):
+        if (scheme in ('http', 'https') and
+            not link_exists(server, path, scheme)):  # noqa
+
             print 'WARNING: graph server link does not exist: %s' % url
 
 

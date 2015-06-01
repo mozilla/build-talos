@@ -507,21 +507,9 @@ class TTest(object):
                         talosconfig.generateTalosConfig(command_args,
                                                         browser_config,
                                                         test_config)
-                        setup = subprocess.Popen(
+                        subprocess.call(
                             ['python'] + test_config['setup'].split(),
-                            env=os.environ.copy(),
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE
                         )
-                        stdout, stderr = setup.communicate()
-                        print ("---------------------------------------"
-                               "--------------------------------------")
-                        print "output of setup command:"
-                        print stdout
-                        print stderr
-                        print "end of setup command output"
-                        print ("---------------------------------------"
-                               "--------------------------------------")
 
                     self.isFinished = False
                     mm_httpd = None
@@ -615,18 +603,9 @@ class TTest(object):
 
                 # For startup tests, we launch the browser multiple times
                 # with the same profile
-                try:
-                    os.remove(os.path.join(profile_dir, 'sessionstore.js'))
-                except:
-                    pass
-                try:
-                    os.remove(os.path.join(profile_dir, '.parentlock'))
-                except:
-                    pass
-                try:
-                    os.remove(os.path.join(profile_dir, 'sessionstore.bak'))
-                except:
-                    pass
+                for fname in ('sessionstore.js', '.parentlock',
+                              'sessionstore.bak'):
+                    mozfile.remove(os.path.join(profile_dir, fname))
 
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']

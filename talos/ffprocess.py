@@ -77,9 +77,10 @@ class FFProcess(object):
 
         # NOTE: this should be sufficient for defining a docroot
         scheme = "http://"
-        if server.startswith('http://') or \
-                server.startswith('chrome://') or \
-                server.startswith('file:///'):
+        if (server.startswith('http://') or
+            server.startswith('chrome://') or
+            server.startswith('file:///')):  # noqa
+
             scheme = ""
         elif (server.find('://') >= 0):
             raise TalosError(

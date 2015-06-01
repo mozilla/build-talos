@@ -79,9 +79,10 @@ def setup_webserver(webserver):
     """use mozhttpd to setup a webserver"""
 
     scheme = "http://"
-    if webserver.startswith('http://') or \
-            webserver.startswith('chrome://') or \
-            webserver.startswith('file:///'):
+    if (webserver.startswith('http://') or
+        webserver.startswith('chrome://') or
+        webserver.startswith('file:///')):  # noqa
+
         scheme = ""
     elif '://' in webserver:
         print "Unable to parse user defined webserver: '%s'" % (webserver)

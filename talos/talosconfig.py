@@ -1,12 +1,16 @@
 import os
 from utils import writeConfigFile
 
+
 def generateTalosConfig(command_line, browser_config, test_config, pid=None):
-    bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait', 'test_timeout', 'browser_log', 'browser_path', 'error_filename']
+    bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait',
+                        'test_timeout', 'browser_log', 'browser_path',
+                        'error_filename']
 
     if 'xperf_path' in browser_config:
         bcontroller_vars.append('xperf_path')
-        bcontroller_vars.extend(['buildid', 'sourcestamp', 'repository', 'title'])
+        bcontroller_vars.extend(['buildid', 'sourcestamp', 'repository',
+                                 'title'])
         if 'name' in test_config:
             bcontroller_vars.append('testname')
             browser_config['testname'] = test_config['name']
@@ -18,14 +22,18 @@ def generateTalosConfig(command_line, browser_config, test_config, pid=None):
 
     if (('xperf_providers' in test_config) and
         ('xperf_user_providers' in test_config) and
-        ('xperf_stackwalk' in test_config)):
+        ('xperf_stackwalk' in test_config)):  # noqa
+
         print "extending with xperf!"
         browser_config['xperf_providers'] = test_config['xperf_providers']
-        browser_config['xperf_user_providers'] = test_config['xperf_user_providers']
+        browser_config['xperf_user_providers'] = \
+            test_config['xperf_user_providers']
         browser_config['xperf_stackwalk'] = test_config['xperf_stackwalk']
         browser_config['processID'] = pid
-        browser_config['approot'] = os.path.dirname(browser_config['browser_path'])
-        bcontroller_vars.extend(['xperf_providers', 'xperf_user_providers', 'xperf_stackwalk', 'processID', 'approot'])
+        browser_config['approot'] = \
+            os.path.dirname(browser_config['browser_path'])
+        bcontroller_vars.extend(['xperf_providers', 'xperf_user_providers',
+                                 'xperf_stackwalk', 'processID', 'approot'])
 
     content = writeConfigFile(browser_config, bcontroller_vars)
 
