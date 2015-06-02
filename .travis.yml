@@ -1,0 +1,15 @@
+language: python
+
+python:
+    - "2.7"
+
+install:
+    # install talos code and test dependencies
+    - pip install flake8
+    - pip install -e .
+
+before_script:
+    flake8 talos
+
+script:
+    - python setup.py test
