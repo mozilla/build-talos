@@ -52,90 +52,29 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # parse the standard commands
         outfile = tempfile.mktemp(suffix='.yaml')
-        args = example.parse_args(['--activeTests', 'ts', '--develop',  '-e', ffox_path, '-o', outfile])
+        args = example.parse_args(['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path, '-o', outfile])
         self.assertTrue(os.path.exists(outfile))
 
         # ensure that the options appropriately get set
         self.assertEqual(bool(args.configuration_files), False) # no arguments
         self.assertEqual(args.develop, True)
-        self.assertEqual(args.activeTests, 'ts')
+        self.assertEqual(args.activeTests, 'ts_paint')
         self.assertEqual(args.browser_path, ffox_path)
 
         # ensure that the configuration appropriately gets updated
         self.assertEqual(example.config['develop'], True)
         self.assertEqual(example.config['browser_path'], ffox_path)
-        self.assertEqual(example.config['tests'][0]['name'], 'ts')
+        self.assertEqual(example.config['tests'][0]['name'], 'ts_paint')
 
         # ensure that the yaml information are accurate with respect to the data given
         yaml = YAML()
         content = yaml.read(outfile)
         self.assertEqual(content['browser_path'], ffox_path)
-        self.assertEqual(content['tests'][0]['name'], 'ts')
+        self.assertEqual(content['tests'][0]['name'], 'ts_paint')
         self.assertEqual(content['develop'], True)
 
         # cleanup
         os.remove(outfile)
-
-    # Need a real device to get this to work.
-    '''
-    def test_cli_robocop_withoutpath(self):
-
-        example = PerfConfigurator()
-
-        # parse the standard commands
-        outfile = tempfile.mktemp(suffix='.yaml')
-        args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', '', '--robocopTestPackage', '', '-o', outfile])
-        self.assertTrue(os.path.exists(outfile))
-
-        # ensure that the options appropriately get set
-        self.assertEqual(bool(args.configuration_files), False) # no arguments
-        self.assertEqual(args.activeTests, 'trobopan')
-        self.assertEqual(args.robocopTestName, 'org.mozilla.roboexample.test')
-        self.assertEqual(args.robocopTestPackage, 'org.mozilla.gecko')
-
-        # ensure that the configuration appropriately gets updated
-        self.assertEqual(example.config['tests'][0]['name'], 'trobopan')
-        self.assertEqual(example.config['robocopTestName'], 'org.mozilla.roboexample.test')
-        self.assertEqual(example.config['robocopTestPackage'], 'org.mozilla.gecko')
-
-        # ensure that the yaml information are accurate with respect to the data given
-        yaml = YAML()
-        content = yaml.read(outfile)
-        self.assertEqual(content['tests'][0]['url'], 'am instrument -w -e deviceroot %s -e class org.mozilla.gecko.tests.testPan org.mozilla.roboexample.test/org.mozilla.gecko.FennecInstrumentationTestRunner')
-        self.assertEqual(content['tests'][0]['name'], 'trobopan')
-
-        # cleanup
-        os.remove(outfile)
-
-    def test_cli_robocop_withpath(self):
-
-        example = PerfConfigurator()
-
-        # parse the standard commands
-        outfile = tempfile.mktemp(suffix='.yaml')
-        args = example.parse_args(['--activeTests', 'trobopan', '--develop',  '-e', ffox_path, '--remoteDevice', '0.0.0.0','--robocopTestName', 'pathtofile', '--robocopTestPackage', 'pathtofile', '-o', outfile])
-        self.assertTrue(os.path.exists(outfile))
-
-        # ensure that the options appropriately get set
-        self.assertEqual(bool(args.configuration_files), False) # no arguments
-        self.assertEqual(args.activeTests, 'trobopan')
-        self.assertEqual(args.robocopTestName, 'pathtofile')
-        self.assertEqual(args.robocopTestPackage, 'pathtofile')
-
-        # ensure that the configuration appropriately gets updated
-        self.assertEqual(example.config['tests'][0]['name'], 'trobopan')
-        self.assertEqual(example.config['robocopTestName'], 'pathtofile')
-        self.assertEqual(example.config['robocopTestPackage'], 'pathtofile')
-
-        # ensure that the yaml information are accurate with respect to the data given
-        yaml = YAML()
-        content = yaml.read(outfile)
-        self.assertEqual(content['tests'][0]['url'], 'am instrument -w -e deviceroot %s -e class pathtofile.tests.testPan pathtofile/pathtofile.FennecInstrumentationTestRunner')
-        self.assertEqual(content['tests'][0]['name'], 'trobopan')
-
-        # cleanup
-        os.remove(outfile)
-    '''
 
     def test_errors(self):
         """
@@ -152,37 +91,25 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
                                         'except_fault' : 'invalid --activeTest raised an error that is not ConfigurationError',
                                         'non_raises_fault' : 'invalid --activeTest passed test'},
                        '--fennecIDs':{'error':ConfigurationError,
-                                      'args':['--activeTests', 'ts', '--develop', '-e', ffox_path, '--fennecIDs', ffox_path, "-o", outfile],
+                                      'args':['--activeTests', 'ts_paint', '--develop', '-e', ffox_path, '--fennecIDs', ffox_path, "-o", outfile],
                                       'except_fault' : 'invalid --fennecIDs raised an error that is not ConfigurationError',
                                       'non_raises_fault' : 'invalid --fennecIDs passed test'},
                        '--fennecIDs':{'error':ConfigurationError,
-                                      'args':['--activeTests', 'ts', '--develop', '-e', ffox_path, '--fennecIDs', 'filedoesnotexist.txt', "-o", outfile],
+                                      'args':['--activeTests', 'ts_paint', '--develop', '-e', ffox_path, '--fennecIDs', 'filedoesnotexist.txt', "-o", outfile],
                                       'except_fault' : 'invalid --fennecIDs raised an error that is not ConfigurationError',
                                       'non_raises_fault' : 'invalid --fennecIDs passed test'},
-                       '--fennecIDs':{'error':ConfigurationError,
-                                      'args':['--activeTests', 'trobopan', '--develop', '-e', ffox_path, '--fennecIDs', 'filedoesnotexist.txt', "-o", outfile],
-                                      'except_fault' : 'invalid --fennecIDs raised an error that is not ConfigurationError',
-                                      'non_raises_fault' : 'invalid --fennecIDs passed test'},
-                       '--robocopTestName':{'error':ConfigurationError,
-                                      'args':['--activeTests', 'trobopan', '--develop', '-e', ffox_path, '--robocopTestName', 'pathdoesnotexist', "-o", outfile],
-                                      'except_fault' : 'invalid --robocopTestName raised an error that is not ConfigurationError',
-                                      'non_raises_fault' : 'invalid --robocopTestName passed test'},
-                       '--robocopTestPackage':{'error':ConfigurationError,
-                                      'args':['--activeTests', 'trobopan', '--develop', '-e', ffox_path, '--robocopTestPackage', 'pathdoesnotexist', "-o", outfile],
-                                      'except_fault' : 'invalid --robocopTestPackage raised an error that is not ConfigurationError',
-                                      'non_raises_fault' : 'invalid --robocopTestPackage passed test'},
                        '--filter':{'error':ConfigurationError,
-                                   'args' : ['--activeTests', 'ts', '--develop',  '-e', ffox_path, '--filter', 'badfilter', '-o', outfile],
+                                   'args' : ['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path, '--filter', 'badfilter', '-o', outfile],
                                    'except_fault' : 'invalid --filter raised an error that is not ConfigurationError',
                                    'non_raises_fault' : 'invalid --filter passed test'},
                        '--ignoreFirst':{'error':ConfigurationError,
-                                        'args' : ['--activeTests', 'ts', '--develop',  '-e', ffox_path, '--ignoreFirst', '--filter',
+                                        'args' : ['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path, '--ignoreFirst', '--filter',
                                                   'median', "-o", outfile],
                                         'except_fault' : '--ignoreFirst and --filter raised an error that is not ConfigurationError',
                                         'non_raises_fault' : '--ignoreFirst and --filter together passed test '\
                                                              '(Should raise ConfigurationError when called together)'},
                        '--remoteDevice':{'error':BaseException,
-                                         'args':['--activeTests', 'ts', '--develop',  '-e', ffox_path,'--remoteDevice', '0.0.0.0',
+                                         'args':['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path,'--remoteDevice', '0.0.0.0',
                                                  '-o', outfile],
                                          'except_fault':'invalid --remoteDevice raised an error that is not BaseException',
                                          'non_raise_fault':'invalid --remoteDevice passed test'},
@@ -218,12 +145,12 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
 
         # invalid overrides
         try:
-            self.example.tests(['ts'], overrides={'ts':'not a dict'})
-            faults.append("example.tests(['ts'], overrides={'ts':'not a dict') passed test")
+            self.example.tests(['ts_paint'], overrides={'ts_paint':'not a dict'})
+            faults.append("example.tests(['ts_paint'], overrides={'ts_paint':'not a dict') passed test")
         except ConfigurationError:
             pass
         except:
-            faults.append("example.tests(['ts'], overrides={'ts':'not a dict') raised an error that is not ConfigurationError")
+            faults.append("example.tests(['ts_paint'], overrides={'ts_paint':'not a dict') raised an error that is not ConfigurationError")
 
         # Test to see if all errors were raised correctly
         self.assertEqual(faults, [])

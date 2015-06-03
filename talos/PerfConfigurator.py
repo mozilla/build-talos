@@ -78,7 +78,7 @@ class PerfConfigurator(Configuration):
         # XXX activeTests should really use a list-thingy but can't because of
         # the one-off ':' separation :/
         ('activeTests', {
-            'help': "List of tests to run, separated by ':' (ex. ts:tp4:tsvg)",
+            'help': "List of tests to run, separated by ':' (ex. damp:cart)",
             'flags': ['-a', '--activeTests']
         }),
         ('e10s', {
@@ -323,13 +323,10 @@ the highest value.
         'process': 'fennec',
         'title': 'mobile',
         'test_overrides': {
-            'ts': {'cycles': 20, 'timeout': 150},
             'ts_paint': {'cycles': 20},
             'ts_places_generated_max': {'cycles': 10, 'timeout': 150},
             'ts_places_generated_min': {'cycles': 10, 'timeout': 150},
             'ts_places_generated_med': {'cycles': 10, 'timeout': 150},
-            'tdhtml': {'tpcycles': 3},
-            'tsvg': {'tpcycles': 3},
             'tsspider': {'tpcycles': 3}
         }
     }
@@ -776,12 +773,6 @@ the highest value.
                     "You passed in --fennecIDs and this is only supported"
                     " for robocop based tests"
                 )
-            # robopan is the only robocop based extension which uses
-            # roboextender
-            if self.config.get('fennecIDs', '') and \
-                    testdict['name'] == 'trobopan':
-                self.config['extensions'] = \
-                    ['${talos}/mobile_extensions/roboextender@mozilla.org']
 
         if self.remote:
             # fix up logfile preference
@@ -816,8 +807,10 @@ the highest value.
                     # This is a hack to get rid of all the raw formatting in
                     # the YAML output. Without this, output is all over the
                     # place and many \'s present
-                    description = ' '.join(test.test_dict[config_test['name']]
-                                           .description().strip().split())
+                    description = ' '.join(
+                        test.test_dict()[config_test['name']]
+                        .description().strip().split()
+                    )
                     config_test['description'] = description
                     serializer = YAML()
                     serializer._write(sys.stdout, config_test)
@@ -825,9 +818,10 @@ the highest value.
             else:
                 print 'Available tests:'
                 print '================\n'
-                test_class_names = [(test_class.name(),
-                                     test_class.description())
-                                    for test_class in test.tests]
+                test_class_names = [
+                    (test_class.name(), test_class.description())
+                    for test_class in test.test_dict().itervalues()
+                ]
                 test_class_names.sort()
                 for name, description in test_class_names:
                     print name
@@ -887,8 +881,10 @@ the highest value.
                 raise ConfigurationError(
                     'test overrides must be a dict: (%s, %s)' % (key, value))
 
+        test_dict = test.test_dict()
+
         # ensure tests are available
-        availableTests = test.test_dict.keys()
+        availableTests = test_dict.keys()
         if not set(activeTests).issubset(availableTests):
             missing = [i for i in activeTests
                        if i not in availableTests]
@@ -898,7 +894,7 @@ the highest value.
         # return the tests
         retval = []
         for test_name in activeTests:
-            test_class = test.test_dict[test_name]
+            test_class = test_dict[test_name]
 
             # specific variables do not need overrides, in this case
             # tpmozafterpaint

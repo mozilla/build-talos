@@ -2,6 +2,24 @@
 test definitions for Talos
 """
 
+_TESTS = {}  # internal dict of Talos test classes
+
+
+def register_test():
+    """Decorator to register Talos test classes"""
+    def wrapper(klass):
+        assert issubclass(klass, Test)
+        assert klass.name() not in _TESTS
+
+        _TESTS[klass.name()] = klass
+        return klass
+    return wrapper
+
+
+def test_dict():
+    """Return the dict of the registered test classes"""
+    return _TESTS
+
 
 class Test(object):
     """abstract base class for a Talos test case"""
@@ -97,28 +115,17 @@ class TsBase(Test):
     ]
 
 
-class ts(TsBase):
-    """
-    A basic start up test (ts = test start up)
-
-    The overall test number is calculated by excluding the max opening time
-    and taking an average of the remaining numbers.
-    Unlike ts_paint, ts test uses a blank profile.
-    """
-    cycles = 20
-    timeout = 150
-    sps_profile_startup = True
-    sps_profile_entries = 10000000
-    url = 'startup_test/startup_test.html'
-    shutdown = True
-
-
-class ts_paint(ts):
+@register_test()
+class ts_paint(TsBase):
     """
     Launches tspaint_test.html with the current timestamp in the url,
     waits for [MozAfterPaint and onLoad] to fire, then records the end
     time and calculates the time to startup.
     """
+    cycles = 20
+    timeout = 150
+    sps_profile_startup = True
+    sps_profile_entries = 10000000
     url = 'startup_test/tspaint_test.html'
     shutdown = False
     xperf_counters = []
@@ -130,14 +137,41 @@ class ts_paint(ts):
     responsiveness = False
 
 
-class ts_paint_cold(ts_paint):
+@register_test()
+class sessionrestore(TsBase):
     """
-    Clears the disk cache before running the ts_paint tests.
+    A start up test measuring the time it takes to load a sessionstore.js file.
+
+    1. Set up Firefox to restore from a given sessionstore.js file.
+    2. Launch Firefox.
+    3. Measure the delta between firstPaint and sessionRestored.
     """
-    setup = "${talos}/startup_test/cold/setup.py"
-    mobile = False
+    cycles = 10
+    timeout = 1000000
+    sps_profile_startup = True
+    sps_profile_entries = 10000000
+    profile_path = '${talos}/startup_test/sessionrestore/profile'
+    url = 'startup_test/sessionrestore/index.html'
+    shutdown = False
+    reinstall = ['sessionstore.js']
+    # Restore the session
+    preferences = {'browser.startup.page': 3}
 
 
+@register_test()
+class sessionrestore_no_auto_restore(sessionrestore):
+    """
+    A start up test measuring the time it takes to load a sessionstore.js file.
+
+    1. Set up Firefox to *not* restore automatically from sessionstore.js file.
+    2. Launch Firefox.
+    3. Measure the delta between firstPaint and sessionRestored.
+    """
+    # Restore about:home
+    preferences = {'browser.startup.page': 1}
+
+
+@register_test()
 class tpaint(TsBase):
     """
     Tests the amount of time it takes the open a new window. This test does
@@ -155,6 +189,7 @@ class tpaint(TsBase):
     filters = [["ignore_first", [5]], ['median', []]]
 
 
+@register_test()
 class tresize(TsBase):
     """
     This test does some resize thing.
@@ -169,53 +204,7 @@ class tresize(TsBase):
     filters = [["ignore_first", [5]], ['median', []]]
 
 
-# mobile ts-type tests
-class trobopan(TsBase):
-    """
-    Panning performance test. Value is square of frame delays (ms greater
-    than 25 ms) encountered while panning. Lower values are better.
-    """
-    url = ('am instrument -w -e deviceroot %s -e class'
-           ' ${robocopTestPackage}.tests.testPan'
-           ' ${robocopTestName}/${robocopTestPackage}'
-           '.FennecInstrumentationTestRunner')
-    cycles = 5
-    timeout = 300
-    desktop = False
-    tpchrome = False
-    fennecIDs = True
-
-
-class tcheckerboard(TsBase):
-    """
-    Simple measure of 'checkerboarding'. Lower values are better.
-    """
-    url = ('am instrument -w -e deviceroot %s -e class'
-           ' ${robocopTestPackage}.tests.testCheck'
-           ' ${robocopTestName}/${robocopTestPackage}'
-           '.FennecInstrumentationTestRunner')
-    cycles = 5
-    timeout = 300
-    desktop = False
-    tpchrome = False
-    fennecIDs = True
-
-
-class tprovider(TsBase):
-    """
-    A mobile ts_type test (docstring to be updated)
-    """
-    url = ('am instrument -w -e deviceroot %s -e class'
-           ' ${robocopTestPackage}.tests.testBrowserProviderPerf'
-           ' ${robocopTestName}/${robocopTestPackage}'
-           '.FennecInstrumentationTestRunner')
-    cycles = 5
-    timeout = 300
-    desktop = False
-    tpchrome = False
-    fennecIDs = True
-
-
+@register_test()
 class tcheck2(TsBase):
     """
     Measure of 'checkerboarding' during simulation of real user interaction
@@ -233,38 +222,8 @@ class tcheck2(TsBase):
     tpdisable_e10s = True
 
 
-class sessionrestore(ts):
-    """
-    A start up test measuring the time it takes to load a sessionstore.js file.
-
-    1. Set up Firefox to restore from a given sessionstore.js file.
-    2. Launch Firefox.
-    3. Measure the delta between firstPaint and sessionRestored.
-    """
-    cycles = 10
-    timeout = 1000000
-    sps_profile_entries = 10000000
-    profile_path = '${talos}/startup_test/sessionrestore/profile'
-    url = 'startup_test/sessionrestore/index.html'
-    shutdown = False
-    reinstall = ['sessionstore.js']
-    # Restore the session
-    preferences = {'browser.startup.page': 3}
-
-
-class sessionrestore_no_auto_restore(sessionrestore):
-    """
-    A start up test measuring the time it takes to load a sessionstore.js file.
-
-    1. Set up Firefox to *not* restore automatically from sessionstore.js file.
-    2. Launch Firefox.
-    3. Measure the delta between firstPaint and sessionRestored.
-    """
-    # Restore about:home
-    preferences = {'browser.startup.page': 1}
-
-
 # Media Test
+@register_test()
 class media_tests(TsBase):
     """
     Media Performance Tests
@@ -275,7 +234,7 @@ class media_tests(TsBase):
     url = 'http://localhost:16932/startup_test/media/html/media_tests.html'
     timeout = 360
 
-# pageloader tests(tp5, tdhtml, etc)
+# pageloader tests(tp5, etc)
 
 # The overall test number is determined by first calculating the median
 # page load time for each page in the set (excluding the max page load
@@ -303,6 +262,7 @@ class PageloaderTest(Test):
             'test_name_extension']
 
 
+@register_test()
 class tart(PageloaderTest):
     """
     Tab Animation Regression Test
@@ -348,6 +308,7 @@ class tart(PageloaderTest):
     filters = [["ignore_first", [1]], ['median', []]]
 
 
+@register_test()
 class cart(PageloaderTest):
     """
     Customize Animation Regression Test
@@ -380,6 +341,7 @@ class cart(PageloaderTest):
     filters = [["ignore_first", [1]], ['median', []]]
 
 
+@register_test()
 class damp(PageloaderTest):
     """
     Devtools At Maximum Performance
@@ -399,6 +361,7 @@ class damp(PageloaderTest):
     filters = [["ignore_first", [1]], ['median', []]]
 
 
+@register_test()
 class glterrain(PageloaderTest):
     """
     Simple rotating WebGL scene with moving light source over a
@@ -424,32 +387,15 @@ class glterrain(PageloaderTest):
     filters = [["ignore_first", [1]], ['median', []]]
 
 
-class tp(PageloaderTest):
-    """
-    Base class for all tp based tests (tp = test pageload)
-
-    The original tp test created by Mozilla to test browser page load time.
-    Cycled through 40 pages. The pages were copied from the live web during
-    November, 2000. Pages were cycled by loading them within the main
-    browser window from a script that lived in content.
-    """
-    tpmanifest = '${talos}/page_load_test/tp3.manifest'
-    tpcycles = None
-    resolution = 20
-    win_counters = ['Working Set', 'Private Bytes', '% Processor Time']
-    w7_counters = ['Working Set', 'Private Bytes', '% Processor Time',
-                   'Modified Page List Bytes']
-    linux_counters = ['Private Bytes', 'Main_RSS', 'XRes']
-    mac_counters = ['Main_RSS']
-    shutdown = True
-
-
-class tp4m(tp):
+@register_test()
+class tp4m(PageloaderTest):
     """
     This is a smaller pageset (21 pages) of the updated web page test which
     was set to 100 pages from February 2009. It is designed for mobile
     Firefox and is a blend of regular and mobile friendly pages.
     """
+    resolution = 20
+    shutdown = True
     tpmanifest = '${talos}/page_load_test/tp4m.manifest'
     tpchrome = False
     tpdisable_e10s = True
@@ -460,7 +406,8 @@ class tp4m(tp):
     timeout = 1800
 
 
-class tp5n(tp):
+@register_test()
+class tp5n(PageloaderTest):
     """
     Tests the time it takes Firefox to load the tp5 web page test set.
 
@@ -469,6 +416,8 @@ class tp5n(tp):
     pages/home pages but to be pages that better reflect the actual content
     of the site in question.
     """
+    resolution = 20
+    shutdown = True
     tpmanifest = '${talos}/page_load_test/tp5n/tp5n.manifest'
     tpcycles = 1
     tppagecycles = 1
@@ -504,6 +453,7 @@ class tp5n(tp):
                    'talos.logfile': 'browser_output.txt'}
 
 
+@register_test()
 class tp5o(PageloaderTest):
     """
     Derived from the tp5n pageset, this is the 49 most reliable webpages.
@@ -529,6 +479,7 @@ class tp5o(PageloaderTest):
     timeout = 1800
 
 
+@register_test()
 class tp5o_scroll(PageloaderTest):
     """
     Tests scroll (like tscrollx does, including ASAP) but on the tp5o pageset.
@@ -548,35 +499,7 @@ class tp5o_scroll(PageloaderTest):
     filters = [["ignore_first", [1]], ['median', []]]
 
 
-class tdhtml(PageloaderTest):
-    """
-    Tests which measure the time to cycle through a set of DHTML test pages.
-    This test will be updated in the near future.
-    This test is also ran with the nochrome option.
-    """
-    tpmanifest = '${talos}/page_load_test/dhtml/dhtml.manifest'
-    tpcycles = 5
-
-
-class tsvg(PageloaderTest):
-    """
-    An svg-only number that measures SVG rendering performance.
-    """
-    tpmanifest = '${talos}/page_load_test/svg/svg.manifest'
-    tpcycles = 5
-    """ ASAP mode - keeping old pref (new is 0), since tsvg is being deprecated
-        and we don't want to modify talos results for it now """
-    preferences = {'layout.frame_rate': 10000}
-
-
-class tsvg_opacity(PageloaderTest):
-    """
-    An svg-only number that measures SVG rendering performance.
-    """
-    tpmanifest = '${talos}/page_load_test/svg_opacity/svg_opacity.manifest'
-    tpcycles = 5
-
-
+@register_test()
 class v8_7(PageloaderTest):
     """
     This is the V8 (version 7) javascript benchmark taken verbatim and
@@ -594,6 +517,7 @@ class v8_7(PageloaderTest):
     preferences = {'dom.send_after_paint_to_content': False}
 
 
+@register_test()
 class kraken(PageloaderTest):
     """
     This is the Kraken javascript benchmark taken verbatim and slightly
@@ -609,6 +533,7 @@ class kraken(PageloaderTest):
     filters = [['mean', []]]
 
 
+@register_test()
 class tcanvasmark(PageloaderTest):
     """
     CanvasMark benchmark v0.6
@@ -626,19 +551,12 @@ class tcanvasmark(PageloaderTest):
     filters = [["ignore_first", [1]], ['median', []]]
 
 
-class tscroll(PageloaderTest):
-    """
-    This test does some scrolly thing.
-    """
-    tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
-    tpcycles = 5
-
-
 class dromaeo(PageloaderTest):
     """abstract base class for dramaeo tests"""
     filters = [['dromaeo', []]]
 
 
+@register_test()
 class dromaeo_css(dromaeo):
     """
     Dromaeo suite of tests for JavaScript performance testing.
@@ -652,6 +570,7 @@ class dromaeo_css(dromaeo):
     tpmanifest = '${talos}/page_load_test/dromaeo/css.manifest'
 
 
+@register_test()
 class dromaeo_dom(dromaeo):
     """
     Dromaeo suite of tests for JavaScript performance testing.
@@ -666,49 +585,10 @@ class dromaeo_dom(dromaeo):
     tpdisable_e10s = True
 
 
-class a11y(PageloaderTest):
-    """
-    This test ensures basic a11y tables and permutations do not cause
-    performance regressions.
-    """
-    tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
-    tpmozafterpaint = True
-    tpcycles = 5
-    sps_profile_interval = 10
-    sps_profile_entries = 300000
-    # we don't make a11y.manifest have urls, it just has dhtml.html instead
-    # of http://ip:port/dhtml.html
-    mobile = False
-    filters = [["ignore_first", [1]], ['median', []]]
-
-
-# 'r' tests are row based vs column based.
-class tdhtmlr(tdhtml):
-    """
-    Tests which measure the time to cycle through a set of DHTML test pages.
-    This test will be updated in the near future. Unlike tdhtml, this test
-    is row-based instead of column based.
-    This test is also ran with the nochrome option.
-    """
-    tpcycles = 1
-    tppagecycles = 25
-
-
-class tsvgr(tsvg):
-    """
-    Like the tsvg test this is an svg-only number that measures SVG
-    rendering performance. Unlike tsvg, this test is row-based instead
-    of column based.
-    """
-    tpcycles = 1
-    tppagecycles = 25
-
-
+@register_test()
 class tsvgm(tsvg):
     """
-    Like the tsvg test this is an svg-only number that measures SVG
-    rendering performance. Unlike tsvg, this test is row-based instead
-    of column based.
+    An svg-only number that measures SVG rendering performance.
     """
     tpmanifest = '${talos}/page_load_test/svgx/svgm.manifest'
     tpcycles = 1
@@ -723,11 +603,10 @@ class tsvgm(tsvg):
     filters = [["ignore_first", [2]], ['median', []]]
 
 
-class tsvgx(tsvg):
+@register_test()
+class tsvgx(PageloaderTest):
     """
-    Like the tsvg test this is an svg-only number that measures SVG
-    rendering performance. Unlike tsvg, this test is row-based instead
-    of column based.
+    An svg-only number that measures SVG rendering performance.
     """
     tpmanifest = '${talos}/page_load_test/svgx/svgx.manifest'
     tpcycles = 1
@@ -742,12 +621,12 @@ class tsvgx(tsvg):
     filters = [["ignore_first", [5]], ['median', []]]
 
 
-class tsvgr_opacity(tsvg_opacity):
+@register_test()
+class tsvgr_opacity(PageloaderTest):
     """
-    Like the tsvg_opacity test this is an svg-only number that measures SVG
-    rendering performance. Unlike tsvg_opacity, this test is row-based
-    instead of column based.
+    An svg-only number that measures SVG rendering performance.
     """
+    tpmanifest = '${talos}/page_load_test/svg_opacity/svg_opacity.manifest'
     tpcycles = 1
     tppagecycles = 25
     sps_profile_interval = 1
@@ -755,20 +634,10 @@ class tsvgr_opacity(tsvg_opacity):
     filters = [["ignore_first", [5]], ['median', []]]
 
 
-class tscrollr(PageloaderTest):
-    """
-    Like tscroll, this test does some scrolly thing. Unlike tscroll, this
-    test is row-based instead of column based.
-    """
-    tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
-    tpcycles = 1
-    tppagecycles = 25
-
-
+@register_test()
 class tscrollx(PageloaderTest):
     """
-    Like tscroll, this test does some scrolly thing. Unlike tscroll, this
-    test is row-based instead of column based.
+    This test does some scrolly thing.
     """
     tpmanifest = '${talos}/page_load_test/scroll/scroll.manifest'
     tpcycles = 1
@@ -783,11 +652,11 @@ class tscrollx(PageloaderTest):
     filters = [["ignore_first", [5]], ['median', []]]
 
 
+@register_test()
 class a11yr(PageloaderTest):
     """
-    Like a11y, this test ensures basic a11y tables and permutations do not
-    cause performance regressions. Unlike a11y, this test is row-based
-    instead of column based.
+    This test ensures basic a11y tables and permutations do not cause
+    performance regressions.
     """
     tpmanifest = '${talos}/page_load_test/a11y/a11y.manifest'
     tpcycles = 1
@@ -797,15 +666,3 @@ class a11yr(PageloaderTest):
     # we don't make a11y.manifest have urls, it just has dhtml.html instead
     # of http://ip:port/dhtml.html
     mobile = False
-
-# global test data
-tests = [ts_paint, ts, tsvg, tdhtml, ts_paint_cold,
-         tp4m, tp5n, tp5o, tpaint, tresize, tp5o_scroll,
-         trobopan, tcheckerboard, tprovider, tcheck2, tcanvasmark,
-         dromaeo_css, dromaeo_dom, v8_7, kraken, media_tests,
-         tdhtmlr, tsvgr, tsvgr_opacity, tscrollr, a11yr,
-         tsvgx, tscrollx, tart, cart, glterrain,
-         sessionrestore, sessionrestore_no_auto_restore,
-         damp
-         ]
-test_dict = dict([(i.name(), i) for i in tests])
