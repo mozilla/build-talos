@@ -586,7 +586,7 @@ class dromaeo_dom(dromaeo):
 
 
 @register_test()
-class tsvgm(tsvg):
+class tsvgm(PageloaderTest):
     """
     An svg-only number that measures SVG rendering performance.
     """
