@@ -293,22 +293,25 @@ class TTest(object):
         utils.debug("operating with platform_type : %s", self.platform_type)
         self.counters = test_config.get(self.platform_type + 'counters', [])
         self.resolution = test_config['resolution']
-        utils.setEnvironmentVars(browser_config['env'])
-        utils.setEnvironmentVars({'MOZ_CRASHREPORTER_NO_REPORT': '1'})
+        with utils.restore_environment_vars():
+            return self._runTest(browser_config, test_config)
+
+    def _runTest(self, browser_config, test_config):
+        for k, v in browser_config['env'].iteritems():
+            os.environ[k] = str(v)
+        os.environ['MOZ_CRASHREPORTER_NO_REPORT'] = '1'
         # for winxp e10s logging:
         # https://bugzilla.mozilla.org/show_bug.cgi?id=1037445
-        utils.setEnvironmentVars(
-            {'MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA': '1'})
+        os.environ['MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA'] = '1'
         if browser_config['symbols_path']:
-            utils.setEnvironmentVars({'MOZ_CRASHREPORTER': '1'})
+            os.environ['MOZ_CRASHREPORTER'] = '1'
         else:
-            utils.setEnvironmentVars({'MOZ_CRASHREPORTER_DISABLE': '1'})
+            os.environ['MOZ_CRASHREPORTER_DISABLE'] = '1'
 
-        utils.setEnvironmentVars({'MOZ_DISABLE_NONLOCAL_CONNECTIONS': '1'})
+        os.environ['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
 
-        utils.setEnvironmentVars({
-            "LD_LIBRARY_PATH": os.path.dirname(browser_config['browser_path'])
-        })
+        os.environ["LD_LIBRARY_PATH"] = \
+            os.path.dirname(browser_config['browser_path'])
 
         profile_dir = None
         temp_dir = None
@@ -328,13 +331,12 @@ class TTest(object):
             here = os.path.dirname(os.path.realpath(__file__))
             if test_config['mainthread']:
                 mainthread_io = os.path.join(here, "mainthread_io.log")
-                utils.setEnvironmentVars(
-                    {'MOZ_MAIN_THREAD_IO_LOG': mainthread_io})
+                os.environ['MOZ_MAIN_THREAD_IO_LOG'] = mainthread_io
 
             preferences = copy.deepcopy(browser_config['preferences'])
             if 'preferences' in test_config and test_config['preferences']:
                 testPrefs = dict(
-                    [(i, utils.parsePref(j))
+                    [(i, utils.parse_pref(j))
                      for i, j in test_config['preferences'].items()]
                 )
                 preferences.update(testPrefs)
@@ -350,10 +352,10 @@ class TTest(object):
                 browser_config['webserver']
             )
             self.initializeProfile(profile_dir, browser_config)
-            test_config['url'] = utils.interpolatePath(
+            test_config['url'] = utils.interpolate(
                 test_config['url'],
-                profile_dir=profile_dir,
-                firefox_path=browser_config['browser_path']
+                profile=profile_dir,
+                firefox=browser_config['browser_path']
             )
 
             if browser_config['fennecIDs']:
@@ -441,12 +443,9 @@ class TTest(object):
                     platform.system() != "Linux":
                 # ignore responsiveness tests on linux until we fix
                 # Bug 710296
-                utils.setEnvironmentVars(
-                    {'MOZ_INSTRUMENT_EVENT_LOOP': '1'})
-                utils.setEnvironmentVars(
-                    {'MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD': '20'})
-                utils.setEnvironmentVars(
-                    {'MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL': '10'})
+                os.environ['MOZ_INSTRUMENT_EVENT_LOOP'] = '1'
+                os.environ['MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD'] = '20'
+                os.environ['MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL'] = '10'
                 global_counters['responsiveness'] = []
 
             # instantiate an object to hold test results
@@ -749,7 +748,6 @@ class TTest(object):
 
             # cleanup
             self.cleanupProfile(temp_dir)
-            utils.restoreEnvironmentVars()
             if sps_profile:
                 # For some reason, on Windows, big profiles are sometimes
                 # locked by another process even after all Firefox processes

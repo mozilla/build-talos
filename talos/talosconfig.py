@@ -1,5 +1,9 @@
 import os
-from utils import writeConfigFile
+
+
+def writeConfigFile(obj, vals):
+    return ''.join("%s: %s\n" % (opt, obj[opt])
+                   for opt in (vals or obj.keys()))
 
 
 def generateTalosConfig(command_line, browser_config, test_config, pid=None):

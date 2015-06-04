@@ -8,39 +8,38 @@ import os
 import sys
 import time
 import urlparse
-import yaml
 import string
 import urllib
 import mozinfo
 import mozlog
 import json
+import re
 from mozlog import debug, info  # this is silly, but necessary
 import platform
 import shutil
-from mozprocess import pid as mozpid
+import copy
+from contextlib import contextmanager
 
 # directory of this file for use with interpolatePath()
 here = os.path.dirname(os.path.realpath(__file__))
 
-DEBUG = 0
-NOISY = 0
-START_TIME = 0
-saved_environment = {}
-log_levels = {'debug': mozlog.DEBUG, 'info': mozlog.INFO}
 
+class Timer(object):
+    def __init__(self):
+        self._start_time = 0
+        self.start()
 
-def startTimer():
-    global START_TIME
-    START_TIME = time.time()
+    def start(self):
+        self._start_time = time.time()
 
-
-def stopTimer():
-    stop_time = time.time()
-    return time.strftime("%H:%M:%S", time.gmtime(stop_time-START_TIME))
+    def elapsed(self):
+        seconds = time.time() - self._start_time
+        return time.strftime("%H:%M:%S", time.gmtime(seconds))
 
 
 def startLogger(levelChoice):
     # declare and define global logger object to send logging messages to
+    log_levels = {'debug': mozlog.DEBUG, 'info': mozlog.INFO}
     mozlog.basicConfig(format='%(levelname)s : %(message)s',
                        level=log_levels[levelChoice])
 
@@ -55,25 +54,23 @@ def stamped_msg(msg_title, msg_action):
     sys.stdout.flush()
 
 
-def setEnvironmentVars(newVars):
-    """Sets environment variables as specified by env, an array of variables
-    from sample.config"""
-    global saved_environment
-    env = os.environ
-    for var in newVars:
-        # save the old values so they can be restored later:
-        try:
-            saved_environment[var] = str(env[var])
-        except:
-            saved_environment[var] = ""
-        env[var] = str(newVars[var])
+@contextmanager
+def restore_environment_vars():
+    """
+    clone the os.environ variable then restore it at the end.
 
+    This is intended to be used like this: ::
 
-def restoreEnvironmentVars():
-    """Restores environment variables to the state they were in before
-    setEnvironmentVars() was last called"""
-    for var in saved_environment:
-        os.environ[var] = saved_environment[var]
+      with restore_environment_vars():
+          # os.environ is a copy
+          os.environ['VAR'] = '1'
+      # os.environ is restored
+    """
+    backup_env, os.environ = os.environ, copy.deepcopy(os.environ)
+    try:
+        yield
+    finally:
+        os.environ = backup_env
 
 
 class TalosError(Exception):
@@ -92,24 +89,6 @@ class TalosCrash(Exception):
 
        https://bugzilla.mozilla.org/show_bug.cgi?id=829734
     """
-
-
-def writeConfigFile(obj, vals):
-    retVal = ""
-    if (vals == []):
-        vals = obj.keys()
-
-    for opt in vals:
-        retVal += "%s: %s\n" % (opt, obj[opt])
-
-    return retVal
-
-
-def readConfigFile(filename):
-    config_file = open(filename, 'r')
-    yaml_config = yaml.load(config_file)
-    config_file.close()
-    return yaml_config
 
 
 def is_running(pid, psarg='axwww'):
@@ -131,39 +110,23 @@ def is_running(pid, psarg='axwww'):
             for i in range(num_results):
                 pids.append(int(processes[i]))
     else:
+        from mozprocess import pid as mozpid
         pids = [int(i['PID']) for i in mozpid.ps()]
 
     return bool([i for i in pids if pid == i])
 
 
-def interpolatePath(path, profile_dir=None, firefox_path=None,
-                    robocop_TestPackage=None, robocop_TestName=None,
-                    webserver=None):
-    path = string.Template(path).safe_substitute(talos=here)
+def interpolate(template, **kwargs):
+    """
+    Use string.Template to substitute variables in a string.
 
-    if robocop_TestName and robocop_TestPackage:
-        path = string.Template(path).safe_substitute(
-            robocopTestPackage=robocop_TestPackage
-        )
-        path = string.Template(path).safe_substitute(
-            robocopTestName=robocop_TestName
-        )
+    The placeholder ${talos} is always defined and will be replaced by the
+    folder containing this file (global variable 'here').
 
-    if profile_dir:
-        path = string.Template(path).safe_substitute(profile=profile_dir)
-
-    if firefox_path:
-        path = string.Template(path).safe_substitute(firefox=firefox_path)
-
-    if webserver:
-        scheme = ''
-        if ('://' not in webserver):
-            scheme = 'http://'
-        path = string.Template(path).safe_substitute(
-            webserver='%s%s' % (scheme, webserver)
-        )
-
-    return path
+    You can add placeholders using kwargs.
+    """
+    kwargs.setdefault('talos', here)
+    return string.Template(template).safe_substitute(**kwargs)
 
 
 def testAgent(host, port):
@@ -175,18 +138,8 @@ def testAgent(host, port):
 
 
 def findall(string, token):
-    """find all occurances in a string"""
-    # really, should be in python core
-    retval = []
-    while True:
-        if retval:
-            index = retval[-1] + len(token)
-        else:
-            index = 0
-        location = string.find(token, index)
-        if location == -1:
-            return retval
-        retval.append(location)
+    """find all occurences in a string"""
+    return [m.start() for m in re.finditer(re.escape(token), string)]
 
 
 def tokenize(string, start, end):
@@ -260,18 +213,10 @@ def urlsplit(url, default_scheme='file'):
     return [i for i in urlparse.urlsplit(url)]
 
 
-def parsePref(value):
+def parse_pref(value):
     """parse a preference value from a string"""
-    if not isinstance(value, basestring):
-        return value
-    if value.lower() == 'true':
-        return True
-    if value.lower() == 'false':
-        return False
-    try:
-        return int(value)
-    except ValueError:
-        return value
+    from mozprofile.prefs import Preferences
+    return Preferences.cast(value)
 
 
 def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot,

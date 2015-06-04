@@ -650,7 +650,7 @@ the highest value.
                 False
 
         extraPrefs = self.config.pop('extraPrefs', {})
-        extraPrefs = dict([(i, utils.parsePref(j))
+        extraPrefs = dict([(i, utils.parse_pref(j))
                            for i, j in extraPrefs.items()])
         self.config['preferences'].update(extraPrefs)
         # remove None values from preferences;
@@ -961,13 +961,16 @@ the highest value.
             # fix up url
             url = getattr(test_instance, 'url', None)
             if url:
-                test_instance.url = self.convertUrlToRemote(url)
-                test_instance.url = utils.interpolatePath(
-                    test_instance.url,
-                    None,
-                    None,
-                    self.config.get('robocopTestPackage'),
-                    self.config.get('robocopTestName')
+                kwargs = {}
+                robocop_TestPackage = self.config.get('robocopTestPackage')
+                robocop_TestName = self.config.get('robocopTestName')
+                if robocop_TestPackage and robocop_TestName:
+                    kwargs['robocop_TestPackage'] = robocop_TestPackage
+                    kwargs['robocop_TestName'] = robocop_TestName
+
+                test_instance.url = utils.interpolate(
+                    self.convertUrlToRemote(url),
+                    **kwargs
                 )
 
             # fix up tpmanifest
@@ -976,7 +979,7 @@ the highest value.
                 if self.config.get('develop') or self.config.get('deviceroot'):
                     test_instance.tpmanifest = \
                         self.buildRemoteManifest(
-                            utils.interpolatePath(tpmanifest))
+                            utils.interpolate(tpmanifest))
 
             # add any counters
             if counters:

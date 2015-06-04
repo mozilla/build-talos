@@ -93,7 +93,10 @@ class FFSetup(object):
         real_prefs = {}
         for name, value in prefs.iteritems():
             if type(value) is str:
-                value = utils.interpolatePath(value, webserver=webserver)
+                webserver_var = webserver
+                if '://' not in webserver:
+                    webserver_var = 'http://' + webserver_var
+                value = utils.interpolate(value, webserver=webserver_var)
             real_prefs[name] = value
         profile.set_preferences(real_prefs)
 

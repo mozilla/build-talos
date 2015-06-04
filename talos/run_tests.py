@@ -127,7 +127,7 @@ def run_tests(configurator):
         # Build command line from config
         for path in paths:
             if test.get(path):
-                test[path] = utils.interpolatePath(test[path])
+                test[path] = utils.interpolate(test[path])
         if test.get('tpmanifest'):
             test['tpmanifest'] = \
                 os.path.normpath('file:/%s' % (urllib.quote(test['tpmanifest'],
@@ -135,9 +135,9 @@ def run_tests(configurator):
         if not test.get('url'):
             # build 'url' for tptest
             test['url'] = buildCommandLine(test)
-        test['url'] = utils.interpolatePath(test['url'])
-        test['setup'] = utils.interpolatePath(test['setup'])
-        test['cleanup'] = utils.interpolatePath(test['cleanup'])
+        test['url'] = utils.interpolate(test['url'])
+        test['setup'] = utils.interpolate(test['setup'])
+        test['cleanup'] = utils.interpolate(test['cleanup'])
 
         # ensure test-specific filters are valid
         if 'filters' in test:
@@ -172,12 +172,12 @@ def run_tests(configurator):
     # fix paths to substitute
     # `os.path.dirname(os.path.abspath(__file__))` for ${talos}
     # https://bugzilla.mozilla.org/show_bug.cgi?id=705809
-    browser_config['extensions'] = [utils.interpolatePath(i)
+    browser_config['extensions'] = [utils.interpolate(i)
                                     for i in browser_config['extensions']]
-    browser_config['dirs'] = dict([(i, utils.interpolatePath(j))
+    browser_config['dirs'] = dict([(i, utils.interpolate(j))
                                    for i, j in browser_config['dirs'].items()])
     browser_config['bcontroller_config'] = \
-        utils.interpolatePath(browser_config['bcontroller_config'])
+        utils.interpolate(browser_config['bcontroller_config'])
 
     # get device manager if specified
     dm = None
@@ -251,7 +251,7 @@ def run_tests(configurator):
             httpd.start()
 
     # run the tests
-    utils.startTimer()
+    timer = utils.Timer()
     utils.stamped_msg(title, "Started")
     for test in tests:
         testname = test['name']
@@ -293,7 +293,7 @@ def run_tests(configurator):
         utils.stamped_msg("Completed test " + testname, "Stopped")
         print_logcat()
 
-    elapsed = utils.stopTimer()
+    elapsed = timer.elapsed()
     print "cycle time: " + elapsed
     utils.stamped_msg(title, "Stopped")
 
