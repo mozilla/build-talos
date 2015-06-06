@@ -233,10 +233,3 @@ class WinCounterManager(CounterManager):
                 aggregateValue += value.union.longValue
 
         return aggregateValue
-
-    def stopMonitor(self):
-        for counter in self.registeredCounters:
-            for singleCounter in self.registeredCounters[counter][1]:
-                pdh.PdhRemoveCounter(singleCounter[0])
-            pdh.PdhCloseQuery(self.registeredCounters[counter][0])
-        self.registeredCounters.clear()

@@ -43,28 +43,6 @@ class FFSetup(object):
         self._env = options['env']
         self._hostproc = hostproc or self.ffprocess
 
-    def PrefString(self, name, value, newline):
-        """Helper function to create a pref string for profile prefs.js
-            in the form 'user_pref("name", value);<newline>'
-
-        Args:
-            name: String containing name of pref
-            value: String containing value of pref
-            newline: Line ending to use, i.e. '\n' or '\r\n'
-
-        Returns:
-            String containing 'user_pref("name", value);<newline>'
-        """
-
-        out_value = str(value)
-        if type(value) == bool:
-            # Write bools as "true"/"false", not "True"/"False".
-            out_value = out_value.lower()
-        if type(value) == str:
-            # Write strings with quotes around them.
-            out_value = '"%s"' % value
-        return 'user_pref("%s", %s);%s' % (name, out_value, newline)
-
     def CreateTempProfileDir(self, source_profile, prefs, extensions,
                              webserver):
         """Creates a temporary profile directory from the source profile
@@ -171,9 +149,8 @@ class FFSetup(object):
         res = 0
         if not os.path.isfile(browser_config['browser_log']):
             raise TalosError("initalization has no output from browser")
-        results_file = open(browser_config['browser_log'], "r")
-        results_raw = results_file.read()
-        results_file.close()
+        with open(browser_config['browser_log'], "r") as results_file:
+            results_raw = results_file.read()
 
         match = PROFILE_REGEX.search(results_raw)
         if match:

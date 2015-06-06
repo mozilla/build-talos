@@ -776,11 +776,10 @@ the highest value.
 
         if self.remote:
             # fix up logfile preference
-            logfile = None
             try:
-                logfile = self.config['preferences'].get('talos.logfile')
-            except:
-                pass
+                logfile = self.config['preferences']['talos.logfile']
+            except KeyError:
+                logfile = None
 
             if logfile:
                 # use the last part of the browser_log overridden for the
@@ -1051,22 +1050,14 @@ the highest value.
         """
 
         # read manifest lines
-        fHandle = None
-        try:
-            fHandle = open(manifestName, 'r')
+        with open(manifestName, 'r') as fHandle:
             manifestLines = fHandle.readlines()
-            fHandle.close()
-        except:
-            if fHandle:
-                fHandle.close()
-            raise  # reraise current exception; prints traceback to screen
 
         # write modified manifest lines
-        newHandle = open(manifestName + '.develop', 'w')
-        for line in manifestLines:
-            newHandle.write(line.replace('localhost',
-                                         self.config['webserver']))
-        newHandle.close()
+        with open(manifestName + '.develop', 'w') as newHandle:
+            for line in manifestLines:
+                newHandle.write(line.replace('localhost',
+                                             self.config['webserver']))
 
         newManifestName = manifestName + '.develop'
 

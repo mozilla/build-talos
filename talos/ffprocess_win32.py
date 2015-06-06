@@ -3,10 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from ffprocess import FFProcess
-try:
-    import mozprocess.wpk as wpk
-except:
-    pass
 
 
 class Win32Process(FFProcess):
@@ -15,4 +11,5 @@ class Win32Process(FFProcess):
     extra_prog = FFProcess.extra_prog[:] + ['dwwim']
 
     def _TerminateProcess(self, pid, timeout):
+        from mozprocess import wpk
         wpk.kill_pid(pid)

@@ -67,9 +67,8 @@ def buildCommandLine(test):
 
 def print_logcat():
     if os.path.exists('logcat.log'):
-        f = open('logcat.log')
-        data = f.read()
-        f.close()
+        with open('logcat.log') as f:
+            data = f.read()
         for l in data.split('\r'):
             # Buildbot will mark the job as failed if it finds 'ERROR'.
             print l.replace('RROR', 'RR_R')
@@ -205,7 +204,7 @@ def run_tests(configurator):
     try:
         browser_config['repository'] = version_info['application_repository']
         browser_config['sourcestamp'] = version_info['application_changeset']
-    except:
+    except KeyError:
         if not browser_config['develop']:
             print "unable to find changeset or repository: %s" % version_info
             sys.exit()

@@ -82,25 +82,24 @@ def GetPrivateBytes(pids):
     privateBytes = 0
     for pid in pids:
         mapfile = '/proc/%s/maps' % pid
-        maps = open(mapfile)
+        with open(mapfile) as maps:
 
-        private = 0
+            private = 0
 
-        for line in maps:
-            # split up
-            (range, line) = line.split(" ", 1)
+            for line in maps:
+                # split up
+                (range, line) = line.split(" ", 1)
 
-            (start, end) = range.split("-")
-            flags = line.split(" ", 1)[0]
+                (start, end) = range.split("-")
+                flags = line.split(" ", 1)[0]
 
-            size = int(end, 16) - int(start, 16)
+                size = int(end, 16) - int(start, 16)
 
-            if flags.find("p") >= 0:
-                if flags.find("w") >= 0:
-                    private += size
+                if flags.find("p") >= 0:
+                    if flags.find("w") >= 0:
+                        private += size
 
-        privateBytes += private
-        maps.close()
+            privateBytes += private
 
     return privateBytes
 
@@ -114,13 +113,11 @@ def GetResidentSize(pids):
     for pid in pids:
         file = '/proc/%s/status' % pid
 
-        status = open(file)
+        with open(file) as status:
 
-        for line in status:
-            if line.find("VmRSS") >= 0:
-                RSS += int(line.split()[1]) * 1024
-
-        status.close()
+            for line in status:
+                if line.find("VmRSS") >= 0:
+                    RSS += int(line.split()[1]) * 1024
 
     return RSS
 
@@ -158,8 +155,6 @@ class LinuxCounterManager(CounterManager):
                    "RSS": GetResidentSize,
                    "XRes": GetXRes}
 
-    pollInterval = .25
-
     def __init__(self, process, counters=None,
                  childProcess="plugin-container"):
         """Args:
@@ -169,7 +164,6 @@ class LinuxCounterManager(CounterManager):
 
         CounterManager.__init__(self)
         self.childProcess = childProcess
-        self.runThread = False
         self.pidList = []
         self.primaryPid = mozpid.get_pids(process)[-1]
         os.stat('/proc/%s' % self.primaryPid)
@@ -195,8 +189,3 @@ class LinuxCounterManager(CounterManager):
                 self.pidList.append(pid)
         except:
             print "WARNING: problem updating child PID's"
-
-    def stopMonitor(self):
-        """any final cleanup"""
-        # TODO: should probably wait until we know run() is completely stopped
-        # before setting self.pid to None. Use a lock?

@@ -9,11 +9,6 @@ import time
 gEnableTracing = False
 
 
-def SetTracingEnabled(isEnabled):
-    global gEnableTracing
-    gEnableTracing = isEnabled
-
-
 def LogTrace(string):
     global gEnableTracing
     if gEnableTracing:

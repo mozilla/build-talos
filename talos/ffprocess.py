@@ -73,7 +73,6 @@ class FFProcess(object):
         """
         import urlparse
         user_js_filename = os.path.join(profile_dir, 'user.js')
-        user_js_file = open(user_js_filename, 'a+')
 
         # NOTE: this should be sufficient for defining a docroot
         scheme = "http://"
@@ -100,8 +99,8 @@ user_pref("capability.principal.codebase.p2.granted", \
 user_pref("capability.principal.codebase.p2.id", "http://%(server)s");
 user_pref("capability.principal.codebase.p2.subjectName", "");
 """ % {"server": server, "host": url.hostname, "port": int(port)}
-        user_js_file.write(remoteCode)
-        user_js_file.close()
+        with open(user_js_filename, 'a+') as user_js_file:
+            user_js_file.write(remoteCode)
 
     # functions for dealing with files
     # these should really go in mozfile:
@@ -120,9 +119,6 @@ user_pref("capability.principal.codebase.p2.subjectName", "");
         mozfile.rmtree(dir)
 
     def getFile(self, handle, localFile=""):
-        fileData = ''
         if os.path.isfile(handle):
-            results_file = open(handle, "r")
-            fileData = results_file.read()
-            results_file.close()
-        return fileData
+            with open(handle, "r") as results_file:
+                return results_file.read()

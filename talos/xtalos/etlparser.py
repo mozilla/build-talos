@@ -10,11 +10,7 @@ import os
 import sys
 import xtalos
 import subprocess
-
-try:
-    import json
-except:
-    import simplejson as json
+import json
 
 
 EVENTNAME_INDEX = 0
@@ -307,9 +303,8 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
         output += "%s, %s\n" % (", ".join(cntr), str(io[cntr]))
     if outputFile:
         fname = "%s_thread_stats%s" % os.path.splitext(outputFile)
-        f = open(fname, "w")
-        f.write(output)
-        f.close()
+        with open(fname, "w") as f:
+            f.write(output)
     else:
         print output
 
@@ -358,18 +353,16 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
 
     wl_temp = {}
     if filename:
-        fHandle = open(filename, 'r')
-        wl_temp = json.load(fHandle)
-        fHandle.close()
+        with open(filename, 'r') as fHandle:
+            wl_temp = json.load(fHandle)
 
     # Approot is the full path where the application is located at
     # We depend on it for dependentlibs.list to ignore files required for
     # normal startup.
     if approot:
         if os.path.exists('%s\\dependentlibs.list' % approot):
-            fhandle = open('%s\\dependentlibs.list' % approot, 'r')
-            libs = fhandle.readlines()
-            fhandle.close()
+            with open('%s\\dependentlibs.list' % approot, 'r') as fhandle:
+                libs = fhandle.readlines()
 
             for lib in libs:
                 wl_temp['{firefox}\\%s' % lib.strip()] = {'ignore': True}
@@ -461,9 +454,8 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
         # We detect if browser_failures.txt exists to exit and turn the job
         # orange
         if error_filename:
-            errorFile = open(error_filename, 'w')
-            errorFile.write('\n'.join(errors))
-            errorFile.close()
+            with open(error_filename, 'w') as errorFile:
+                errorFile.write('\n'.join(errors))
 
         mud = os.environ.get('MOZ_UPLOAD_DIR', None)
         if mud:

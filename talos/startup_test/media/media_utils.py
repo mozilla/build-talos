@@ -17,7 +17,6 @@ import subprocess
 import threading
 
 here = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.abspath(os.path.join(here, os.pardir))
 
 """
 Constants for audio tools, input and processed audio files
@@ -140,34 +139,6 @@ class AudioUtils(object):
             return True, "Recording Device: %s Set" % result.group(1)
         else:
             return False, "Unable to Set Recording Device"
-
-    # Run PESQ on the audio reference file and recorded file
-    def computePESQScore(self):
-        pesq_score = "0,0"
-
-        if not os.path.exists(_PESQ_):
-            return False, "PESQ Tool not found"
-
-        cmd = [_PESQ_, _PESQ_SAMPLE_RATE_, _INPUT_FILE_,
-               _RECORDED_NO_SILENCE_]
-        output = subprocess.check_output(cmd)
-        # P.862 Prediction (Raw MOS, MOS-LQO):  = 2.392        2.009
-        result = re.search('Prediction.*= (\d{1}\.\d{3})\t(\d{1}\.\d{3})',
-                           output)
-        # delete the recorded file with no silence
-        if os.path.exists(_RECORDED_NO_SILENCE_):
-            os.remove(_RECORDED_NO_SILENCE_)
-
-        if result:
-            pesq_score = str(result.group(1)) + ',' + str(result.group(2))
-            return True, pesq_score
-        else:
-            """
-            We return status as True since PESQ computation went through
-            successfully but scores computation failed due to severly
-            degraded audio quality.
-            """
-            return True, pesq_score
 
     # Run SNR on the audio reference file and recorded file
     def computeSNRAndDelay(self):

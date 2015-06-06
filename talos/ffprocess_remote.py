@@ -6,12 +6,8 @@ from ffprocess import FFProcess
 import os
 import time
 from utils import TalosError, testAgent
-try:
-    import mozdevice
-except:
-    # mozdevice is known not to import correctly with python 2.4, which we
-    # still support
-    pass
+import mozdevice
+
 
 DEFAULT_PORT = 20701
 
@@ -39,58 +35,6 @@ class RemoteProcess(FFProcess):
 
     def setupRemote(self, host='', port=DEFAULT_PORT):
         self.testAgent = testAgent(host, port)
-
-    def GetRunningProcesses(self):
-        try:
-            return self.testAgent.getProcessList()
-        except mozdevice.DMError:
-            print ("Remote Device Error: Error getting list of processes"
-                   " on remote device")
-            raise
-
-    def ProcessesWithNames(self, *process_names):
-        """Returns a list of processes running with the given name(s).
-           For the remote case (this file), we will look for activities
-           intead of raw processname.
-
-        Useful to check whether a Browser process is still running
-
-        Args:
-            process_names: String or strings containing process names, i.e.
-                           "firefox"
-
-        Returns:
-            An array with a list of processes in the list which are running
-        """
-
-        processes_with_names = []
-        topActivity = self.testAgent.getTopActivity()
-        for process_name in process_names:
-            if topActivity == process_name:
-                processes_with_names.append((-1, process_name))
-        return processes_with_names
-
-    def TerminateAllProcesses(self, timeout, *process_names):
-        """Helper function to terminate all processes with the given
-        process name
-
-        Args:
-          process_name: String or strings containing the process name,
-                        i.e. "firefox"
-        """
-        result = ''
-        for process_name in process_names:
-            try:
-                self.testAgent.killProcess(process_name)
-                if result:
-                    result = result + ', '
-                result += \
-                    process_name + ': terminated by testAgent.killProcess'
-            except mozdevice.DMError:
-                print ("Remote Device Error: Error while killing process '%s'"
-                       % process_name)
-                raise
-        return result
 
     def getFile(self, remote_filename, local_filename=None):
         data = ''

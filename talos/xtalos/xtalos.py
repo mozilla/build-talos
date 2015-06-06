@@ -23,9 +23,8 @@ def options_from_config(options, config_file):
     - config_file: path to a YAML config file
     """
 
-    config = open(config_file, 'r')
-    yaml_config = yaml.load(config)
-    config.close()
+    with open(config_file, 'r') as config:
+        yaml_config = yaml.load(config)
     for obj in options.keys():
         options[obj] = yaml_config.get(obj, options[obj])
     return options

@@ -42,16 +42,6 @@ class Whitelist:
             return False
         return True
 
-    def save_baseline(self, data, filename_index, output_filename):
-        self.listmap = {}
-        for tuple in data:
-            self.listmap[self.sanitize_filename(tuple[filename_index])] = \
-                {'ignore': True}
-        with open(output_filename, 'w') as f:
-            json.dump(self.listmap, f, sort_keys=True, indent=4,
-                      separators=(',', ': '))
-        print "Dependent libs: %r" % self.dependent_libs
-
     def sanitize_filename(self, filename):
         filename = filename.lower()
         filename.replace(' (x86)', '')

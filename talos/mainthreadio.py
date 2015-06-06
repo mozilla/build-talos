@@ -11,15 +11,12 @@ import whitelist
 SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
 
 STAGE_STARTUP = 0
-STAGE_NORMAL = 1
-STAGE_SHUTDOWN = 2
-STAGE_STRINGS = ('startup', 'normal', 'shutdown')
+STAGE_STRINGS = ('startup',)
 
 LENGTH_IO_ENTRY = 5
 LENGTH_NEXT_STAGE_ENTRY = 2
 TOKEN_NEXT_STAGE = 'NEXT-STAGE'
 
-INDEX_START_TIMESTAMP = 0
 INDEX_OPERATION = 1
 INDEX_DURATION = 2
 INDEX_EVENT_SOURCE = 3

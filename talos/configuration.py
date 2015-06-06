@@ -54,10 +54,8 @@ class YAML(object):
     dump_args = {'default_flow_style': False}
 
     def read(self, filename):
-        f = file(filename)
-        config = yaml.load(f)
-        f.close()
-        return config
+        with open(filename) as f:
+            return yaml.load(f)
 
     def write(self, config, filename):
         if isinstance(filename, basestring):

@@ -25,20 +25,8 @@ class CounterManager(object):
                 self.registeredCounters[counter] = \
                     [self.allCounters[counter], []]
 
-    def unregisterCounters(self, counters):
-        """Unregister a list of counters.
-           Only counters whose names are found in registeredCounters will be
-           paid attention to
-        """
-        for counter in counters:
-            if counter in self.registeredCounters:
-                del self.registeredCounters[counter]
-
     def getCounterValue(self, counterName):
         """Returns the last value of the counter 'counterName'"""
 
     def updatePidList(self):
         """Updates the list of PIDs we're interested in"""
-
-    def stopMonitor(self):
-        """any final cleanup"""

@@ -172,11 +172,6 @@ class SymFileManager:
 
         return SymbolInfo(symbolMap)
 
-    def StopPrefetchTimer(self):
-        if self.sCallbackTimer:
-            self.sCallbackTimer.cancel()
-            self.sCallbackTimer = None
-
     def PrefetchRecentSymbolFiles(self):
         global PREFETCHED_LIBS
 

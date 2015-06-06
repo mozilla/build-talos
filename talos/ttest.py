@@ -198,28 +198,28 @@ class TTest(object):
     def setupRobocopTests(self, browser_config, profile_dir):
         try:
             deviceRoot = self._ffprocess.testAgent.getDeviceRoot()
-            fHandle = open("robotium.config", "w")
-            fHandle.write("profile=%s\n" % profile_dir)
+            with open("robotium.config", "w") as fHandle:
+                fHandle.write("profile=%s\n" % profile_dir)
 
-            remoteLog = deviceRoot + "/" + browser_config['browser_log']
-            fHandle.write("logfile=%s\n" % remoteLog)
-            fHandle.write("host=http://%s\n" % browser_config['webserver'])
-            fHandle.write("rawhost=http://%s\n" % browser_config['webserver'])
-            envstr = ""
-            delim = ""
-            # This is not foolproof and the ideal solution would be to have
-            # one env/line instead of a single string
-            for key, value in browser_config.get('env', {}).items():
-                try:
-                    value.index(',')
-                    print ("Error: Found an ',' in our value, unable to"
-                           " process value.")
-                except ValueError:
-                    envstr += "%s%s=%s" % (delim, key, value)
-                    delim = ","
+                remoteLog = deviceRoot + "/" + browser_config['browser_log']
+                fHandle.write("logfile=%s\n" % remoteLog)
+                fHandle.write("host=http://%s\n" % browser_config['webserver'])
+                fHandle.write("rawhost=http://%s\n"
+                              % browser_config['webserver'])
+                envstr = ""
+                delim = ""
+                # This is not foolproof and the ideal solution would be to have
+                # one env/line instead of a single string
+                for key, value in browser_config.get('env', {}).items():
+                    try:
+                        value.index(',')
+                        print ("Error: Found an ',' in our value, unable to"
+                               " process value.")
+                    except ValueError:
+                        envstr += "%s%s=%s" % (delim, key, value)
+                        delim = ","
 
-            fHandle.write("envvars=%s\n" % envstr)
-            fHandle.close()
+                fHandle.write("envvars=%s\n" % envstr)
 
             self._ffprocess.testAgent.removeFile(
                 os.path.join(deviceRoot, "fennec_ids.txt"))
@@ -240,9 +240,8 @@ class TTest(object):
                     temp_dir):
         try:
             if os.path.isfile(browser_config['browser_log']):
-                results_file = open(browser_config['browser_log'], "r")
-                results_raw = results_file.read()
-                results_file.close()
+                with open(browser_config['browser_log'], "r") as results_file:
+                    results_raw = results_file.read()
                 utils.info(results_raw)
 
             if profile_dir:
@@ -674,7 +673,7 @@ class TTest(object):
 
                     try:
                         mode = zipfile.ZIP_DEFLATED
-                    except:
+                    except NameError:
                         mode = zipfile.ZIP_STORED
                     with zipfile.ZipFile(profile_arcname, 'a', mode) as arc:
                         # Collect all individual profiles that the test
@@ -686,9 +685,8 @@ class TTest(object):
                             profile_path = os.path.join(sps_profile_dir,
                                                         profile_filename)
                             try:
-                                profile_file = open(profile_path, 'r')
-                                profile = json.load(profile_file)
-                                profile_file.close()
+                                with open(profile_path, 'r') as profile_file:
+                                    profile = json.load(profile_file)
                                 symbolicator\
                                     .dump_and_integrate_missing_symbols(
                                         profile,

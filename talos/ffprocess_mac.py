@@ -5,7 +5,6 @@
 import signal
 import os
 import time
-from select import select
 from ffprocess import FFProcess
 import utils
 
@@ -28,34 +27,3 @@ class MacProcess(FFProcess):
         except OSError, (errno, strerror):
             print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
         return ret
-
-    def NonBlockingReadProcessOutput(self, handle):
-        """Does a non-blocking read from the output of the process
-            with the given handle.
-
-        Args:
-            handle: The process handle returned from os.popen()
-
-        Returns:
-            A tuple (bytes, output) containing the number of output
-            bytes read, and the actual output.
-        """
-
-        output = ""
-        num_avail = 0
-
-        # check for data
-        # select() does not seem to work well with pipes.
-        # after data is available once it *always* thinks there is data
-        # available readline() will continue to return an empty string however
-        # so we can use this behavior to work around the problem
-        while select([handle], [], [], 0)[0]:
-            line = handle.readline()
-            if line:
-                output += line
-            else:
-                break
-            # this statement is true for encodings that have 1byte/char
-            num_avail = len(output)
-
-        return (num_avail, output)

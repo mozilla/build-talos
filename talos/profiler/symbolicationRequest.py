@@ -11,12 +11,6 @@ import urllib2
 # Precompiled regex for validating lib names
 # Empty lib name means client couldn't associate frame with any lib
 gLibNameRE = re.compile("[0-9a-zA-Z_+\-\.]*$")
-gPdbSigRE = re.compile("{([0-9a-fA-F]{8})"
-                       "-([0-9a-fA-F]{4})"
-                       "-([0-9a-fA-F]{4})"
-                       "-([0-9a-fA-F]{4})"
-                       "-([0-9a-fA-F]{12})}$")
-gPdbSigRE2 = re.compile("[0-9a-fA-F]{32}$")
 
 # Maximum number of times a request can be forwarded to a different server
 # for symbolication. Also prevents loops.
@@ -50,7 +44,6 @@ class SymbolicationRequest:
         self.stacks = []
         self.combinedMemoryMap = []
         self.knownModules = []
-        self.includeKnownModulesInResponse = True
         self.symbolSources = []
         self.ParseRequests(rawRequests)
 
@@ -59,10 +52,7 @@ class SymbolicationRequest:
         self.isValidRequest = False
         self.combinedMemoryMap = []
         self.knownModules = []
-        self.includeKnownModulesInResponse = True
         self.stacks = []
-        self.appName = ""
-        self.osName = ""
         self.forwardCount = 0
 
     def ParseRequests(self, rawRequests):
@@ -146,9 +136,6 @@ class SymbolicationRequest:
 
             self.combinedMemoryMap = cleanMemoryMap
             self.knownModules = [False] * len(self.combinedMemoryMap)
-
-            if version < 4:
-                self.includeKnownModulesInResponse = False
 
             # Check stack is well-formatted
             for stack in stacks:

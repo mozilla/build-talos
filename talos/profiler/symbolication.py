@@ -17,13 +17,17 @@ from symbolicationRequest import SymbolicationRequest
 from symLogging import LogMessage
 
 
+class SymbolError(Exception):
+    pass
+
+
 class OSXSymbolDumper:
 
     def __init__(self):
         self.dump_syms_bin = os.path.join(
             os.path.dirname(__file__), 'dump_syms_mac')
         if not os.path.exists(self.dump_syms_bin):
-            raise Exception("No dump_syms_mac binary in this directory")
+            raise SymbolError("No dump_syms_mac binary in this directory")
 
     def store_symbols(self, lib_path, expected_breakpad_id,
                       output_filename_without_extension):
@@ -58,9 +62,8 @@ class OSXSymbolDumper:
             if actual_breakpad_id != expected_breakpad_id:
                 return None
 
-            f = open(output_filename, "w")
-            f.write(stdout)
-            f.close()
+            with open(output_filename, "w") as f:
+                f.write(stdout)
             return output_filename
 
         for arch in get_archs(lib_path):
@@ -75,7 +78,8 @@ class LinuxSymbolDumper:
     def __init__(self):
         self.nm = spawn.find_executable("nm")
         if not self.nm:
-            raise Exception("Could not find nm, necessary for symbol dumping")
+            raise SymbolError(
+                "Could not find nm, necessary for symbol dumping")
 
     def store_symbols(self, lib_path, breakpad_id,
                       output_filename_without_extension):
@@ -93,19 +97,18 @@ class LinuxSymbolDumper:
         if proc.returncode != 0:
             return
 
-        f = open(output_filename, "w")
-        f.write(stdout)
-
-        # Append nm -D output to the file. On Linux, most system libraries have
-        # no "normal" symbols, but they have "dynamic" symbols, which nm -D
-        # shows.
-        proc = subprocess.Popen([self.nm, "--demangle", "-D", lib_path],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        if proc.returncode == 0:
+        with open(output_filename, "w") as f:
             f.write(stdout)
-        f.close()
+
+            # Append nm -D output to the file. On Linux, most system libraries
+            # have no "normal" symbols, but they have "dynamic" symbols, which
+            # nm -D shows.
+            proc = subprocess.Popen([self.nm, "--demangle", "-D", lib_path],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+            stdout, stderr = proc.communicate()
+            if proc.returncode == 0:
+                f.write(stdout)
         return output_filename
 
 
@@ -120,36 +123,27 @@ class ProfileSymbolicator:
         try:
             if platform.system() == "Darwin":
                 return OSXSymbolDumper()
-        except:
-            pass
-        try:
-            if platform.system() == "Linux":
+            elif platform.system() == "Linux":
                 return LinuxSymbolDumper()
-        except:
-            pass
-        return None
+        except SymbolError:
+            return None
 
     def integrate_symbol_zip_from_url(self, symbol_zip_url):
         if self.have_integrated(symbol_zip_url):
             return
         LogMessage("Retrieving symbol zip from {symbol_zip_url}...".format(
             symbol_zip_url=symbol_zip_url))
-        io = urllib2.urlopen(symbol_zip_url, None, 30)
-        sio = cStringIO.StringIO(io.read())
-        zf = zipfile.ZipFile(sio)
-        io.close()
-        self.integrate_symbol_zip(zf)
-        zf.close()
+        with urllib2.urlopen(symbol_zip_url, None, 30) as io:
+            with zipfile.ZipFile(cStringIO.StringIO(io.read())) as zf:
+                self.integrate_symbol_zip(zf)
         self._create_file_if_not_exists(self._marker_file(symbol_zip_url))
 
     def integrate_symbol_zip_from_file(self, filename):
         if self.have_integrated(filename):
             return
-        f = open(filename, 'rb')
-        zf = zipfile.ZipFile(f)
-        self.integrate_symbol_zip(zf)
-        f.close()
-        zf.close()
+        with open(filename, 'rb') as f:
+            with zipfile.ZipFile(f) as zf:
+                self.integrate_symbol_zip(zf)
         self._create_file_if_not_exists(self._marker_file(filename))
 
     def _create_file_if_not_exists(self, filename):
@@ -210,11 +204,9 @@ class ProfileSymbolicator:
 
         # Additionally, we add all dumped symbol files to the missingsymbols
         # zip file.
-        zip = zipfile.ZipFile(symbol_zip_path, 'a', zipfile.ZIP_DEFLATED)
-
-        for lib in unknown_modules:
-            self.dump_and_integrate_symbols_for_lib(lib, output_dir, zip)
-        zip.close()
+        with zipfile.ZipFile(symbol_zip_path, 'a', zipfile.ZIP_DEFLATED) as zf:
+            for lib in unknown_modules:
+                self.dump_and_integrate_symbols_for_lib(lib, output_dir, zf)
 
     def dump_and_integrate_symbols_for_lib(self, lib, output_dir, zip):
         [name, breakpadId] = self._module_from_lib(lib)
