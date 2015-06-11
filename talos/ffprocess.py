@@ -10,7 +10,8 @@ import shutil
 import time
 import utils
 import copy
-from utils import TalosError, MakeDirectoryContentsWritable
+import mozlog
+from utils import TalosError
 
 
 class FFProcess(object):
@@ -49,7 +50,7 @@ class FFProcess(object):
         # returns string of which process_names were terminated and with
         # what signal
 
-        utils.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
+        mozlog.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
         terminate_result = self.TerminateProcesses(pids, browser_wait)
         # check if anything is left behind
         if self.checkProcesses(pids):
@@ -110,13 +111,12 @@ user_pref("capability.principal.codebase.p2.subjectName", "");
     def copyFile(self, fromfile, toDir):
         if not os.path.isfile(os.path.join(toDir, os.path.basename(fromfile))):
             shutil.copy(fromfile, toDir)
-            utils.debug("installed %s", fromfile)
+            mozlog.debug("installed %s", fromfile)
         else:
-            utils.debug("WARNING: file already installed (%s)", fromfile)
+            mozlog.debug("WARNING: file already installed (%s)", fromfile)
 
     def removeDirectory(self, dir):
-        MakeDirectoryContentsWritable(dir)
-        mozfile.rmtree(dir)
+        mozfile.remove(dir)
 
     def getFile(self, handle, localFile=""):
         if os.path.isfile(handle):

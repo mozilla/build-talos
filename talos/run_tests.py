@@ -5,6 +5,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import mozversion
+import mozfile
+import mozlog
 import filter
 import os
 import PerfConfigurator
@@ -218,8 +220,8 @@ def run_tests(configurator):
                                              '%a, %d %b %Y %H:%M:%S GMT')))
     else:
         date = int(time.time())
-    utils.debug("using testdate: %d", date)
-    utils.debug("actual date: %d", int(time.time()))
+    mozlog.debug("using testdate: %d", date)
+    mozlog.debug("actual date: %d", int(time.time()))
 
     if browser_config['remote']:
         procName = browser_config['browser_path'].split('/')[-1]
@@ -257,8 +259,7 @@ def run_tests(configurator):
         test['browser_log'] = browser_config['browser_log']
         utils.stamped_msg("Running test " + testname, "Started")
 
-        if os.path.exists('logcat.log'):
-            os.unlink('logcat.log')
+        mozfile.remove('logcat.log')
 
         try:
             mytest = TTest(browser_config['remote'])

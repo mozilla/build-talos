@@ -112,9 +112,6 @@ class RemoteProcess(FFProcess):
                    " remote device")
             raise
 
-    def MakeDirectoryContentsWritable(self, dir):
-        pass
-
     def removeFile(self, filename):
         try:
             self.testAgent.removeFile(filename)

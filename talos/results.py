@@ -16,6 +16,7 @@ import output
 import re
 import utils
 import csv
+import mozlog
 
 __all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults',
            'BrowserLogResults']
@@ -67,7 +68,7 @@ class TalosResults(object):
         - output_options: a dict mapping formats to options for each format
         """
 
-        utils.info("Outputting talos results => %s", output_formats)
+        mozlog.info("Outputting talos results => %s", output_formats)
         tbpl_output = {}
         try:
 

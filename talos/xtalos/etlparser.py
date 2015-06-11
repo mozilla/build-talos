@@ -11,6 +11,7 @@ import sys
 import xtalos
 import subprocess
 import json
+import mozfile
 
 
 EVENTNAME_INDEX = 0
@@ -293,10 +294,7 @@ def etlparser(xperf_path, etl_filename, processID, approot=None,
 
     # remove the csv file
     if not debug:
-        try:
-            os.remove(csvname)
-        except:
-            pass
+        mozfile.remove(csvname)
 
     output = "thread, stage, counter, value\n"
     for cntr in sorted(io.iterkeys()):

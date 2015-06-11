@@ -12,9 +12,10 @@ import re
 import tempfile
 import time
 import glob
+import mozlog
 from mozprofile.profile import Profile
 
-from utils import TalosError, MakeDirectoryContentsWritable
+from utils import TalosError
 import utils
 
 import TalosProcess
@@ -65,7 +66,6 @@ class FFSetup(object):
         temp_dir = tempfile.mkdtemp()
         profile_dir = os.path.join(temp_dir, 'profile')
         profile = Profile.clone(source_profile, profile_dir)
-        MakeDirectoryContentsWritable(profile_dir)
 
         # Copy the user-set prefs to user.js
         real_prefs = {}
@@ -156,9 +156,9 @@ class FFSetup(object):
         if match:
             res = 1
         else:
-            utils.info("Could not find %s in browser_log: %s",
-                       PROFILE_REGEX.pattern, browser_config['browser_log'])
-            utils.info("Raw results:%s", results_raw)
-            utils.info("Initialization of new profile failed")
+            mozlog.info("Could not find %s in browser_log: %s",
+                        PROFILE_REGEX.pattern, browser_config['browser_log'])
+            mozlog.info("Raw results:%s", results_raw)
+            mozlog.info("Initialization of new profile failed")
 
         return res, pid

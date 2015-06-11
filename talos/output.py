@@ -7,6 +7,7 @@
 import filter
 import json
 import mozinfo
+import mozlog
 import post_file
 import time
 import utils
@@ -116,29 +117,29 @@ class Output(object):
                  ('Splay', ['Splay'])]
         results = dict([(j, i) for i, j in val_list])
         scores = []
-        utils.info("v8 benchmark")
+        mozlog.info("v8 benchmark")
         for test, benchmarks in tests:
             vals = [results[benchmark] for benchmark in benchmarks]
             mean = filter.geometric_mean(vals)
             score = reference[test] / mean
             scores.append(score)
-            utils.info(" %s: %s", test, score * 100)
+            mozlog.info(" %s: %s", test, score * 100)
         score = 100 * filter.geometric_mean(scores)
-        utils.info("Score: %s", score)
+        mozlog.info("Score: %s", score)
         return score
 
     @classmethod
     def JS_Metric(cls, val_list):
         """v8 benchmark score"""
         results = [i for i, j in val_list]
-        utils.info("javascript benchmark")
+        mozlog.info("javascript benchmark")
         return sum(results)
 
     @classmethod
     def CanvasMark_Metric(cls, val_list):
         """CanvasMark benchmark score (NOTE: this is identical to JS_Metric)"""
         results = [i for i, j in val_list]
-        utils.info("CanvasMark benchmark")
+        mozlog.info("CanvasMark benchmark")
         return sum(results)
 
 
@@ -173,7 +174,7 @@ class GraphserverOutput(Output):
         )
 
         for test in self.results.results:
-            utils.debug("Working with test: %s", test.name())
+            mozlog.debug("Working with test: %s", test.name())
 
             # get full name of test
             testname = test.name()
@@ -313,7 +314,7 @@ class GraphserverOutput(Output):
                 try:
                     buffer.write("%d,%.2f,%s\n" % (i, float(val), page))
                 except ValueError:
-                    utils.info(
+                    mozlog.info(
                         "We expected a numeric value and recieved '%s' instead"
                         % val
                     )
@@ -329,7 +330,7 @@ class GraphserverOutput(Output):
             if line.find("RETURN\t") > -1:
                 line = line.replace("RETURN\t", "")
                 links += line + '\n'
-            utils.debug("process_Request line: %s", line)
+            mozlog.debug("process_Request line: %s", line)
         if not links:
             raise utils.TalosError("send failed, graph server says:\n%s"
                                    % post)
@@ -345,8 +346,8 @@ class GraphserverOutput(Output):
             times = 0
             msg = ""
             while times < self.retries:
-                utils.info("Posting result %d of %d to %s://%s%s, attempt %d",
-                           index, len(results), scheme, server, path, times)
+                mozlog.info("Posting result %d of %d to %s://%s%s, attempt %d",
+                            index, len(results), scheme, server, path, times)
                 try:
                     links.append(self.process_Request(
                         post_file.post_multipart(server, path,
@@ -440,7 +441,7 @@ class PerfherderOutput(Output):
 
         # This is the output that treeherder expects to find when parsing the
         # log file
-        utils.info("TALOSDATA: %s" % json.dumps(results))
+        mozlog.info("TALOSDATA: %s" % json.dumps(results))
         if results_scheme in ('file'):
             json.dump(results, file(results_path, 'w'), indent=2,
                       sort_keys=True)

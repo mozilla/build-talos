@@ -6,7 +6,7 @@ from mozprocess import ProcessHandler
 from threading import Thread
 import os
 import time
-import utils
+import mozlog
 
 from utils import TalosError
 
@@ -69,7 +69,7 @@ class TalosProcess(ProcessHandler):
                 return
             time.sleep(1)
 
-        utils.info(
+        mozlog.info(
             "Browser shutdown timed out after {0} seconds, terminating"
             " process.".format(self.wait_for_quit_timeout)
         )

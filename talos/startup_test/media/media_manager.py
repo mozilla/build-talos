@@ -6,8 +6,7 @@
 import sys
 import platform
 import optparse
-# Talos specific imports
-import talos.utils
+import mozlog
 import mozhttpd
 # media test utilities
 import media_utils
@@ -135,9 +134,9 @@ def run_server(doc_root):
         ]
     )
 
-    talos.utils.info("Server %s at %s:%s",
-                     httpd_server.docroot, httpd_server.host,
-                     httpd_server.port)
+    mozlog.info("Server %s at %s:%s",
+                httpd_server.docroot, httpd_server.host,
+                httpd_server.port)
     ObjectDb.httpd_server = httpd_server
     httpd_server.start()
     return httpd_server

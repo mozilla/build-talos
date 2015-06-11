@@ -30,6 +30,7 @@ import json
 from profiler import symbolication
 from profiler import sps
 import mozfile
+import mozlog
 from threading import Thread
 
 from utils import TalosError, TalosCrash, TalosRegression
@@ -107,7 +108,7 @@ class TTest(object):
                                                preferences,
                                                extensions,
                                                webserver)
-        utils.debug("created profile")
+        mozlog.debug("created profile")
         return profile_dir, temp_dir
 
     def initializeProfile(self, profile_dir, browser_config):
@@ -242,7 +243,7 @@ class TTest(object):
             if os.path.isfile(browser_config['browser_log']):
                 with open(browser_config['browser_log'], "r") as results_file:
                     results_raw = results_file.read()
-                utils.info(results_raw)
+                mozlog.info(results_raw)
 
             if profile_dir:
                 try:
@@ -257,10 +258,10 @@ class TTest(object):
             if temp_dir:
                 self.cleanupProfile(temp_dir)
         except TalosError, te:
-            utils.debug("cleanup error: %s", te)
+            mozlog.debug("cleanup error: %s", te)
         except Exception:
-            utils.debug("unknown error during cleanup: %s"
-                        % (traceback.format_exc(),))
+            mozlog.debug("unknown error during cleanup: %s"
+                         % (traceback.format_exc(),))
 
     def collectCounters(self):
         # set up the counters for this test
@@ -289,7 +290,7 @@ class TTest(object):
         """
         self.initializeLibraries(browser_config)
 
-        utils.debug("operating with platform_type : %s", self.platform_type)
+        mozlog.debug("operating with platform_type : %s", self.platform_type)
         self.counters = test_config.get(self.platform_type + 'counters', [])
         self.resolution = test_config['resolution']
         with utils.restore_environment_vars():
@@ -391,11 +392,8 @@ class TTest(object):
                     upload_dir,
                     "profile_{0}.sps.zip".format(test_config['name'])
                 )
-                try:
-                    utils.info("Clearing archive {0}".format(profile_arcname))
-                    os.remove(profile_arcname)
-                except OSError:
-                    pass
+                mozlog.info("Clearing archive {0}".format(profile_arcname))
+                mozfile.remove(profile_arcname)
 
                 symbol_paths = {
                     'FIREFOX': tempfile.mkdtemp(),
@@ -403,11 +401,11 @@ class TTest(object):
                     'WINDOWS': tempfile.mkdtemp()
                 }
 
-                utils.info("Activating Gecko Profiling. Temp. profile dir:"
-                           " {0}, interval: {1}, entries: {2}"
-                           .format(sps_profile_dir,
-                                   sps_profile_interval,
-                                   sps_profile_entries))
+                mozlog.info("Activating Gecko Profiling. Temp. profile dir:"
+                            " {0}, interval: {1}, entries: {2}"
+                            .format(sps_profile_dir,
+                                    sps_profile_interval,
+                                    sps_profile_entries))
 
                 profiling_info = {
                     "sps_profile_interval": sps_profile_interval,
@@ -427,7 +425,7 @@ class TTest(object):
                         "MOZ_PROFILER_THREADS": str(sps_profile_threads)
                     }
 
-            utils.debug("initialized %s", browser_config['process'])
+            mozlog.debug("initialized %s", browser_config['process'])
 
             # setup global (cross-cycle) counters:
             # shutdown, responsiveness
@@ -456,15 +454,9 @@ class TTest(object):
 
             for i in range(test_config['cycles']):
 
-                # remove the browser log file
-                if os.path.isfile(browser_config['browser_log']):
-                    os.chmod(browser_config['browser_log'], 0777)
-                    os.remove(browser_config['browser_log'])
-
-                # remove the error file if it exists
-                if os.path.exists(browser_config['error_filename']):
-                    os.chmod(browser_config['error_filename'], 0777)
-                    os.remove(browser_config['error_filename'])
+                # remove the browser log file and error file
+                for key in ('browser_log', 'error_filename'):
+                    mozfile.remove(browser_config[key])
 
                 # reinstall any file whose stability we need to ensure across
                 # the cycles
@@ -473,8 +465,8 @@ class TTest(object):
                         origin = os.path.join(test_config['profile_path'],
                                               keep)
                         dest = os.path.join(profile_dir, keep)
-                        utils.debug("Reinstalling %s on top of %s", origin,
-                                    dest)
+                        mozlog.debug("Reinstalling %s on top of %s", origin,
+                                     dest)
                         shutil.copy(origin, dest)
 
                 # check to see if the previous cycle is still hanging around
@@ -547,7 +539,7 @@ class TTest(object):
                     except KeyboardInterrupt:
                         browser.kill()
                         raise
-                    utils.info(
+                    mozlog.info(
                         "Browser exited with error code: {0}".format(code)
                     )
                     browser = None
@@ -576,7 +568,7 @@ class TTest(object):
 
                                 print line
                                 mainthread_error_count += 1
-                            os.remove(rawlog)
+                            mozfile.remove(rawlog)
 
                     if test_config['cleanup']:
                         # HACK: add the pid to support xperf where we require
@@ -627,7 +619,7 @@ class TTest(object):
                     # Log the exception, but continue. One way to get here
                     # is if the browser hangs, and we'd still like to get
                     # symbolicated profiles in that case.
-                    utils.info(e)
+                    mozlog.info(e)
 
                 if sps_profile:
                     symbolicator = symbolication.ProfileSymbolicator({
@@ -696,14 +688,14 @@ class TTest(object):
                                 sps.save_profile(profile, profile_path)
                                 profile = None  # Free up memory
                             except MemoryError as e:
-                                utils.info(
+                                mozlog.info(
                                     "Ran out of memory while trying"
                                     " to symbolicate profile {0} (cycle {1})"
                                     .format(profile_path, i)
                                 )
                             except Exception as e:
-                                utils.info(e)
-                                utils.info(
+                                mozlog.info(e)
+                                mozlog.info(
                                     "Encountered an exception during profile"
                                     " symbolication {0} (cycle {1})"
                                     .format(profile_path, i)
@@ -724,15 +716,15 @@ class TTest(object):
                                     testname,
                                     cycle_name
                                 )
-                            utils.info(
+                            mozlog.info(
                                 "Adding profile {0} to archive {1}"
                                 .format(path_in_zip, profile_arcname)
                             )
                             try:
                                 arc.write(profile_path, path_in_zip)
                             except Exception as e:
-                                utils.info(e)
-                                utils.info(
+                                mozlog.info(e)
+                                mozlog.info(
                                     "Failed to copy profile {0} as {1} to"
                                     " archive {2}".format(profile_path,
                                                           path_in_zip,
@@ -747,13 +739,9 @@ class TTest(object):
             # cleanup
             self.cleanupProfile(temp_dir)
             if sps_profile:
-                # For some reason, on Windows, big profiles are sometimes
-                # locked by another process even after all Firefox processes
-                # have been terminated. Allow up to 10 minutes for the file
-                # lock to be released.
-                utils.rmtree_until_timeout(sps_profile_dir, 20 * 60)
+                mozfile.remove(sps_profile_dir)
                 for symbol_path in symbol_paths.values():
-                    utils.rmtree_until_timeout(symbol_path, 20 * 60)
+                    mozfile.remove(symbol_path)
 
             # include global (cross-cycle) counters
             test_results.all_counter_results.extend(

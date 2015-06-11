@@ -14,9 +14,7 @@ import mozinfo
 import mozlog
 import json
 import re
-from mozlog import debug, info  # this is silly, but necessary
 import platform
-import shutil
 import copy
 from contextlib import contextmanager
 
@@ -169,35 +167,6 @@ def tokenize(string, start, end):
     return parts, _end[-1]
 
 
-def MakeDirectoryContentsWritable(dirname):
-    """Recursively makes all the contents of a directory writable.
-       Uses os.chmod(filename, mod ), which works on Windows and Unix
-       based systems.
-
-    Args:
-      dirname: Name of the directory to make contents writable.
-    """
-    os_name = os.name
-    if os_name == 'posix':
-        mod = 0755
-    elif os_name == 'nt':
-        mod = 0777
-    else:
-        print('WARNING : this action is not supported on your current os')
-    try:
-        for (root, dirs, files) in os.walk(dirname):
-            os.chmod(root, mod)
-            for filename in files:
-                try:
-                    os.chmod(os.path.join(root, filename), mod)
-                except OSError, (errno, strerror):
-                    print ('WARNING: failed to os.chmod(%s): %s : %s'
-                           % (os.path.join(root, filename), errno, strerror))
-    except OSError, (errno, strerror):
-        print ('WARNING: failed to MakeDirectoryContentsWritable: %s : %s'
-               % (errno, strerror))
-
-
 def urlsplit(url, default_scheme='file'):
     """front-end to urlparse.urlsplit"""
 
@@ -259,7 +228,7 @@ def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot,
     if url.find('media_manager.py') != -1:
         command_args = url.split(' ')
 
-    debug("command line: %s", ' '.join(command_args))
+    mozlog.debug("command line: %s", ' '.join(command_args))
     return command_args
 
 
@@ -273,25 +242,3 @@ def indexed_items(itr):
         yield prev_i, prev_val
         prev_i, prev_val = i, val
     yield -1, prev_val
-
-
-def rmtree_until_timeout(path, timeout):
-    """
-    Like shutils.rmtree, but retries until timeout seconds have elapsed.
-    """
-    elapsed = 0
-    while True:
-        try:
-            shutil.rmtree(path)
-            if elapsed > 0:
-                info("shutil.rmtree({0}) succeeded after retrying for {1}"
-                     " seconds.".format(path, elapsed))
-            return
-        except Exception as e:
-            if elapsed >= timeout:
-                info("shutil.rmtree({0}) still failing after retrying for"
-                     " {1} seconds.".format(path, elapsed))
-                raise e
-            # Wait 1 second and retry.
-            time.sleep(1)  # 1 second
-            elapsed += 1

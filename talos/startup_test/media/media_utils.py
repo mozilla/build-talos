@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import threading
+import mozfile
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -156,8 +157,7 @@ class AudioUtils(object):
         result = re.search('SNR_DELAY=(\d+\.\d+),(\d+)', output)
 
         # delete the recorded file with no silence
-        if os.path.exists(_RECORDED_NO_SILENCE_):
-            os.remove(_RECORDED_NO_SILENCE_)
+        mozfile.remove(_RECORDED_NO_SILENCE_)
 
         if result:
             snr_delay = str(result.group(1)) + ',' + str(result.group(2))
@@ -210,5 +210,4 @@ class AudioUtils(object):
         cmd = [str(s) for s in cmd]
         subprocess.call(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # Delete the recorded file
-        if os.path.exists(_RECORDED_FILE_):
-            os.remove(_RECORDED_FILE_)
+        mozfile.remove(_RECORDED_FILE_)
