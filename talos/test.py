@@ -448,8 +448,7 @@ class tp5n(PageloaderTest):
     timeout = 1800
     setup = '${talos}/xtalos/start_xperf.py -c ${talos}/bcontroller.yml'
     cleanup = '${talos}/xtalos/parse_xperf.py -c ${talos}/bcontroller.yml'
-    preferences = {'extensions.autoDisableScopes': '',
-                   'extensions.enabledScopes': '',
+    preferences = {'extensions.enabledScopes': '',
                    'talos.logfile': 'browser_output.txt'}
 
 
