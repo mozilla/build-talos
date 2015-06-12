@@ -961,11 +961,8 @@ the highest value.
             url = getattr(test_instance, 'url', None)
             if url:
                 kwargs = {}
-                robocop_TestPackage = self.config.get('robocopTestPackage')
-                robocop_TestName = self.config.get('robocopTestName')
-                if robocop_TestPackage and robocop_TestName:
-                    kwargs['robocop_TestPackage'] = robocop_TestPackage
-                    kwargs['robocop_TestName'] = robocop_TestName
+                for name in ('robocopTestPackage', 'robocopTestName'):
+                    kwargs[name] = self.config.get(name, '')
 
                 test_instance.url = utils.interpolate(
                     self.convertUrlToRemote(url),
