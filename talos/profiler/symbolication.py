@@ -133,10 +133,13 @@ class ProfileSymbolicator:
             return
         LogMessage("Retrieving symbol zip from {symbol_zip_url}...".format(
             symbol_zip_url=symbol_zip_url))
-        with urllib2.urlopen(symbol_zip_url, None, 30) as io:
+        try:
+            io = urllib2.urlopen(symbol_zip_url, None, 30)
             with zipfile.ZipFile(cStringIO.StringIO(io.read())) as zf:
                 self.integrate_symbol_zip(zf)
-        self._create_file_if_not_exists(self._marker_file(symbol_zip_url))
+            self._create_file_if_not_exists(self._marker_file(symbol_zip_url))
+        except IOError:
+            LogMessage("Symbol zip request failed.")
 
     def integrate_symbol_zip_from_file(self, filename):
         if self.have_integrated(filename):
