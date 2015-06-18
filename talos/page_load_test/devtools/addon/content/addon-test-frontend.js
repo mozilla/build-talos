@@ -121,7 +121,7 @@ function deselectAll() {
 // http://localhost/x.html#hello=world&x=12&year=2014
 function getUriHashValue(key) {
   var k = String(key) + "=";
-  var uriVars = document.location.hash.substr(1).split("&");
+  var uriVars = unescape(document.location.hash).substr(1).split("&");
   for (var i in uriVars) {
     if (uriVars[i].indexOf(k) == 0)
       return uriVars[i].substr(k.length);
