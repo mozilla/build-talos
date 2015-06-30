@@ -338,6 +338,7 @@ the highest value.
     preferences = {
         'app.update.enabled': False,
         'browser.addon-watch.interval': -1,  # Deactivate add-on watching
+        'browser.aboutHomeSnippets.updateUrl': 'https://127.0.0.1/about-dummy/',
         'browser.bookmarks.max_backups': 0,
         'browser.cache.disk.smart_size.enabled': False,
         'browser.cache.disk.smart_size.first_run': False,
