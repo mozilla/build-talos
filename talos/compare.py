@@ -94,8 +94,6 @@ test_map['tcanvasmark'] = {'id': 289, 'tbplname': 'tcanvasmark'}
 test_map['glterrain'] = {'id': 325, 'tbplname': 'glterrain'}
 test_map['media_tests'] = {'id': 317, 'tbplname': 'media_tests'}
 test_map['remote-trobocheck2'] = {'id': 201, 'tbplname': 'tcheck2'}
-test_map['remote-trobopan'] = {'id': 174, 'tbplname': 'trobopan'}
-test_map['remote-troboprovider'] = {'id': 200, 'tbplname': 'tprovider'}
 test_map['remote-tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
 test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'tp4m'}
 
@@ -104,8 +102,7 @@ tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr',
          'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore',
          'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll',
          'media_tests']
-android_tests = ['remote-trobocheck2', 'remote-trobopan',
-                 'remote-troboprovider', 'remote-tsvgx',
+android_tests = ['remote-trobocheck2', 'remote-tsvgx',
                  'remote-tp4m_nochrome']
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8_7', 'canvasmark']
 
@@ -122,18 +119,12 @@ platform_map['Win8'] = 31
 platform_map['Win8 (e10s)'] = 49
 platform_map['WinXP'] = 37  # 1 is for non-ix
 platform_map['WinXP (e10s)'] = 45
-platform_map['OSX64'] = 21  # 10.6
-platform_map['OSX64 (e10s)'] = 51
-platform_map['OSX10.8'] = 24  # TODO: 10.8 will be gone in the near future
-platform_map['OSX10.8 (e10s)'] = 53
 platform_map['OSX10.10'] = 55
-platform_map['OSX10.10 (e10s)'] = 55  # TODO: a placeholder for now
+platform_map['OSX10.10 (e10s)'] = 57
 platform_map['Android'] = 29
-platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX64', 'OSX10.8',
-             'Android']
+platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX10.10', 'Android']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)',
-                  'WinXP (e10s)', 'Win8 (e10s)', 'OSX64 (e10s)',
-                  'OSX10.8 (e10s)']
+                  'WinXP (e10s)', 'Win8 (e10s)', 'OSX10.10 (e10s)']
 
 disabled_tests = {}
 disabled_tests['Linux'] = ['media_tests', 'tp5n']
@@ -147,19 +138,6 @@ disabled_tests['WinXP'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
 disabled_tests['WinXP (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
                                   'kraken', 'v8_7', 'tp5n']
 disabled_tests['Win64'] = ['media_tests', 'tp5n']
-disabled_tests['OSX64'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
-                           'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint',
-                           'a11yr', 'sessionrestore',
-                           'sessionrestore_no_auto_restore', 'tsvgr_opacity',
-                           'tart', 'cart', 'tp5o', 'tp5n']
-disabled_tests['OSX64 (e10s)'] = ['media_tests', 'dromaeo_dom', 'dromaeo_css',
-                                  'kraken', 'v8_7', 'tp5o_scroll', 'ts_paint',
-                                  'a11yr', 'sessionrestore',
-                                  'sessionrestore_no_auto_restore',
-                                  'tsvgr_opacity', 'tart', 'cart', 'tp5o',
-                                  'tp5n']
-disabled_tests['OSX10.8'] = ['media_tests', 'tp5n']
-disabled_tests['OSX10.8 (e10s)'] = ['media_tests', 'tp5n']
 disabled_tests['OSX10.10'] = ['media_tests', 'tp5n']
 disabled_tests['OSX10.10 (e10s)'] = ['media_tests', 'tp5n']
 
@@ -220,10 +198,8 @@ def getDatazillaPlatform(os, platform, osversion, product):
         else:
             platform = 'WinXP'
     elif os == 'mac':
-        if osversion.startswith('OS X 10.6'):
-            platform = 'OSX64'
-        elif osversion.startswith('OS X 10.8'):
-            platform = 'OSX10.8'
+        if osversion.startswith('OS X 10.10'):
+            platform = 'OSX10.10'
     return platform
 
 
