@@ -65,7 +65,7 @@ class FFSetup(object):
         # source profile to it.
         temp_dir = tempfile.mkdtemp()
         profile_dir = os.path.join(temp_dir, 'profile')
-        profile = Profile.clone(source_profile, profile_dir)
+        profile = Profile.clone(source_profile, profile_dir, restore=False)
 
         # Copy the user-set prefs to user.js
         real_prefs = {}
