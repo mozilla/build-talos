@@ -90,6 +90,7 @@ test_map['sessionrestore_no_auto_restore'] = \
     {'id': 315, 'tbplname': 'sessionrestore_no_auto_restore'}
 test_map['tart'] = {'id': 293, 'tbplname': 'tart'}
 test_map['cart'] = {'id': 309, 'tbplname': 'cart'}
+test_map['damp'] = {'id': 327, 'tbplname': 'damp'}
 test_map['tcanvasmark'] = {'id': 289, 'tbplname': 'tcanvasmark'}
 test_map['glterrain'] = {'id': 325, 'tbplname': 'glterrain'}
 test_map['media_tests'] = {'id': 317, 'tbplname': 'media_tests'}
@@ -101,7 +102,7 @@ tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr',
          'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart',
          'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore',
          'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll',
-         'media_tests']
+         'media_tests', 'damp']
 android_tests = ['remote-trobocheck2', 'remote-tsvgx',
                  'remote-tp4m_nochrome']
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8_7', 'canvasmark']
@@ -317,13 +318,14 @@ def parseGraphResultsByDate(data, start, end):
     count = 0
     runs = data['test_runs']
     vals = []
+    dataid = 4 # 3 for average, 4 for geomean
     for run in runs:
         if run[2] >= start and run[2] <= end:
-            vals.append(run[3])
-            if run[3] < low:
-                low = run[3]
-            if run[3] > high:
-                high = run[3]
+            vals.append(run[dataid])
+            if run[dataid] < low:
+                low = run[dataid]
+            if run[dataid] > high:
+                high = run[dataid]
             count += 1
 
     average = 0
@@ -341,15 +343,16 @@ def parseGraphResultsByChangeset(data, changeset):
     count = 0
     runs = data['test_runs']
     vals = []
+    dataid = 7 # 3 for average, 7 for geomean
     for run in runs:
         push = run[1]
         cset = push[2]
         if cset == changeset:
-            vals.append(run[3])
-            if run[3] < low:
-                low = run[3]
-            if run[3] > high:
-                high = run[3]
+            vals.append(run[dataid])
+            if run[dataid] < low:
+                low = run[dataid]
+            if run[dataid] > high:
+                high = run[dataid]
             count += 1
 
     average = 0
