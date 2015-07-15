@@ -432,6 +432,7 @@ the highest value.
         'datareporting.policy.dataSubmissionPolicyBypassNotification': True,
         'general.useragent.updates.enabled': False,
         'browser.webapps.checkForUpdates': 0,
+        'browser.search.geoSpecificDefaults': False,
         'browser.snippets.enabled': False,
         'browser.snippets.syncPromo.enabled': False,
         'toolkit.telemetry.server': 'https://127.0.0.1/telemetry-dummy/',
