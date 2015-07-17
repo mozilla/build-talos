@@ -10,6 +10,7 @@ try {
 } catch (ex) {}
 
 Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/Task.jsm");
 Components.utils.import("resource:///modules/E10SUtils.jsm");
 
 var NUM_CYCLES = 5;
@@ -419,7 +420,7 @@ function loadFail() {
   }
 }
 
-function plNextPage() {
+let plNextPage = Task.async(function*() {
   var doNextPage = false;
   if (pageCycle < numPageCycles) {
     pageCycle++;
@@ -428,6 +429,7 @@ function plNextPage() {
     if (profilingInfo) {
       Profiler.finishTest();
     }
+
     if (pageIndex < pages.length-1) {
       pageIndex++;
       if (profilingInfo) {
@@ -453,7 +455,7 @@ function plNextPage() {
   } else {
     plStop(false);
   }
-}
+});
 
 function plRecordTime(time) {
   var pageName = pages[pageIndex].url.spec;
