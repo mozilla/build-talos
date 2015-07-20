@@ -245,6 +245,7 @@ function plInit() {
                          "} " +
                          "addEventListener('load', _contentLoadHandler, true); ";
                        content.selectedBrowser.messageManager.loadFrameScript(contentScript, false, true);
+                       content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/talos-content.js", false);
                        content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/tscroll.js", false, true);
                        content.selectedBrowser.messageManager.loadFrameScript("chrome://pageloader/content/Profiler.js", false, true);
                      }
@@ -449,6 +450,9 @@ let plNextPage = Task.async(function*() {
             .garbageCollect();
       var tccend = new Date();
       report.recordCCTime(tccend - tccstart);
+
+      // Now asynchronously trigger GC / CC in the content process.
+      yield forceContentGC();
     }
 
     setTimeout(plLoadPage, delay);
@@ -456,6 +460,17 @@ let plNextPage = Task.async(function*() {
     plStop(false);
   }
 });
+
+function forceContentGC() {
+  return new Promise((resolve) => {
+    let mm = browserWindow.getBrowser().selectedBrowser.messageManager;
+    mm.addMessageListener("Talos:ForceGC:OK", function onTalosContentForceGC(msg) {
+      mm.removeMessageListener("Talos:ForceGC:OK", onTalosContentForceGC);
+      resolve();
+    });
+    mm.sendAsyncMessage("Talos:ForceGC");
+  });
+}
 
 function plRecordTime(time) {
   var pageName = pages[pageIndex].url.spec;
