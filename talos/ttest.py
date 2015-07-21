@@ -367,6 +367,9 @@ class TTest(object):
             sps_profile = upload_dir and \
                 test_config.get('sps_profile', False) and \
                 not browser_config['remote']
+            if test_config.get('sps_profile', False) and not upload_dir:
+                print "Profiling ignored because MOZ_UPLOAD_DIR was not set"
+
             sps_profile_dir = None
             profile_arcname = None
             profiling_info = None
