@@ -82,6 +82,7 @@
  "{profile}\\extensions\\pageloader@mozilla.org\\searchplugins": {},
  "{profile}\\extensions\\pageloader@mozilla.org\\chrome\\profiler.js": {},
  "{profile}\\extensions\\pageloader@mozilla.org\\chrome\\tscroll.js": {},
+ "{profile}\\extensions\\pageloader@mozilla.org\\chrome\\talos-content.js": {},
  "{profile}\\extensions\\talos-powers@mozilla.org": {},
  "{profile}\\extensions\\talos-powers@mozilla.org\\chrome.manifest": {},
  "{profile}\\extensions\\talos-powers@mozilla.org\\plugins": {},
