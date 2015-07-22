@@ -102,12 +102,6 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
                                    'args' : ['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path, '--filter', 'badfilter', '-o', outfile],
                                    'except_fault' : 'invalid --filter raised an error that is not ConfigurationError',
                                    'non_raises_fault' : 'invalid --filter passed test'},
-                       '--ignoreFirst':{'error':ConfigurationError,
-                                        'args' : ['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path, '--ignoreFirst', '--filter',
-                                                  'median', "-o", outfile],
-                                        'except_fault' : '--ignoreFirst and --filter raised an error that is not ConfigurationError',
-                                        'non_raises_fault' : '--ignoreFirst and --filter together passed test '\
-                                                             '(Should raise ConfigurationError when called together)'},
                        '--remoteDevice':{'error':BaseException,
                                          'args':['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path,'--remoteDevice', '0.0.0.0',
                                                  '-o', outfile],

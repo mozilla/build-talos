@@ -54,26 +54,11 @@ class PerfConfigurator(Configuration):
             'default': 5,
             'flags': ['-w', '--browserWait']
         }),
-        ('resultsServer', {
-            'help': "Address of the results server [DEPRECATED: use"
-                    " --resultsURL]"
-        }),
-        ('resultsLink', {
-            'help': 'Link to the results from this test run [DEPRECATED:'
-                    ' use --resultsURL]',
-            'flags': ['-l', '--resultsLink']
-        }),
         ('results_urls', {
             'help': 'URL of graphserver or file:// url for local output',
             'flags': ['--results_url'],
             'type': list
         }),
-        ('datazilla_urls', {
-            'help': 'Deprecated',
-            'flags': ['--datazilla-url'],
-            'type': list
-        }),
-        ('authfile', {'help': "Deprecated"}),
 
         # XXX activeTests should really use a list-thingy but can't because of
         # the one-off ':' separation :/
@@ -172,14 +157,6 @@ class PerfConfigurator(Configuration):
         ('responsiveness', {
             'help': 'turn on responsiveness collection',
             'type': bool
-        }),
-        ('ignore_first', {
-            'help': """Alternative median calculation from pageloader data.
-Use the raw values and discard the first page load instead of
-the highest value.
-[DEPRECATED: use `--filter ignore_first --filter median`]""",
-            'default': False,
-            'flags': ['--ignoreFirst']
         }),
         ('filters', {
             'help': 'filters to apply to the data from talos.filters [DEFAULT:'
@@ -606,18 +583,6 @@ the highest value.
                 not self.config.get('browser_path'):
             self.error(msg)
 
-        # BBB: (resultsServer, resultsLink) -> results_url
-        resultsServer = self.config.pop('resultsServer', None)
-        resultsLink = self.config.pop('resultsLink', None)
-        if resultsServer and resultsLink:
-            if self.config.get('results_urls'):
-                raise Configuration(
-                    "Can't user resultsServer/resultsLink and results_url:"
-                    " use results_url instead"
-                )
-            self.config['results_urls'] = \
-                ['http://%s%s' % (resultsServer, resultsLink)]
-
         # BBB: remove doubly-quoted xperf values from command line
         # (needed for buildbot)
         # https://bugzilla.mozilla.org/show_bug.cgi?id=704654#c43
@@ -684,17 +649,6 @@ the highest value.
             self.config['init_url'] = \
                 self.convertUrlToRemote(self.config['init_url'])
 
-        # get filters
-        ignore_first = self.config.pop('ignore_first')
-        if ignore_first:
-            # BBB handle legacy ignore_first case
-            # convert --ignoreFirst to the appropriate set of filters
-            if self.config.get('filters'):
-                raise ConfigurationError(
-                    "Can't use --ignoreFirst and --filter; use"
-                    " --filter instead"
-                )
-            self.config['filters'] = ['ignore_first', 'median']
         # convert options.filters to [[filter, [args]]]
         filters = []
         _filters = self.config.get('filters', self.filters[:])
@@ -1080,10 +1034,12 @@ the highest value.
         - a dictionary of output format -> urls
         - a dictionary of options for each format
         """
-
-        outputs = ['results_urls', 'datazilla_urls']
-        results_urls = dict([(key, self.config[key]) for key in outputs
-                             if key in self.config])
+        results_urls = dict(
+            results_urls=self.config['results_urls'],
+            # another hack; datazilla stands for Perfherder
+            # and do not require url...
+            datazilla_urls=[],
+        )
         results_options = {}
         return results_urls, results_options
 
