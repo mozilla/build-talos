@@ -38,7 +38,7 @@ class TalosResults(object):
     def add(self, test_results):
         self.results.append(test_results)
 
-    def check_output_formats(self, output_formats, **output_options):
+    def check_output_formats(self, output_formats):
         """check output formats"""
 
         # ensure formats are available
@@ -51,7 +51,7 @@ class TalosResults(object):
         # perform per-format check
         for format, urls in output_formats.items():
             cls = output.formats[format]
-            cls.check(urls, **(output_options.get(format, {})))
+            cls.check(urls)
 
     @classmethod
     def check_formats_exist(cls, formats):
@@ -61,11 +61,10 @@ class TalosResults(object):
         """
         return [i for i in formats if i not in output.formats]
 
-    def output(self, output_formats, **output_options):
+    def output(self, output_formats):
         """
         output all results to appropriate URLs
         - output_formats: a dict mapping formats to a list of URLs
-        - output_options: a dict mapping formats to options for each format
         """
 
         mozlog.info("Outputting talos results => %s", output_formats)
@@ -73,8 +72,7 @@ class TalosResults(object):
         try:
 
             for key, urls in output_formats.items():
-                options = output_options.get(key, {})
-                _output = output.formats[key](self, **options)
+                _output = output.formats[key](self)
                 results = _output()
                 for url in urls:
                     _output.output(results, url, tbpl_output)

@@ -33,7 +33,7 @@ class Output(object):
     """abstract base class for Talos output"""
 
     @classmethod
-    def check(cls, urls, **options):
+    def check(cls, urls):
         """check to ensure that the urls are valid"""
 
     def __init__(self, results):

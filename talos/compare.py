@@ -123,7 +123,8 @@ platform_map['WinXP (e10s)'] = 45
 platform_map['OSX10.10'] = 55
 platform_map['OSX10.10 (e10s)'] = 57
 platform_map['Android'] = 29
-platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX10.10', 'Android']
+platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX10.10',
+             'Android']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)',
                   'WinXP (e10s)', 'Win8 (e10s)', 'OSX10.10 (e10s)']
 
@@ -318,7 +319,7 @@ def parseGraphResultsByDate(data, start, end):
     count = 0
     runs = data['test_runs']
     vals = []
-    dataid = 4 # 3 for average, 4 for geomean
+    dataid = 4  # 3 for average, 4 for geomean
     for run in runs:
         if run[2] >= start and run[2] <= end:
             vals.append(run[dataid])
@@ -343,7 +344,7 @@ def parseGraphResultsByChangeset(data, changeset):
     count = 0
     runs = data['test_runs']
     vals = []
-    dataid = 7 # 3 for average, 7 for geomean
+    dataid = 7  # 3 for average, 7 for geomean
     for run in runs:
         push = run[1]
         cset = push[2]

@@ -55,7 +55,7 @@ class PerfConfigurator(Configuration):
             'flags': ['-w', '--browserWait']
         }),
         ('results_urls', {
-            'help': 'URL of graphserver or file:// url for local output',
+            'help': 'DEPRECATED, will be removed soon.',
             'flags': ['--results_url'],
             'type': list
         }),
@@ -315,7 +315,8 @@ class PerfConfigurator(Configuration):
     preferences = {
         'app.update.enabled': False,
         'browser.addon-watch.interval': -1,  # Deactivate add-on watching
-        'browser.aboutHomeSnippets.updateUrl': 'https://127.0.0.1/about-dummy/',
+        'browser.aboutHomeSnippets.updateUrl':
+            'https://127.0.0.1/about-dummy/',
         'browser.bookmarks.max_backups': 0,
         'browser.cache.disk.smart_size.enabled': False,
         'browser.cache.disk.smart_size.first_run': False,
@@ -1027,21 +1028,6 @@ class PerfConfigurator(Configuration):
 
         # return new manifest
         return newManifestName
-
-    def output_options(self):
-        """configuration related to outputs;
-        Returns a 2-tuple of
-        - a dictionary of output format -> urls
-        - a dictionary of options for each format
-        """
-        results_urls = dict(
-            results_urls=self.config['results_urls'],
-            # another hack; datazilla stands for Perfherder
-            # and do not require url...
-            datazilla_urls=[],
-        )
-        results_options = {}
-        return results_urls, results_options
 
     def browser_config(self):
 

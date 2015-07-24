@@ -236,13 +236,21 @@ def run_tests(configurator):
                                  remote=browser_config['remote'])
 
     # results links
-    results_urls, results_options = configurator.output_options()
-    # set --results_url and --datazilla-url to defaults, if --develop is
-    # specified to PerfConfigurator.py
-    if browser_config['develop']:
-        results_urls['results_urls'] = ['local.out']
-        results_urls['datazilla_urls'] = ['local.json']
-    talos_results.check_output_formats(results_urls, **results_options)
+    if not browser_config['develop']:
+        results_urls = dict(
+            # hardcoded, this will be removed soon anyway.
+            results_urls=['http://graphs.mozilla.org/server/collect.cgi'],
+            # another hack; datazilla stands for Perfherder
+            # and do not require url, but a non empty dict is required...
+            datazilla_urls=['local.json'],
+        )
+    else:
+        # local mode, output to files
+        results_urls = dict(
+            results_urls=[os.path.abspath('local.out')],
+            datazilla_urls=[os.path.abspath('local.json')]
+        )
+    talos_results.check_output_formats(results_urls)
 
     # setup a webserver, if --develop is specified to PerfConfigurator.py
     httpd = None
@@ -303,7 +311,7 @@ def run_tests(configurator):
 
     # output results
     if results_urls:
-        talos_results.output(results_urls, **results_options)
+        talos_results.output(results_urls)
         if browser_config['develop']:
             print ("Thanks for running Talos locally. Results are in"
                    " %s and %s" % (results_urls['results_urls'],

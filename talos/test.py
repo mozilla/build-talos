@@ -263,6 +263,7 @@ class PageloaderTest(Test):
             'preferences', 'extensions', 'setup', 'cleanup', 'fennecIDs',
             'test_name_extension']
 
+
 @register_test()
 class tps(PageloaderTest):
     """
@@ -272,7 +273,12 @@ class tps(PageloaderTest):
     tpmanifest = '${talos}/page_load_test/tabswitch/tps.manifest'
     tppagecycles = 5
     tploadnocache = True
-    preferences = {'addon.test.tabswitch.urlfile':  os.path.join('${talos}', 'page_load_test', 'tp5o.html')}
+    preferences = {
+        'addon.test.tabswitch.urlfile': os.path.join('${talos}',
+                                                     'page_load_test',
+                                                     'tp5o.html')
+    }
+
 
 @register_test()
 class tart(PageloaderTest):
