@@ -6,6 +6,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+var aboutBlankTab = null;
+
 var windowListener = {
   onOpenWindow: function(aWindow) {
     // Ensure we don't get tiles which contact the network
@@ -81,11 +83,20 @@ function waitForTabLoads(browser, numTabs, callback) {
 }
 
 function loadTabs(urls, win, callback) {
+  // We don't want to catch scrolling the tabstrip in our tests
+  win.gBrowser.tabContainer.style.visibility = "hidden";
+
   let initialTab = win.gBrowser.selectedTab;
+  // Set about:blank to be the first tab. This will allow us to use about:blank
+  // to let paint event stabilize and make all tab switch more even.
+  initialTab.linkedBrowser.loadURI("about:blank", null, null);
   waitForTabLoads(win.gBrowser, urls.length, function() {
-    callback(win.gBrowser.getTabsToTheEndFrom(initialTab));
+    let tabs = win.gBrowser.getTabsToTheEndFrom(initialTab);
+    callback(tabs);
   });
   win.gBrowser.loadTabs(urls, true);
+
+  aboutBlankTab = initialTab;
 }
 
 function runTest(tabs, win, callback) {
@@ -96,21 +107,45 @@ function runTest(tabs, win, callback) {
   });
 }
 
-function runTestHelper(startTab, tabs, index,  win, times, callback) {
+function runTestHelper(startTab, tabs, index, win, times, callback) {
   let tab = tabs[index];
+
+  if (typeof(Profiler) !== "undefined") {
+    Profiler.resume(tab.linkedBrowser.currentURI.spec);
+  }
   let start = win.performance.now();
-  promiseOneEvent(tab.linkedBrowser, "MozAfterPaint", false).then(
-    function() {
-      times.push(win.performance.now() - start);
-      if (index == tabs.length - 1) {
-        callback();
-      } else {
-        runTestHelper(startTab, tabs, index + 1, win, times, function() {
-          callback();
-        });
-      }
-    });
   win.gBrowser.selectedTab = tab;
+  // This will fire when we're about to paint the tab switch
+  win.requestAnimationFrame(function() {
+    // This will fire on the next vsync tick after the tab has switched.
+    // If we have a sync transaction on the compositor, that time will
+    // be included here. It will not accuratly capture the composite time
+    // or the time of async transaction.
+    // XXX: This will need to be adjusted for e10s since we need to block
+    //      on the child/content having painted.
+    win.requestAnimationFrame(function() {
+      times.push(win.performance.now() - start);
+      if (typeof(Profiler) !== "undefined") {
+        Profiler.pause(tab.linkedBrowser.currentURI.spec);
+      }
+
+      // Select about:blank which will let the browser reach a steady no
+      // painting state
+      win.gBrowser.selectedTab = aboutBlankTab;
+
+      win.requestAnimationFrame(function() {
+        win.requestAnimationFrame(function() {
+          if (index == tabs.length - 1) {
+            callback();
+          } else {
+            runTestHelper(startTab, tabs, index + 1, win, times, function() {
+              callback();
+            });
+          }
+        });
+      });
+    });
+  });
 }
 
 function test(window) {
@@ -138,7 +173,7 @@ function test(window) {
         let time = 0;
         for(let i in times) {
           time += times[i];
-          output += '<tr><td>' + testURLs[i] + '</td><td>' +times[i] + 'ms</td></tr>';
+          output += '<tr><td>' + testURLs[i] + '</td><td>' + times[i] + 'ms</td></tr>';
         }
         output += '</table></body></html>';
         dump("total tab switch time:" + time + "\n");
