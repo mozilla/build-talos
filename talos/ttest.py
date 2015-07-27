@@ -525,7 +525,7 @@ class TTest(object):
                         "enableTracing": 0,
                         # Fallback server if symbol is not found locally
                         "remoteSymbolServer":
-                            "http://symbolapi.mozilla.org:80/",
+                            "http://symbolapi.mozilla.org:80/talos/",
                         # Maximum number of symbol files to keep in memory
                         "maxCacheEntries": 2000000,
                         # Frequency of checking for recent symbols to
