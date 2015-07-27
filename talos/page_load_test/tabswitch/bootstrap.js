@@ -6,6 +6,8 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+var Profiler = null;
+
 var windowListener = {
   onOpenWindow: function(aWindow) {
     // Ensure we don't get tiles which contact the network
@@ -81,6 +83,10 @@ function waitForTabLoads(browser, numTabs, callback) {
 }
 
 function loadTabs(urls, win, callback) {
+  let context = {};
+  Services.scriptloader.loadSubScript("chrome://pageloader/content/Profiler.js", context);
+  Profiler = context.Profiler;
+
   // We don't want to catch scrolling the tabstrip in our tests
   win.gBrowser.tabContainer.style.visibility = "hidden";
 
