@@ -16,7 +16,6 @@ const TalosContent = {
   },
 
   forceGC() {
-    let start = new Date();
     content.QueryInterface(Ci.nsIInterfaceRequestor)
            .getInterface(Ci.nsIDOMWindowUtils)
            .garbageCollect();

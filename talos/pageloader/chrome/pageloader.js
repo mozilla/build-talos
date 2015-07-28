@@ -451,8 +451,11 @@ let plNextPage = Task.async(function*() {
       var tccend = new Date();
       report.recordCCTime(tccend - tccstart);
 
-      // Now asynchronously trigger GC / CC in the content process.
-      yield forceContentGC();
+      // Now asynchronously trigger GC / CC in the content process if we're
+      // in an e10s window.
+      if (browserWindow.gMultiProcessBrowser) {
+        yield forceContentGC();
+      }
     }
 
     setTimeout(plLoadPage, delay);
