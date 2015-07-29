@@ -110,6 +110,21 @@ function runTest(tabs, win, callback) {
   });
 }
 
+function waitForTabSwitchDone(win, callback) {
+  if (win.gBrowser.selectedBrowser.isRemoteBrowser) {
+    var list = function onSwitch() {
+      win.gBrowser.removeEventListener("TabSwitched", list);
+      callback();
+    };
+
+    win.gBrowser.addEventListener("TabSwitched", list);
+
+  } else {
+    // Tab switch is sync so it has already happened.
+    callback();
+  }
+}
+
 // waitForPaints is from mochitest
 var waitForAllPaintsFlushed = null;
 (function() {
@@ -211,36 +226,39 @@ function runTestHelper(startTab, tabs, index, win, times, callback) {
   }
   let start = win.performance.now();
   win.gBrowser.selectedTab = tab;
-  // This will fire when we're about to paint the tab switch
-  win.requestAnimationFrame(function() {
-    // This will fire on the next vsync tick after the tab has switched.
-    // If we have a sync transaction on the compositor, that time will
-    // be included here. It will not accuratly capture the composite time
-    // or the time of async transaction.
-    // XXX: This will need to be adjusted for e10s since we need to block
-    //      on the child/content having painted.
+
+  waitForTabSwitchDone(win, function() {
+    // This will fire when we're about to paint the tab switch
     win.requestAnimationFrame(function() {
-      times.push(win.performance.now() - start);
-      if (typeof(Profiler) !== "undefined") {
-        Profiler.pause(tab.linkedBrowser.currentURI.spec);
-      }
-
-      // Select about:blank which will let the browser reach a steady no
-      // painting state
-      win.gBrowser.selectedTab = aboutBlankTab;
-
+      // This will fire on the next vsync tick after the tab has switched.
+      // If we have a sync transaction on the compositor, that time will
+      // be included here. It will not accuratly capture the composite time
+      // or the time of async transaction.
       win.requestAnimationFrame(function() {
-        win.requestAnimationFrame(function() {
-          // Let's wait for all the paints to be flushed. This makes
-          // the next test load less noisy.
-          waitForAllPaintsFlushed(win, function() {
-            if (index == tabs.length - 1) {
-              callback();
-            } else {
-              runTestHelper(startTab, tabs, index + 1, win, times, function() {
-                callback();
+        times.push(win.performance.now() - start);
+        if (typeof(Profiler) !== "undefined") {
+          Profiler.pause(tab.linkedBrowser.currentURI.spec);
+        }
+
+        // Select about:blank which will let the browser reach a steady no
+        // painting state
+        win.gBrowser.selectedTab = aboutBlankTab;
+
+        waitForTabSwitchDone(win, function() {
+          win.requestAnimationFrame(function() {
+            win.requestAnimationFrame(function() {
+              // Let's wait for all the paints to be flushed. This makes
+              // the next test load less noisy.
+              waitForAllPaintsFlushed(win, function() {
+                if (index == tabs.length - 1) {
+                  callback();
+                } else {
+                  runTestHelper(startTab, tabs, index + 1, win, times, function() {
+                    callback();
+                  });
+                }
               });
-            }
+            });
           });
         });
       });
