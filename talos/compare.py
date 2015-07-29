@@ -94,17 +94,12 @@ test_map['damp'] = {'id': 327, 'tbplname': 'damp'}
 test_map['tcanvasmark'] = {'id': 289, 'tbplname': 'tcanvasmark'}
 test_map['glterrain'] = {'id': 325, 'tbplname': 'glterrain'}
 test_map['media_tests'] = {'id': 317, 'tbplname': 'media_tests'}
-test_map['remote-trobocheck2'] = {'id': 201, 'tbplname': 'tcheck2'}
-test_map['remote-tsvgx'] = {'id': 281, 'tbplname': 'tsvgx'}
-test_map['remote-tp4m_nochrome'] = {'id': 85, 'tbplname': 'tp4m'}
 
 tests = ['tresize', 'kraken', 'v8_7', 'dromaeo_css', 'dromaeo_dom', 'a11yr',
          'ts_paint', 'tpaint', 'tsvgr_opacity', 'tp5n', 'tp5o', 'tart',
          'tcanvasmark', 'tsvgx', 'tscrollx', 'sessionrestore',
          'sessionrestore_no_auto_restore', 'glterrain', 'cart', 'tp5o_scroll',
          'media_tests', 'damp']
-android_tests = ['remote-trobocheck2', 'remote-tsvgx',
-                 'remote-tp4m_nochrome']
 reverse_tests = ['dromaeo_css', 'dromaeo_dom', 'v8_7', 'canvasmark']
 
 platform_map = {}
@@ -122,9 +117,7 @@ platform_map['WinXP'] = 37  # 1 is for non-ix
 platform_map['WinXP (e10s)'] = 45
 platform_map['OSX10.10'] = 55
 platform_map['OSX10.10 (e10s)'] = 57
-platform_map['Android'] = 29
-platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX10.10',
-             'Android']
+platforms = ['Linux', 'Linux64', 'Win7', 'WinXP', 'Win8', 'OSX10.10']
 platforms_e10s = ['Linux (e10s)', 'Linux64 (e10s)', 'Win7 (e10s)',
                   'WinXP (e10s)', 'Win8 (e10s)', 'OSX10.10 (e10s)']
 
@@ -385,8 +378,6 @@ def compareResults(revision, branch, masterbranch, skipdays, history,
     for p in platforms:
         output = ["\n%s:" % p]
         itertests = getListOfTests(p, tests)
-        if p == "Android":
-            itertests = android_tests
 
         for t in itertests:
             dzval = None
@@ -401,21 +392,13 @@ def compareResults(revision, branch, masterbranch, skipdays, history,
                     if test_map[t]['tbplname'] in pgodzdata[p]:
                         pgodzval = pgodzdata[p][test_map[t]['tbplname']]
 
-            if p.startswith('OSX') or p.startswith('Android') or pgo:
+            if p.startswith('OSX') or pgo:
                 test_bid = branch_map[branch]['pgo']['id']
-                # Hack for talos on Android Firefox, since we use different
-                # numbers for pgo and android builds.
-                if p.startswith('Android') and branch == 'Firefox':
-                    test_bid = 11
             else:
                 test_bid = branch_map[branch]['nonpgo']['id']
 
-            if p.startswith('OSX') or p.startswith('Android') or pgo:
+            if p.startswith('OSX') or pgo:
                 bid = branch_map[masterbranch]['pgo']['id']
-                # Hack for talos on Android Firefox, since we use different
-                # numbers for pgo and android builds.
-                if p.startswith('Android') and masterbranch == 'Firefox':
-                    bid = 11
             else:
                 bid = branch_map[masterbranch]['nonpgo']['id']
 

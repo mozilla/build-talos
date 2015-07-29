@@ -90,23 +90,10 @@ class PerfConfiguratorUnitTest(unittest.TestCase):
                                         'args':['--activeTests', 'badtest', '--develop', '-e', ffox_path, "-o", outfile],
                                         'except_fault' : 'invalid --activeTest raised an error that is not ConfigurationError',
                                         'non_raises_fault' : 'invalid --activeTest passed test'},
-                       '--fennecIDs':{'error':ConfigurationError,
-                                      'args':['--activeTests', 'ts_paint', '--develop', '-e', ffox_path, '--fennecIDs', ffox_path, "-o", outfile],
-                                      'except_fault' : 'invalid --fennecIDs raised an error that is not ConfigurationError',
-                                      'non_raises_fault' : 'invalid --fennecIDs passed test'},
-                       '--fennecIDs':{'error':ConfigurationError,
-                                      'args':['--activeTests', 'ts_paint', '--develop', '-e', ffox_path, '--fennecIDs', 'filedoesnotexist.txt', "-o", outfile],
-                                      'except_fault' : 'invalid --fennecIDs raised an error that is not ConfigurationError',
-                                      'non_raises_fault' : 'invalid --fennecIDs passed test'},
                        '--filter':{'error':ConfigurationError,
                                    'args' : ['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path, '--filter', 'badfilter', '-o', outfile],
                                    'except_fault' : 'invalid --filter raised an error that is not ConfigurationError',
                                    'non_raises_fault' : 'invalid --filter passed test'},
-                       '--remoteDevice':{'error':BaseException,
-                                         'args':['--activeTests', 'ts_paint', '--develop',  '-e', ffox_path,'--remoteDevice', '0.0.0.0',
-                                                 '-o', outfile],
-                                         'except_fault':'invalid --remoteDevice raised an error that is not BaseException',
-                                         'non_raise_fault':'invalid --remoteDevice passed test'},
                        }
 
         # Taken from http://k0s.org/mozilla/hg/configuration/file/56db0b2b90af/tests/unit.py

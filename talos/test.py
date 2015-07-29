@@ -28,8 +28,6 @@ class Test(object):
     cycles = None  # number of cycles
     keys = []
     desktop = True
-    mobile = True
-    fennecIDs = False
 
     @classmethod
     def name(cls):
@@ -106,7 +104,6 @@ class TsBase(Test):
         'extensions',
         'setup',
         'cleanup',
-        'fennecIDs',
         'reinstall',     # A list of files from the profile directory that
                          # should be copied to the temporary profile prior to
                          # running each cycle, to avoid one cycle overwriting
@@ -184,7 +181,6 @@ class tpaint(TsBase):
     """
     url = 'file://${talos}/startup_test/tpaint.html?auto=1'
     timeout = 300
-    mobile = False  # XUL based tests with local files.
     sps_profile_interval = 1
     sps_profile_entries = 2000000
     tpmozafterpaint = True
@@ -206,24 +202,6 @@ class tresize(TsBase):
     filters = [["ignore_first", [5]], ['median', []]]
 
 
-@register_test()
-class tcheck2(TsBase):
-    """
-    Measure of 'checkerboarding' during simulation of real user interaction
-    with page. Lower values are better.
-    """
-    url = ('am instrument -w -e deviceroot %s -e class'
-           ' ${robocopTestPackage}.tests.testCheck2'
-           ' ${robocopTestName}/${robocopTestPackage}'
-           '.FennecInstrumentationTestRunner')
-    cycles = 5
-    timeout = 300
-    desktop = False
-    tpchrome = False
-    fennecIDs = True
-    tpdisable_e10s = True
-
-
 # Media Test
 @register_test()
 class media_tests(TsBase):
@@ -232,7 +210,6 @@ class media_tests(TsBase):
     """
     cycles = 5
     desktop = True
-    mobile = False
     url = 'http://localhost:16932/startup_test/media/html/media_tests.html'
     timeout = 360
 
@@ -256,11 +233,10 @@ class PageloaderTest(Test):
             'tpmozafterpaint', 'tploadnocache', 'rss', 'mainthread',
             'resolution', 'cycles', 'sps_profile', 'sps_profile_interval',
             'sps_profile_entries', 'tptimeout', 'win_counters', 'w7_counters',
-            'linux_counters', 'mac_counters', 'tpscrolltest',
-            'remote_counters', 'xperf_counters', 'timeout', 'shutdown',
-            'responsiveness', 'profile_path', 'xperf_providers',
-            'xperf_user_providers', 'xperf_stackwalk', 'filters',
-            'preferences', 'extensions', 'setup', 'cleanup', 'fennecIDs',
+            'linux_counters', 'mac_counters', 'tpscrolltest', 'xperf_counters',
+            'timeout', 'shutdown', 'responsiveness', 'profile_path',
+            'xperf_providers', 'xperf_user_providers', 'xperf_stackwalk',
+            'filters', 'preferences', 'extensions', 'setup', 'cleanup',
             'test_name_extension']
 
 
@@ -311,8 +287,7 @@ class tart(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 1000000
-    win_counters = w7_counters = linux_counters = mac_counters = \
-        remote_counters = None
+    win_counters = w7_counters = linux_counters = mac_counters = None
     """
     ASAP mode
     The recording API is broken with OMTC before ~2013-11-27
@@ -348,8 +323,7 @@ class cart(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 1
     sps_profile_entries = 10000000
-    win_counters = w7_counters = linux_counters = mac_counters = \
-        remote_counters = None
+    win_counters = w7_counters = linux_counters = mac_counters = None
     """
     ASAP mode
     """
@@ -374,8 +348,7 @@ class damp(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 1000000
-    win_counters = w7_counters = linux_counters = mac_counters = \
-        remote_counters = None
+    win_counters = w7_counters = linux_counters = mac_counters = None
     filters = [["ignore_first", [1]], ['median', []]]
 
 
@@ -396,32 +369,12 @@ class glterrain(PageloaderTest):
     tpmozafterpaint = False
     sps_profile_interval = 10
     sps_profile_entries = 2000000
-    win_counters = w7_counters = linux_counters = mac_counters = \
-        remote_counters = None
+    win_counters = w7_counters = linux_counters = mac_counters = None
     """ ASAP mode """
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
     filters = [["ignore_first", [1]], ['median', []]]
-
-
-@register_test()
-class tp4m(PageloaderTest):
-    """
-    This is a smaller pageset (21 pages) of the updated web page test which
-    was set to 100 pages from February 2009. It is designed for mobile
-    Firefox and is a blend of regular and mobile friendly pages.
-    """
-    resolution = 20
-    shutdown = True
-    tpmanifest = '${talos}/page_load_test/tp4m.manifest'
-    tpchrome = False
-    tpdisable_e10s = True
-    rss = True
-    tpcycles = 2
-    win_counters = w7_counters = linux_counters = mac_counters = None
-    remote_counters = ['Main_RSS']
-    timeout = 1800
 
 
 @register_test()
@@ -447,7 +400,6 @@ class tp5n(PageloaderTest):
     w7_counters = []
     win_counters = []
     linux_counters = []
-    remote_counters = []
     mac_counters = []
     xperf_counters = ['main_startup_fileio', 'main_startup_netio',
                       'main_normal_fileio', 'main_normal_netio',
@@ -461,7 +413,6 @@ class tp5n(PageloaderTest):
                             'Microsoft-Windows-TCPIP']
     xperf_stackwalk = ['FileCreate', 'FileRead', 'FileWrite', 'FileFlush',
                        'FileClose']
-    mobile = False  # too many files to run, we will hit OOM
     filters = [["ignore_first", [1]], ['median', []]]
     timeout = 1800
     setup = '${talos}/xtalos/start_xperf.py -c ${talos}/bcontroller.yml'
@@ -491,7 +442,6 @@ class tp5o(PageloaderTest):
     responsiveness = True
     sps_profile_interval = 2
     sps_profile_entries = 4000000
-    mobile = False  # too many files to run, we will hit OOM
     filters = [["ignore_first", [5]], ['median', []]]
     timeout = 1800
 
@@ -557,7 +507,6 @@ class tcanvasmark(PageloaderTest):
     """
     tpmanifest = '${talos}/page_load_test/canvasmark/canvasmark.manifest'
     win_counters = w7_counters = linux_counters = mac_counters = None
-    remote_counters = None
     tpcycles = 5
     tppagecycles = 1
     timeout = 900
@@ -680,6 +629,3 @@ class a11yr(PageloaderTest):
     tppagecycles = 25
     tpmozafterpaint = True
     preferences = {'dom.send_after_paint_to_content': False}
-    # we don't make a11y.manifest have urls, it just has dhtml.html instead
-    # of http://ip:port/dhtml.html
-    mobile = False

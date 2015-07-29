@@ -19,9 +19,6 @@ def generateTalosConfig(command_line, browser_config, test_config, pid=None):
             bcontroller_vars.append('testname')
             browser_config['testname'] = test_config['name']
 
-    if (browser_config['webserver'] != 'localhost'):
-        bcontroller_vars.extend(['host', 'port', 'deviceroot', 'env'])
-
     browser_config['command'] = ' '.join(command_line)
 
     if (('xperf_providers' in test_config) and

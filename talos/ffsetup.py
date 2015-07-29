@@ -22,27 +22,9 @@ import TalosProcess
 
 
 class FFSetup(object):
-
-    _remoteWebServer = 'localhost'
-    _deviceroot = ''
-    _host = ''
-    _port = ''
-    _hostproc = None
-
-    def __init__(self, procmgr, options=None):
-        self.ffprocess = procmgr
-        self._hostproc = procmgr
-        if options is not None:
-            self.intializeRemoteDevice(options)
+    def __init__(self, ffprocess):
+        self.ffprocess = ffprocess
         self.extensions = None
-
-    def initializeRemoteDevice(self, options, hostproc=None):
-        self._remoteWebServer = options['webserver']
-        self._deviceroot = options['deviceroot']
-        self._host = options['host']
-        self._port = options['port']
-        self._env = options['env']
-        self._hostproc = hostproc or self.ffprocess
 
     def CreateTempProfileDir(self, source_profile, prefs, extensions,
                              webserver):
@@ -78,15 +60,9 @@ class FFSetup(object):
             real_prefs[name] = value
         profile.set_preferences(real_prefs)
 
-        if (webserver and webserver != 'localhost'):
-            self.ffprocess.addRemoteServerPref(profile_dir, webserver)
-
         # Install the extensions.
         profile.addon_manager.install_addons(extensions)
 
-        if webserver != 'localhost' and self._host != '':
-            remote_dir = self.ffprocess.copyDirToDevice(profile_dir)
-            profile_dir = remote_dir
         return temp_dir, profile_dir
 
     def InstallInBrowser(self, browser_path, dir_path):
@@ -120,31 +96,26 @@ class FFSetup(object):
         command_args = utils.GenerateBrowserCommandLine(
             browser_config["browser_path"],
             browser_config["extra_args"],
-            browser_config["deviceroot"],
             profile_dir,
             browser_config["init_url"]
         )
         pid = None
-        if not browser_config['remote']:
-            browser = TalosProcess.TalosProcess(
-                command_args,
-                env=os.environ.copy(),
-                logfile=browser_config['browser_log']
-            )
-            browser.run()
-            pid = browser.pid
-            try:
-                browser.wait()
-            except KeyboardInterrupt:
-                browser.kill()
-                raise
-            finally:
-                browser.closeLogFile()
-            browser = None
-            time.sleep(5)
-        else:
-            self.ffprocess.runProgram(browser_config, command_args,
-                                      timeout=1200)
+        browser = TalosProcess.TalosProcess(
+            command_args,
+            env=os.environ.copy(),
+            logfile=browser_config['browser_log']
+        )
+        browser.run()
+        pid = browser.pid
+        try:
+            browser.wait()
+        except KeyboardInterrupt:
+            browser.kill()
+            raise
+        finally:
+            browser.closeLogFile()
+        browser = None
+        time.sleep(5)
 
         res = 0
         if not os.path.isfile(browser_config['browser_log']):

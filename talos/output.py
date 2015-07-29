@@ -454,24 +454,13 @@ class PerfherderOutput(Output):
     # as we have established platform names already
     def test_machine(self):
         """return test machine platform in a form appropriate to datazilla"""
-        if self.results.remote:
-            # TODO: figure out how to not hardcode this, specifically the
-            # version !!
-            # should probably come from the agent (sut/adb) and passed in
-            platform = "Android"
-            processor = "ARMv7"
-            if 'panda' in self.results.title:
-                version = "4.0.4"
-            else:
-                version = "unknown"
-        else:
-            platform = mozinfo.os
-            version = mozinfo.version
-            processor = mozinfo.processor
-            if self.results.title.endswith(".e") and \
-                    not version.endswith('.e'):
-                # we are running this against e10s builds
-                version = '%s.e' % (version,)
+        platform = mozinfo.os
+        version = mozinfo.version
+        processor = mozinfo.processor
+        if self.results.title.endswith(".e") and \
+                not version.endswith('.e'):
+            # we are running this against e10s builds
+            version = '%s.e' % (version,)
 
         return dict(name=self.results.title, os=platform, osversion=version,
                     platform=processor)

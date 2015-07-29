@@ -15,7 +15,6 @@ from utils import TalosError
 
 
 class FFProcess(object):
-    testAgent = None
     extra_prog = ["crashreporter"]  # list of extra programs to be killed
 
     def TerminateProcesses(self, pids, timeout):
@@ -66,42 +65,6 @@ class FFProcess(object):
                     "failed to cleanup process with PID: %s" % process_pids)
 
         return terminate_result
-
-    def addRemoteServerPref(self, profile_dir, server):
-        """
-          edit the user.js in the profile (on the host machine) and
-          add the xpconnect priviledges for the remote server
-        """
-        import urlparse
-        user_js_filename = os.path.join(profile_dir, 'user.js')
-
-        # NOTE: this should be sufficient for defining a docroot
-        scheme = "http://"
-        if (server.startswith('http://') or
-            server.startswith('chrome://') or
-            server.startswith('file:///')):  # noqa
-
-            scheme = ""
-        elif (server.find('://') >= 0):
-            raise TalosError(
-                "Unable to parse user defined webserver: '%s'" % (server))
-
-        url = urlparse.urlparse('%s%s' % (scheme, server))
-
-        port = url.port
-        if not url.port or port < 0:
-            port = 80
-
-        # TODO: p2 is hardcoded, how do we determine what prefs.js
-        # has hardcoded?
-        remoteCode = """
-user_pref("capability.principal.codebase.p2.granted", \
-"UniversalPreferencesWrite UniversalXPConnect UniversalPreferencesRead");
-user_pref("capability.principal.codebase.p2.id", "http://%(server)s");
-user_pref("capability.principal.codebase.p2.subjectName", "");
-""" % {"server": server, "host": url.hostname, "port": int(port)}
-        with open(user_js_filename, 'a+') as user_js_file:
-            user_js_file.write(remoteCode)
 
     # functions for dealing with files
     # these should really go in mozfile:

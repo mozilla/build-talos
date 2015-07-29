@@ -127,14 +127,6 @@ def interpolate(template, **kwargs):
     return string.Template(template).safe_substitute(**kwargs)
 
 
-def testAgent(host, port):
-    from mozdevice import droid
-    if port == -1:
-        return droid.DroidADB(host, port, deviceRoot='/mnt/sdcard/tests')
-    else:
-        return droid.DroidSUT(host, port, deviceRoot='/mnt/sdcard/tests')
-
-
 def findall(string, token):
     """find all occurences in a string"""
     return [m.start() for m in re.finditer(re.escape(token), string)]
@@ -188,8 +180,8 @@ def parse_pref(value):
     return Preferences.cast(value)
 
 
-def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot,
-                               profile_dir, url, profiling_info=None):
+def GenerateBrowserCommandLine(browser_path, extra_args, profile_dir,
+                               url, profiling_info=None):
     # TODO: allow for spaces in file names on Windows
 
     command_args = [browser_path.strip()]
@@ -218,11 +210,6 @@ def GenerateBrowserCommandLine(browser_path, extra_args, deviceroot,
             url += '?' + urllib.urlencode(profiling_info)
 
     command_args.extend(url.split(' '))
-
-    # Handle robocop case
-    if url.startswith('am instrument'):
-        command = url % deviceroot
-        command_args = command.split(' ')
 
     # Handle media performance tests
     if url.find('media_manager.py') != -1:

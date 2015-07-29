@@ -12,7 +12,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 
 def get_branch(platform):
-    if platform == 'Android' or platform.startswith('OSX'):
+    if platform.startswith('OSX'):
         return compare.branch_map['Inbound']['pgo']['id']
     return compare.branch_map['Inbound']['nonpgo']['id']
 

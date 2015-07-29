@@ -180,18 +180,6 @@ def run_tests(configurator):
     browser_config['bcontroller_config'] = \
         utils.interpolate(browser_config['bcontroller_config'])
 
-    # get device manager if specified
-    dm = None
-    if browser_config['remote'] is True:
-        if browser_config['port'] == -1:
-            from mozdevice import devicemanagerADB
-            dm = devicemanagerADB.DeviceManagerADB(browser_config['host'],
-                                                   browser_config['port'])
-        else:
-            from mozdevice import devicemanagerSUT
-            dm = devicemanagerSUT.DeviceManagerSUT(browser_config['host'],
-                                                   browser_config['port'])
-
     # normalize browser path to work across platforms
     browser_config['browser_path'] = \
         os.path.normpath(browser_config['browser_path'])
@@ -223,17 +211,11 @@ def run_tests(configurator):
     mozlog.debug("using testdate: %d", date)
     mozlog.debug("actual date: %d", int(time.time()))
 
-    if browser_config['remote']:
-        procName = browser_config['browser_path'].split('/')[-1]
-        if dm.processExist(procName):
-            dm.killProcess(procName)
-
     # results container
     talos_results = TalosResults(title=title,
                                  date=date,
                                  browser_config=browser_config,
-                                 filters=filters,
-                                 remote=browser_config['remote'])
+                                 filters=filters)
 
     # results links
     if not browser_config['develop']:
@@ -270,7 +252,7 @@ def run_tests(configurator):
         mozfile.remove('logcat.log')
 
         try:
-            mytest = TTest(browser_config['remote'])
+            mytest = TTest()
             if mytest:
                 talos_results.add(mytest.runTest(browser_config, test))
             else:

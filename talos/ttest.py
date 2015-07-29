@@ -22,7 +22,6 @@ import time
 import utils
 import copy
 import mozcrash
-import mozdevice
 import talosconfig
 import shutil
 import zipfile
@@ -48,24 +47,17 @@ class TTest(object):
     _pids = []
     platform_type = ''
 
-    def __init__(self, remote=False):
-        cmanager, platformtype, ffprocess = self.getPlatformType(remote)
+    def __init__(self):
+        cmanager, platformtype, ffprocess = self.getPlatformType()
         self.CounterManager = cmanager
         self.platform_type = platformtype
         self._ffprocess = ffprocess
-        self._hostproc = ffprocess
-        self.remote = remote
 
         self._ffsetup = FFSetup(self._ffprocess)
 
-    def getPlatformType(self, remote):
-
+    def getPlatformType(self):
         _ffprocess = None
-        if remote is True:
-            platform_type = 'remote_'
-            import cmanager
-            CounterManager = cmanager.CounterManager
-        elif platform.system() == "Linux":
+        if platform.system() == "Linux":
             import cmanager_linux
             CounterManager = cmanager_linux.LinuxCounterManager
             platform_type = 'linux_'
@@ -89,18 +81,6 @@ class TTest(object):
             _ffprocess = MacProcess()
         return CounterManager, platform_type, _ffprocess
 
-    def initializeLibraries(self, browser_config):
-        if browser_config['remote'] is True:
-            cmanager, platform_type, ffprocess = self.getPlatformType(False)
-
-            from ffprocess_remote import RemoteProcess
-            self._ffprocess = RemoteProcess(browser_config['host'],
-                                            browser_config['port'],
-                                            browser_config['deviceroot'])
-            self._ffsetup = FFSetup(self._ffprocess)
-            self._ffsetup.initializeRemoteDevice(browser_config, ffprocess)
-            self._hostproc = ffprocess
-
     def createProfile(self, profile_path, preferences, extensions, webserver):
         # Create the new profile
         temp_dir, profile_dir = \
@@ -123,10 +103,8 @@ class TTest(object):
             raise TalosError("browser failed to close after being initialized")
 
     def cleanupProfile(self, dir):
-        # Delete the temp profile directory  Make it writeable first,
-        # because every once in a while browser seems to drop a read-only
-        # file into it.
-        self._hostproc.removeDirectory(dir)
+        """Delete the temp profile directory."""
+        self._ffprocess.removeDirectory(dir)
 
     def cleanupAndCheckForCrashes(self, browser_config, profile_dir,
                                   test_name):
@@ -155,87 +133,16 @@ class TTest(object):
         assert os.path.exists(stackwalkbin), \
             "minidump_stackwalk binary not found: %s" % stackwalkbin
 
-        if browser_config['remote'] is True:
-            # favour using Java exceptions in the logcat over minidumps
-            if os.path.exists('logcat.log'):
-                with open('logcat.log') as f:
-                    logcat = f.read().split('\r')
-                found = mozcrash.check_for_java_exception(logcat)
-
-            remoteminidumpdir = profile_dir + '/minidumps/'
-            if not found:
-                # check for minidumps
-                minidumpdir = tempfile.mkdtemp()
-                try:
-                    if self._ffprocess.testAgent.dirExists(remoteminidumpdir):
-                        self._ffprocess.testAgent.\
-                            getDirectory(remoteminidumpdir, minidumpdir)
-                except mozdevice.DMError:
-                    print ("Remote Device Error: Error getting crash minidumps"
-                           " from device")
-                    raise
-                found = mozcrash.check_for_crashes(
-                    minidumpdir,
-                    browser_config['symbols_path'],
-                    stackwalk_binary=stackwalkbin,
-                    test_name=test_name
-                )
-                self._hostproc.removeDirectory(minidumpdir)
-
-            # cleanup dumps on remote
-            self._ffprocess.testAgent.removeDir(remoteminidumpdir)
-        else:
-            # check for minidumps
-            minidumpdir = os.path.join(profile_dir, 'minidumps')
-            found = mozcrash.check_for_crashes(minidumpdir,
-                                               browser_config['symbols_path'],
-                                               stackwalk_binary=stackwalkbin,
-                                               test_name=test_name)
-            self._hostproc.removeDirectory(minidumpdir)
+        # check for minidumps
+        minidumpdir = os.path.join(profile_dir, 'minidumps')
+        found = mozcrash.check_for_crashes(minidumpdir,
+                                           browser_config['symbols_path'],
+                                           stackwalk_binary=stackwalkbin,
+                                           test_name=test_name)
+        self._ffprocess.removeDirectory(minidumpdir)
 
         if found:
             raise TalosCrash("Found crashes after test run, terminating test")
-
-    def setupRobocopTests(self, browser_config, profile_dir):
-        try:
-            deviceRoot = self._ffprocess.testAgent.getDeviceRoot()
-            with open("robotium.config", "w") as fHandle:
-                fHandle.write("profile=%s\n" % profile_dir)
-
-                remoteLog = deviceRoot + "/" + browser_config['browser_log']
-                fHandle.write("logfile=%s\n" % remoteLog)
-                fHandle.write("host=http://%s\n" % browser_config['webserver'])
-                fHandle.write("rawhost=http://%s\n"
-                              % browser_config['webserver'])
-                envstr = ""
-                delim = ""
-                # This is not foolproof and the ideal solution would be to have
-                # one env/line instead of a single string
-                for key, value in browser_config.get('env', {}).items():
-                    try:
-                        value.index(',')
-                        print ("Error: Found an ',' in our value, unable to"
-                               " process value.")
-                    except ValueError:
-                        envstr += "%s%s=%s" % (delim, key, value)
-                        delim = ","
-
-                fHandle.write("envvars=%s\n" % envstr)
-
-            self._ffprocess.testAgent.removeFile(
-                os.path.join(deviceRoot, "fennec_ids.txt"))
-            self._ffprocess.testAgent.removeFile(
-                os.path.join(deviceRoot, "robotium.config"))
-            self._ffprocess.testAgent.removeFile(remoteLog)
-            self._ffprocess.testAgent.pushFile("robotium.config",
-                                               os.path.join(deviceRoot,
-                                                            "robotium.config"))
-            self._ffprocess.testAgent.pushFile(browser_config['fennecIDs'],
-                                               os.path.join(deviceRoot,
-                                                            "fennec_ids.txt"))
-        except mozdevice.DMError:
-            print "Remote Device Error: Error copying files for robocop setup"
-            raise
 
     def testCleanup(self, browser_config, profile_dir, test_config, cm,
                     temp_dir):
@@ -288,7 +195,6 @@ class TTest(object):
                              test (url, cycles, counters, etc)
 
         """
-        self.initializeLibraries(browser_config)
 
         mozlog.debug("operating with platform_type : %s", self.platform_type)
         self.counters = test_config.get(self.platform_type + 'counters', [])
@@ -358,15 +264,9 @@ class TTest(object):
                 firefox=browser_config['browser_path']
             )
 
-            if browser_config['fennecIDs']:
-                # This pushes environment variables to the device, be
-                # careful of placement
-                self.setupRobocopTests(browser_config, profile_dir)
-
             upload_dir = os.environ.get('MOZ_UPLOAD_DIR', None)
-            sps_profile = upload_dir and \
-                test_config.get('sps_profile', False) and \
-                not browser_config['remote']
+            sps_profile = upload_dir and test_config.get('sps_profile', False)
+
             if test_config.get('sps_profile', False) and not upload_dir:
                 print "Profiling ignored because MOZ_UPLOAD_DIR was not set"
 
@@ -486,7 +386,6 @@ class TTest(object):
                 command_args = utils.GenerateBrowserCommandLine(
                     browser_config["browser_path"],
                     browser_config["extra_args"],
-                    browser_config["deviceroot"],
                     profile_dir,
                     test_config['url'],
                     profiling_info=profiling_info
@@ -494,105 +393,101 @@ class TTest(object):
 
                 self.counter_results = None
                 mainthread_error_count = 0
-                if not browser_config['remote']:
-                    if test_config['setup']:
-                        # Generate bcontroller.yml for xperf
-                        talosconfig.generateTalosConfig(command_args,
-                                                        browser_config,
-                                                        test_config)
-                        subprocess.call(
-                            ['python'] + test_config['setup'].split(),
-                        )
-
-                    self.isFinished = False
-                    mm_httpd = None
-
-                    if test_config['name'] == 'media_tests':
-                        from startup_test.media import media_manager
-                        mm_httpd = media_manager.run_server(
-                            os.path.dirname(os.path.realpath(__file__))
-                        )
-
-                    browser = TalosProcess.TalosProcess(
-                        command_args,
-                        env=dict(os.environ.items() +
-                                 additional_env_vars.items()),
-                        logfile=browser_config['browser_log'],
-                        suppress_javascript_errors=True,
-                        wait_for_quit_timeout=5
+                if test_config['setup']:
+                    # Generate bcontroller.yml for xperf
+                    talosconfig.generateTalosConfig(command_args,
+                                                    browser_config,
+                                                    test_config)
+                    subprocess.call(
+                        ['python'] + test_config['setup'].split(),
                     )
-                    browser.run(timeout=timeout)
-                    pid = browser.pid
-                    self._pids.append(pid)
 
-                    if self.counters:
-                        self.cm = self.CounterManager(
-                            browser_config['process'],
-                            self.counters
-                        )
-                        self.counter_results = \
-                            dict([(counter, []) for counter in self.counters])
-                        cmthread = Thread(target=self.collectCounters)
-                        cmthread.setDaemon(True)  # don't hang on quit
-                        cmthread.start()
+                self.isFinished = False
+                mm_httpd = None
 
-                    # todo: ctrl+c doesn't close the browser windows
-                    try:
-                        code = browser.wait()
-                    except KeyboardInterrupt:
-                        browser.kill()
-                        raise
-                    mozlog.info(
-                        "Browser exited with error code: {0}".format(code)
+                if test_config['name'] == 'media_tests':
+                    from startup_test.media import media_manager
+                    mm_httpd = media_manager.run_server(
+                        os.path.dirname(os.path.realpath(__file__))
                     )
-                    browser = None
-                    self.isFinished = True
 
-                    if mm_httpd:
-                        mm_httpd.stop()
+                browser = TalosProcess.TalosProcess(
+                    command_args,
+                    env=dict(os.environ.items() +
+                             additional_env_vars.items()),
+                    logfile=browser_config['browser_log'],
+                    suppress_javascript_errors=True,
+                    wait_for_quit_timeout=5
+                )
+                browser.run(timeout=timeout)
+                pid = browser.pid
+                self._pids.append(pid)
 
-                    if test_config['mainthread']:
-                        rawlog = os.path.join(here, "mainthread_io.log")
-                        if os.path.exists(rawlog):
-                            processedlog = \
-                                os.path.join(here, 'mainthread_io.json')
-                            xre_path = \
-                                os.path.dirname(browser_config['browser_path'])
-                            mtio_py = os.path.join(here, 'mainthreadio.py')
-                            command = ['python', mtio_py, rawlog,
-                                       processedlog, xre_path]
-                            mtio = subprocess.Popen(command,
-                                                    env=os.environ.copy(),
-                                                    stdout=subprocess.PIPE)
-                            output, stderr = mtio.communicate()
-                            for line in output.split('\n'):
-                                if line.strip() == "":
-                                    continue
+                if self.counters:
+                    self.cm = self.CounterManager(
+                        browser_config['process'],
+                        self.counters
+                    )
+                    self.counter_results = \
+                        dict([(counter, []) for counter in self.counters])
+                    cmthread = Thread(target=self.collectCounters)
+                    cmthread.setDaemon(True)  # don't hang on quit
+                    cmthread.start()
 
-                                print line
-                                mainthread_error_count += 1
-                            mozfile.remove(rawlog)
+                # todo: ctrl+c doesn't close the browser windows
+                try:
+                    code = browser.wait()
+                except KeyboardInterrupt:
+                    browser.kill()
+                    raise
+                mozlog.info(
+                    "Browser exited with error code: {0}".format(code)
+                )
+                browser = None
+                self.isFinished = True
 
-                    if test_config['cleanup']:
-                        # HACK: add the pid to support xperf where we require
-                        # the pid in post processing
-                        talosconfig.generateTalosConfig(command_args,
-                                                        browser_config,
-                                                        test_config,
-                                                        pid=pid)
-                        cleanup = TalosProcess.TalosProcess(
-                            ['python'] + test_config['cleanup'].split(),
-                            env=os.environ.copy()
-                        )
-                        cleanup.run()
-                        cleanup.wait()
+                if mm_httpd:
+                    mm_httpd.stop()
 
-                    # allow mozprocess to terminate fully.
-                    # It appears our log file is partial unless we wait
-                    time.sleep(5)
-                else:
-                    self._ffprocess.runProgram(browser_config, command_args,
-                                               timeout=timeout)
+                if test_config['mainthread']:
+                    rawlog = os.path.join(here, "mainthread_io.log")
+                    if os.path.exists(rawlog):
+                        processedlog = \
+                            os.path.join(here, 'mainthread_io.json')
+                        xre_path = \
+                            os.path.dirname(browser_config['browser_path'])
+                        mtio_py = os.path.join(here, 'mainthreadio.py')
+                        command = ['python', mtio_py, rawlog,
+                                   processedlog, xre_path]
+                        mtio = subprocess.Popen(command,
+                                                env=os.environ.copy(),
+                                                stdout=subprocess.PIPE)
+                        output, stderr = mtio.communicate()
+                        for line in output.split('\n'):
+                            if line.strip() == "":
+                                continue
+
+                            print line
+                            mainthread_error_count += 1
+                        mozfile.remove(rawlog)
+
+                if test_config['cleanup']:
+                    # HACK: add the pid to support xperf where we require
+                    # the pid in post processing
+                    talosconfig.generateTalosConfig(command_args,
+                                                    browser_config,
+                                                    test_config,
+                                                    pid=pid)
+                    cleanup = TalosProcess.TalosProcess(
+                        ['python'] + test_config['cleanup'].split(),
+                        env=os.environ.copy()
+                    )
+                    cleanup.run()
+                    cleanup.wait()
+
+                # allow mozprocess to terminate fully.
+                # It appears our log file is partial unless we wait
+                time.sleep(5)
 
                 # For startup tests, we launch the browser multiple times
                 # with the same profile
