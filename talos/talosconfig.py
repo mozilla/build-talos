@@ -1,9 +1,10 @@
 import os
+import json
 
 
 def writeConfigFile(obj, vals):
-    return ''.join("%s: %s\n" % (opt, obj[opt])
-                   for opt in (vals or obj.keys()))
+    data = dict((opt, obj[opt]) for opt in (vals or obj.keys()))
+    return json.dumps(data)
 
 
 def generateTalosConfig(command_line, browser_config, test_config, pid=None):

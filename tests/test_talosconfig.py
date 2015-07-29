@@ -1,6 +1,8 @@
 from talos import talosconfig
 from talos.configuration import YAML
 import unittest
+import json
+
 
 #globals
 ffox_path = 'test/path/to/firefox'
@@ -14,15 +16,15 @@ class TestWriteConfig(unittest.TestCase):
         obj = dict(some=123, thing='456', other=789)
 
         self.assertEquals(
-            talosconfig.writeConfigFile(obj, ('some', 'thing')), """\
-some: 123
-thing: 456
-""")
+            json.loads(talosconfig.writeConfigFile(obj, ('some', 'thing'))),
+            dict(some=123, thing='456')
+        )
 
         # test without keys
-        out = talosconfig.writeConfigFile(obj, None)
-        for line in ('some: 123', 'thing: 456', 'other: 789'):
-            self.assertIn(line + '\n', out)
+        self.assertEquals(
+            json.loads(talosconfig.writeConfigFile(obj, None)),
+            obj
+        )
 
 
 class TalosConfigUnitTest(unittest.TestCase):

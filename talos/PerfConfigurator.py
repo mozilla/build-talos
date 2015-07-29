@@ -194,7 +194,7 @@ class PerfConfigurator(Configuration):
         }),
         ('bcontroller_config', {
             'help': 'path to YAML input for bcontroller',
-            'default': '${talos}/bcontroller.yml',
+            'default': '${talos}/bcontroller.json',
             'flags': []
         }),
         ('buildid', {'default': 'testbuildid', 'flags': []}),
@@ -817,7 +817,7 @@ class PerfConfigurator(Configuration):
         required = ['preferences', 'extensions',
                     'browser_path', 'browser_log', 'browser_wait',
                     'extra_args', 'buildid', 'env', 'init_url']
-        optional = {'bcontroller_config': 'bcontroller.yml',
+        optional = {'bcontroller_config': 'bcontroller.json',
                     'branch_name': '',
                     'child_process': 'plugin-container',
                     'develop': False,

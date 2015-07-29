@@ -415,8 +415,8 @@ class tp5n(PageloaderTest):
                        'FileClose']
     filters = [["ignore_first", [1]], ['median', []]]
     timeout = 1800
-    setup = '${talos}/xtalos/start_xperf.py -c ${talos}/bcontroller.yml'
-    cleanup = '${talos}/xtalos/parse_xperf.py -c ${talos}/bcontroller.yml'
+    setup = '${talos}/xtalos/start_xperf.py -c ${talos}/bcontroller.json'
+    cleanup = '${talos}/xtalos/parse_xperf.py -c ${talos}/bcontroller.json'
     preferences = {'extensions.enabledScopes': '',
                    'talos.logfile': 'browser_output.txt'}
 

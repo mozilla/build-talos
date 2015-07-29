@@ -394,7 +394,7 @@ class TTest(object):
                 self.counter_results = None
                 mainthread_error_count = 0
                 if test_config['setup']:
-                    # Generate bcontroller.yml for xperf
+                    # Generate bcontroller.json for xperf
                     talosconfig.generateTalosConfig(command_args,
                                                     browser_config,
                                                     test_config)

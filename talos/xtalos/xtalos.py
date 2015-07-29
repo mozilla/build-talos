@@ -4,7 +4,7 @@
 
 import os
 import argparse
-import yaml
+import json
 
 DEBUG_CRITICAL = 0
 DEBUG_ERROR = 1
@@ -18,15 +18,15 @@ class XTalosError(Exception):
 
 
 def options_from_config(options, config_file):
-    """override options from a YAML config file; returns the dictionary
+    """override options from a json config file; returns the dictionary
     - options: a dictionary with default options
-    - config_file: path to a YAML config file
+    - config_file: path to a json config file
     """
 
     with open(config_file, 'r') as config:
-        yaml_config = yaml.load(config)
-    for obj in options.keys():
-        options[obj] = yaml_config.get(obj, options[obj])
+        conf = json.load(config)
+    for optname, value in options.items():
+        options[optname] = conf.get(optname, value)
     return options
 
 
@@ -78,7 +78,7 @@ class XtalosOptions(argparse.ArgumentParser):
         defaults["xperf_stackwalk"] = []
 
         self.add_argument("-c", "--config-file", dest="configFile",
-                          help="Name of the yaml config file with test run"
+                          help="Name of the json config file with test run"
                                " and browser information")
         defaults["configFile"] = None
 
