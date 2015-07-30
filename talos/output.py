@@ -485,8 +485,21 @@ class PerfherderOutput(Output):
                                      for extension in test.extensions]
         return options
 
-    def __call__(self):
+    def construct_results(self, vals, testname):
+        if 'responsiveness' in testname:
+            return self.responsiveness_Metric([val for (val, page) in vals])
+        elif testname.startswith('v8_7'):
+            return self.v8_Metric(vals)
+        elif testname.startswith('kraken'):
+            return self.JS_Metric(vals)
+        elif testname.startswith('tcanvasmark'):
+            return self.CanvasMark_Metric(vals)
+        elif len(vals) > 1:
+            return filter.geometric_mean([i for i, j in vals])
+        else:
+            return filter.mean([i for i, j in vals])
 
+    def __call__(self):
         # platform
         machine = self.test_machine()
 
@@ -510,8 +523,28 @@ class PerfherderOutput(Output):
 
             # serialize test results
             results = {}
+            summary = {"suite": 0, "subtests": {}}
             if not test.using_xperf:
+                vals = []
                 for result in test.results:
+                    # per test filters
+                    _filters = self.results.filters
+                    if 'filters' in test.test_config:
+                        try:
+                            _filters = filter.filters_args(
+                                test.test_config['filters']
+                            )
+                        except AssertionError, e:
+                            raise utils.TalosError(str(e))
+
+                    filtered_results = result.values(_filters)
+                    vals.extend(filtered_results)
+                    for val, page in filtered_results:
+                        if page == 'NULL':
+                            summary['subtests'][test.name()] = val
+                        else:
+                            summary['subtests'][page] = val
+
                     # XXX this will not work for manifests which list
                     # the same page name twice. It also ignores cycles
                     for page, val in result.raw_values():
@@ -519,6 +552,12 @@ class PerfherderOutput(Output):
                             results.setdefault(test.name(), []).extend(val)
                         else:
                             results.setdefault(page, []).extend(val)
+
+                suite_summary = self.construct_results(vals,
+                                                       testname=test.name())
+                summary['suite'] = suite_summary
+                test_result['summary'] = summary
+
                 for result, values in results.items():
                     test_result['results'][result] = values
 
