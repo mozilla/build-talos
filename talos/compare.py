@@ -402,13 +402,17 @@ def compareResults(revision, branch, masterbranch, skipdays, history,
             else:
                 bid = branch_map[masterbranch]['nonpgo']['id']
 
-            data = getGraphData(test_map[t]['id'], bid, platform_map[p])
-            if compare_e10s:
-                testdata = getGraphData(test_map[t]['id'],
-                                        test_bid, platform_map[p + " (e10s)"])
-            else:
-                testdata = getGraphData(test_map[t]['id'],
-                                        test_bid, platform_map[p])
+            e10s = True
+            plat = p
+            if e10s:
+                plat = "%s (e10s)" % p
+            data = getGraphData(test_map[t]['id'], bid, platform_map[plat])
+
+            if not e10s and compare_e10s:
+                plat = "%s (e10s)" % p
+            testdata = getGraphData(test_map[t]['id'],
+                                    test_bid, platform_map[plat])
+
             if data and testdata:
                 if masterrevision:
                     results = \
