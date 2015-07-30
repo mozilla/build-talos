@@ -6,8 +6,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-var Profiler = null;
-
 var windowListener = {
   onOpenWindow: function(aWindow) {
     // Ensure we don't get tiles which contact the network
@@ -83,22 +81,10 @@ function waitForTabLoads(browser, numTabs, callback) {
 }
 
 function loadTabs(urls, win, callback) {
-  let context = {};
-  Services.scriptloader.loadSubScript("chrome://pageloader/content/Profiler.js", context);
-  Profiler = context.Profiler;
-
-  // We don't want to catch scrolling the tabstrip in our tests
-  win.gBrowser.tabContainer.style.visibility = "hidden";
-
   let initialTab = win.gBrowser.selectedTab;
   waitForTabLoads(win.gBrowser, urls.length, function() {
-    let tabs = win.gBrowser.getTabsToTheEndFrom(initialTab);
-    aboutBlankTab = tabs[0];
-    callback(tabs);
+    callback(win.gBrowser.getTabsToTheEndFrom(initialTab));
   });
-  // Add about:blank to be the first tab. This will allow us to use about:blank
-  // to let paint event stabilize and make all tab switch more even.
-  urls.unshift("about:blank");
   win.gBrowser.loadTabs(urls, true);
 }
 
@@ -110,160 +96,21 @@ function runTest(tabs, win, callback) {
   });
 }
 
-function waitForTabSwitchDone(win, callback) {
-  if (win.gBrowser.selectedBrowser.isRemoteBrowser) {
-    var list = function onSwitch() {
-      win.gBrowser.removeEventListener("TabSwitched", list);
-      callback();
-    };
-
-    win.gBrowser.addEventListener("TabSwitched", list);
-
-  } else {
-    // Tab switch is sync so it has already happened.
-    callback();
-  }
-}
-
-// waitForPaints is from mochitest
-var waitForAllPaintsFlushed = null;
-(function() {
- var accumulatedRect = null;
- var onpaint = function() {};
- var debug = false;
- var registeredWin = null;
- const FlushModes = {
-   FLUSH: 0,
-   NOFLUSH: 1
- };
-
-  function paintListener(event) {
-    if (event.target != registeredWin) {
-      return;
-    }
-    var eventRect =
-      [ event.boundingClientRect.left,
-        event.boundingClientRect.top,
-        event.boundingClientRect.right,
-        event.boundingClientRect.bottom ];
-    if (debug) {
-      dump("got MozAfterPaint: " + eventRect.join(",") + "\n");
-    }
-    accumulatedRect = accumulatedRect
-                    ? [ Math.min(accumulatedRect[0], eventRect[0]),
-                        Math.min(accumulatedRect[1], eventRect[1]),
-                        Math.max(accumulatedRect[2], eventRect[2]),
-                        Math.max(accumulatedRect[3], eventRect[3]) ]
-                    : eventRect;
-    onpaint();
-  }
-
-  function waitForPaints(win, callback, subdoc, flushMode) {
-    if (!registeredWin) { // delay the register until we have a window
-      registeredWin = win;
-      win.addEventListener("MozAfterPaint", paintListener, false);
-    }
-
-    // Wait until paint suppression has ended
-    var utils = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindowUtils);
-    if (utils.paintingSuppressed) {
-      if (debug) {
-        dump("waiting for paint suppression to end...\n");
-      }
-      onpaint = function() {};
-      win.setTimeout(function() {
-        waitForPaints(win, callback, subdoc, flushMode);
-      }, 0);
-      return;
-    }
-
-    // The call to getBoundingClientRect will flush pending layout
-    // notifications. Sometimes, however, this is undesirable since it can mask
-    // bugs where the code under test should be performing the flush.
-    if (flushMode === FlushModes.FLUSH) {
-      win.document.documentElement.getBoundingClientRect();
-      if (subdoc) {
-        subdoc.documentElement.getBoundingClientRect();
-      }
-    }
-
-    if (utils.isMozAfterPaintPending) {
-      if (debug) {
-        dump("waiting for paint...\n");
-      }
-      onpaint =
-        function() { waitForPaints(win, callback, subdoc, FlushModes.NOFLUSH); };
-      if (utils.isTestControllingRefreshes) {
-        utils.advanceTimeAndRefresh(0);
-      }
-      return;
-    }
-
-    if (debug) {
-      dump("done...\n");
-    }
-    var result = accumulatedRect || [ 0, 0, 0, 0 ];
-    accumulatedRect = null;
-    onpaint = function() {};
-    callback.apply(null, result);
-  }
-
-  waitForAllPaintsFlushed = function(win, callback, subdoc) {
-    waitForPaints(win, callback, subdoc, FlushModes.FLUSH);
-  };
-
-  waitForAllPaints = function(win, callback) {
-    waitForPaints(win, callback, null, FlushModes.NOFLUSH);
-  };
-})();
-
-function runTestHelper(startTab, tabs, index, win, times, callback) {
+function runTestHelper(startTab, tabs, index,  win, times, callback) {
   let tab = tabs[index];
-
-  if (typeof(Profiler) !== "undefined") {
-    Profiler.resume(tab.linkedBrowser.currentURI.spec);
-  }
   let start = win.performance.now();
-  win.gBrowser.selectedTab = tab;
-
-  waitForTabSwitchDone(win, function() {
-    // This will fire when we're about to paint the tab switch
-    win.requestAnimationFrame(function() {
-      // This will fire on the next vsync tick after the tab has switched.
-      // If we have a sync transaction on the compositor, that time will
-      // be included here. It will not accuratly capture the composite time
-      // or the time of async transaction.
-      win.requestAnimationFrame(function() {
-        times.push(win.performance.now() - start);
-        if (typeof(Profiler) !== "undefined") {
-          Profiler.pause(tab.linkedBrowser.currentURI.spec);
-        }
-
-        // Select about:blank which will let the browser reach a steady no
-        // painting state
-        win.gBrowser.selectedTab = aboutBlankTab;
-
-        waitForTabSwitchDone(win, function() {
-          win.requestAnimationFrame(function() {
-            win.requestAnimationFrame(function() {
-              // Let's wait for all the paints to be flushed. This makes
-              // the next test load less noisy.
-              waitForAllPaintsFlushed(win, function() {
-                if (index == tabs.length - 1) {
-                  callback();
-                } else {
-                  runTestHelper(startTab, tabs, index + 1, win, times, function() {
-                    callback();
-                  });
-                }
-              });
-            });
-          });
+  promiseOneEvent(tab.linkedBrowser, "MozAfterPaint", false).then(
+    function() {
+      times.push(win.performance.now() - start);
+      if (index == tabs.length - 1) {
+        callback();
+      } else {
+        runTestHelper(startTab, tabs, index + 1, win, times, function() {
+          callback();
         });
-      });
+      }
     });
-  });
+  win.gBrowser.selectedTab = tab;
 }
 
 function test(window) {

@@ -248,7 +248,6 @@ class tps(PageloaderTest):
     extensions = '${talos}/page_load_test/tabswitch'
     tpmanifest = '${talos}/page_load_test/tabswitch/tps.manifest'
     tppagecycles = 5
-    sps_profile_entries = 1000000
     tploadnocache = True
     preferences = {
         'addon.test.tabswitch.urlfile': os.path.join('${talos}',
