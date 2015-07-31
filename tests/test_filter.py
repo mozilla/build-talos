@@ -6,13 +6,9 @@ test talos' filter module:
 http://hg.mozilla.org/build/talos/file/tip/talos/filter.py
 """
 
-import os
-import sys
-import tempfile
-import time
 import unittest
 import talos.filter
-from talos.PerfConfigurator import PerfConfigurator
+
 
 class TestFilter(unittest.TestCase):
 

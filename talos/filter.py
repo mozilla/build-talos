@@ -132,8 +132,7 @@ def parse(filter_name):
     ['ignore_first', [10]]
     or "foo:10.1,2,5.0" to return
     ['foo', [10.1, 2, 5.0]] .
-    The filter name strings are returned versus the functions'
-    as the data may need to be reserialized (e.g. PerfConfigurator.py).
+    The filter name strings are returned versus the functions
     """
 
     sep = ':'

@@ -1,4 +1,3 @@
-PyYAML
 mozlog==2.6
 mozcrash==0.13
 mozfile==1.1

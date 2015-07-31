@@ -48,7 +48,6 @@ setup(name='talos',
       entry_points="""
       # -*- Entry points: -*-
       [console_scripts]
-      PerfConfigurator = talos.PerfConfigurator:main
       talos = talos.run_tests:main
       talos-results = talos.results:main
       """,
