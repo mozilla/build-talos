@@ -167,8 +167,6 @@ def run_tests(config, browser_config):
     # https://bugzilla.mozilla.org/show_bug.cgi?id=705809
     browser_config['extensions'] = [utils.interpolate(i)
                                     for i in browser_config['extensions']]
-    browser_config['dirs'] = dict([(i, utils.interpolate(j))
-                                   for i, j in browser_config['dirs'].items()])
     browser_config['bcontroller_config'] = \
         utils.interpolate(browser_config['bcontroller_config'])
 

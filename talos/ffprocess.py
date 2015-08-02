@@ -4,84 +4,98 @@
 
 """Firefox process management for Talos"""
 
-import mozfile
 import os
-import shutil
+import signal
 import time
-import utils
-import copy
 import mozlog
+import mozinfo
 from utils import TalosError
 
 
-class FFProcess(object):
-    extra_prog = ["crashreporter"]  # list of extra programs to be killed
+def is_running(pid):
+    """returns if a pid is running"""
+    if mozinfo.isWin:
+        from ctypes import sizeof, windll, addressof
+        from ctypes.wintypes import DWORD
 
-    def TerminateProcesses(self, pids, timeout):
-        """Helper function to terminate processes with the given pids
+        BIG_ARRAY = DWORD * 4096
+        processes = BIG_ARRAY()
+        needed = DWORD()
 
-        Args:
-            pids: A list containing PIDs of process, i.e. firefox
-        """
-        results = []
-        for pid in copy.deepcopy(pids):
-            ret = self._TerminateProcess(pid, timeout)
-            if ret:
-                results.append("(%s): %s" % (pid, ret))
-            else:
-                # Remove PIDs which are already terminated
-                pids.remove(pid)
-        return ",".join(results)
+        pids = []
+        result = windll.psapi.EnumProcesses(processes,
+                                            sizeof(processes),
+                                            addressof(needed))
+        if result:
+            num_results = needed.value / sizeof(DWORD)
+            for i in range(num_results):
+                pids.append(int(processes[i]))
+    else:
+        from mozprocess import pid as mozpid
+        pids = [int(i['PID']) for i in mozpid.ps()]
 
-    def checkProcesses(self, pids):
-        """Returns a list of browser related PIDs still running
+    return bool([i for i in pids if pid == i])
 
-        Args:
-            pids: A list containg PIDs
-        Returns:
-            A list containing PIDs which are still running
-        """
-        pids = [pid for pid in pids if utils.is_running(pid)]
-        return pids
 
-    def cleanupProcesses(self, pids, browser_wait):
-        # kill any remaining browser processes
-        # returns string of which process_names were terminated and with
-        # what signal
+def running_processes(pids):
+    """filter pids and return only the running ones"""
+    return [pid for pid in pids if is_running(pid)]
 
-        mozlog.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
-        terminate_result = self.TerminateProcesses(pids, browser_wait)
-        # check if anything is left behind
-        if self.checkProcesses(pids):
-            # this is for windows machines.  when attempting to send kill
-            # messages to win processes the OS
-            # always gives the process a chance to close cleanly before
-            # terminating it, this takes longer
-            # and we need to give it a little extra time to complete
-            time.sleep(browser_wait)
-            process_pids = self.checkProcesses(pids)
-            if process_pids:
-                raise TalosError(
-                    "failed to cleanup process with PID: %s" % process_pids)
 
-        return terminate_result
+if mozinfo.os == 'win':
+    def terminate_process(pid, timeout):
+        from mozprocess import wpk
+        wpk.kill_pid(pid)
+else:
+    if mozinfo.os == 'linux':
+        DEFAULT_SIGNALS = ('SIGABRT', 'SIGTERM', 'SIGKILL')
+    else:
+        DEFAULT_SIGNALS = ('SIGTERM', 'SIGKILL')
 
-    # functions for dealing with files
-    # these should really go in mozfile:
-    # https://bugzilla.mozilla.org/show_bug.cgi?id=774916
-    # These really don't have anything to do with process management
+    def terminate_process(pid, timeout):
+        ret = ''
+        try:
+            for sig in DEFAULT_SIGNALS:
+                if is_running(pid):
+                    os.kill(pid, getattr(signal, sig))
+                    time.sleep(timeout)
+                    ret = 'killed with %s' % sig
+        except OSError, (errno, strerror):
+            print 'WARNING: failed os.kill: %s : %s' % (errno, strerror)
+        return ret
 
-    def copyFile(self, fromfile, toDir):
-        if not os.path.isfile(os.path.join(toDir, os.path.basename(fromfile))):
-            shutil.copy(fromfile, toDir)
-            mozlog.debug("installed %s", fromfile)
+
+def terminate_processes(pids, timeout):
+    results = []
+    for pid in pids[:]:
+        ret = terminate_process(pid, timeout)
+        if ret:
+            results.append("(%s): %s" % (pid, ret))
         else:
-            mozlog.debug("WARNING: file already installed (%s)", fromfile)
+            # Remove PIDs which are already terminated
+            # TODO: we will never be here on windows!
+            pids.remove(pid)
+    return ",".join(results)
 
-    def removeDirectory(self, dir):
-        mozfile.remove(dir)
 
-    def getFile(self, handle, localFile=""):
-        if os.path.isfile(handle):
-            with open(handle, "r") as results_file:
-                return results_file.read()
+def cleanup_processes(pids, timeout):
+    # kill any remaining browser processes
+    # returns string of which process_names were terminated and with
+    # what signal
+
+    mozlog.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
+    terminate_result = terminate_processes(pids, timeout)
+    # check if anything is left behind
+    if running_processes(pids):
+        # this is for windows machines.  when attempting to send kill
+        # messages to win processes the OS
+        # always gives the process a chance to close cleanly before
+        # terminating it, this takes longer
+        # and we need to give it a little extra time to complete
+        time.sleep(timeout)
+        process_pids = running_processes(pids)
+        if process_pids:
+            raise TalosError(
+                "failed to cleanup process with PID: %s" % process_pids)
+
+    return terminate_result

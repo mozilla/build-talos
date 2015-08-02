@@ -10,7 +10,6 @@ import time
 import urlparse
 import string
 import urllib
-import mozinfo
 import mozlog
 import json
 import re
@@ -87,31 +86,6 @@ class TalosCrash(Exception):
 
        https://bugzilla.mozilla.org/show_bug.cgi?id=829734
     """
-
-
-def is_running(pid, psarg='axwww'):
-    """returns if a pid is running"""
-    if mozinfo.isWin:
-        from ctypes import sizeof, windll, addressof
-        from ctypes.wintypes import DWORD
-
-        BIG_ARRAY = DWORD * 4096
-        processes = BIG_ARRAY()
-        needed = DWORD()
-
-        pids = []
-        result = windll.psapi.EnumProcesses(processes,
-                                            sizeof(processes),
-                                            addressof(needed))
-        if result:
-            num_results = needed.value / sizeof(DWORD)
-            for i in range(num_results):
-                pids.append(int(processes[i]))
-    else:
-        from mozprocess import pid as mozpid
-        pids = [int(i['PID']) for i in mozpid.ps()]
-
-    return bool([i for i in pids if pid == i])
 
 
 def interpolate(template, **kwargs):

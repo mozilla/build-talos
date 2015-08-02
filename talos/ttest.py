@@ -33,9 +33,7 @@ import mozlog
 from threading import Thread
 
 from utils import TalosError, TalosCrash, TalosRegression
-from ffprocess_linux import LinuxProcess
-from ffprocess_win32 import Win32Process
-from ffprocess_mac import MacProcess
+import ffprocess
 from ffsetup import FFSetup
 import TalosProcess
 
@@ -43,25 +41,21 @@ import TalosProcess
 class TTest(object):
 
     _ffsetup = None
-    _ffprocess = None
     _pids = []
     platform_type = ''
 
     def __init__(self):
-        cmanager, platformtype, ffprocess = self.getPlatformType()
+        cmanager, platformtype = self.getPlatformType()
         self.CounterManager = cmanager
         self.platform_type = platformtype
-        self._ffprocess = ffprocess
 
-        self._ffsetup = FFSetup(self._ffprocess)
+        self._ffsetup = FFSetup()
 
     def getPlatformType(self):
-        _ffprocess = None
         if platform.system() == "Linux":
             import cmanager_linux
             CounterManager = cmanager_linux.LinuxCounterManager
             platform_type = 'linux_'
-            _ffprocess = LinuxProcess()
         elif platform.system() in ("Windows", "Microsoft"):
             if '5.1' in platform.version():  # winxp
                 platform_type = 'win_'
@@ -73,13 +67,11 @@ class TTest(object):
                 raise TalosError('unsupported windows version')
             import cmanager_win32
             CounterManager = cmanager_win32.WinCounterManager
-            _ffprocess = Win32Process()
         elif platform.system() == "Darwin":
             import cmanager_mac
             CounterManager = cmanager_mac.MacCounterManager
             platform_type = 'mac_'
-            _ffprocess = MacProcess()
-        return CounterManager, platform_type, _ffprocess
+        return CounterManager, platform_type
 
     def createProfile(self, profile_path, preferences, extensions, webserver):
         # Create the new profile
@@ -98,21 +90,21 @@ class TTest(object):
             self._pids.append(pid)
         if not res:
             raise TalosError("failed to initialize browser")
-        processes = self._ffprocess.checkProcesses(self._pids)
+        processes = ffprocess.running_processes(self._pids)
         if processes:
             raise TalosError("browser failed to close after being initialized")
 
     def cleanupProfile(self, dir):
         """Delete the temp profile directory."""
-        self._ffprocess.removeDirectory(dir)
+        mozfile.remove(dir)
 
     def cleanupAndCheckForCrashes(self, browser_config, profile_dir,
                                   test_name):
         """cleanup browser processes and process crashes if found"""
 
         # cleanup processes
-        self._ffprocess.cleanupProcesses(self._pids,
-                                         browser_config['browser_wait'])
+        ffprocess.cleanup_processes(self._pids,
+                                    browser_config['browser_wait'])
 
         # find stackwalk binary
         if platform.system() in ('Windows', 'Microsoft'):
@@ -139,7 +131,7 @@ class TTest(object):
                                            browser_config['symbols_path'],
                                            stackwalk_binary=stackwalkbin,
                                            test_name=test_name)
-        self._ffprocess.removeDirectory(minidumpdir)
+        mozfile.remove(minidumpdir)
 
         if found:
             raise TalosCrash("Found crashes after test run, terminating test")
@@ -223,11 +215,6 @@ class TTest(object):
         temp_dir = None
 
         try:
-            # add any provided directories to the installed browser
-            for dir in browser_config['dirs']:
-                self._ffsetup.InstallInBrowser(browser_config['browser_path'],
-                                               browser_config['dirs'][dir])
-
             # make profile path work cross-platform
             test_config['profile_path'] = \
                 os.path.normpath(test_config['profile_path'])
@@ -373,7 +360,7 @@ class TTest(object):
                         shutil.copy(origin, dest)
 
                 # check to see if the previous cycle is still hanging around
-                if (i > 0) and self._ffprocess.checkProcesses(self._pids):
+                if (i > 0) and ffprocess.running_processes(self._pids):
                     raise TalosError("previous cycle still running")
 
                 # Run the test

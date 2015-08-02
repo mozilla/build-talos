@@ -11,7 +11,6 @@ import os
 import re
 import tempfile
 import time
-import glob
 import mozlog
 from mozprofile.profile import Profile
 
@@ -22,8 +21,7 @@ import TalosProcess
 
 
 class FFSetup(object):
-    def __init__(self, ffprocess):
-        self.ffprocess = ffprocess
+    def __init__(self):
         self.extensions = None
 
     def CreateTempProfileDir(self, source_profile, prefs, extensions,
@@ -64,18 +62,6 @@ class FFSetup(object):
         profile.addon_manager.install_addons(extensions)
 
         return temp_dir, profile_dir
-
-    def InstallInBrowser(self, browser_path, dir_path):
-        """
-            Take the given directory and copies it to appropriate location in
-            the given browser install
-        """
-        # add the provided directory to the given browser install
-        fromfiles = glob.glob(os.path.join(dir_path, '*'))
-        todir = os.path.join(os.path.dirname(browser_path),
-                             os.path.basename(os.path.normpath(dir_path)))
-        for fromfile in fromfiles:
-            self.ffprocess.copyFile(fromfile, todir)
 
     def InitializeNewProfile(self, profile_dir, browser_config):
         """

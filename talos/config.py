@@ -142,7 +142,6 @@ DEFAULTS = dict(
     extra_args='',
     buildid='testbuildid',
     init_url='getInfo.html',
-    dirs={},
     env={'NO_EM_RESTART': '1'},
     # base data for all tests
     basetest=dict(
@@ -552,7 +551,6 @@ def get_browser_config(config):
                 'branch_name': '',
                 'child_process': 'plugin-container',
                 'develop': False,
-                'dirs': {},
                 'e10s': False,
                 'process': '',
                 'repository': None,
