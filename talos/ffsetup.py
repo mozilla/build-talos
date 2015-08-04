@@ -9,7 +9,7 @@ Set up a browser environment before running a test.
 import os
 import re
 import tempfile
-import mozlog
+import logging
 import mozfile
 from mozprocess import ProcessHandler
 from mozprofile.profile import Profile
@@ -116,9 +116,9 @@ class FFSetup(object):
         results_raw = '\n'.join(browser.output)
 
         if not self.PROFILE_REGEX.search(results_raw):
-            mozlog.info("Could not find %s in browser output",
-                        self.PROFILE_REGEX.pattern)
-            mozlog.info("Raw results:%s", results_raw)
+            logging.info("Could not find %s in browser output",
+                         self.PROFILE_REGEX.pattern)
+            logging.info("Raw results:%s", results_raw)
             raise TalosError("browser failed to close after being initialized")
 
     def clean(self):

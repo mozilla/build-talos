@@ -10,7 +10,7 @@ import time
 import urlparse
 import string
 import urllib
-import mozlog
+import logging
 import json
 import re
 import platform
@@ -34,9 +34,9 @@ class Timer(object):
 
 def startLogger(levelChoice):
     # declare and define global logger object to send logging messages to
-    log_levels = {'debug': mozlog.DEBUG, 'info': mozlog.INFO}
-    mozlog.basicConfig(format='%(levelname)s : %(message)s',
-                       level=log_levels[levelChoice])
+    log_levels = {'debug': logging.DEBUG, 'info': logging.INFO}
+    logging.basicConfig(format='%(levelname)s : %(message)s',
+                        level=log_levels[levelChoice])
 
 
 def stamped_msg(msg_title, msg_action):
@@ -168,7 +168,7 @@ def GenerateBrowserCommandLine(browser_path, extra_args, profile_dir,
     if url.find('media_manager.py') != -1:
         command_args = url.split(' ')
 
-    mozlog.debug("command line: %s", ' '.join(command_args))
+    logging.debug("command line: %s", ' '.join(command_args))
     return command_args
 
 

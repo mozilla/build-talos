@@ -6,7 +6,7 @@
 
 import mozversion
 import mozfile
-import mozlog
+import logging
 import filter
 import os
 import sys
@@ -198,8 +198,8 @@ def run_tests(config, browser_config):
                                              '%a, %d %b %Y %H:%M:%S GMT')))
     else:
         date = int(time.time())
-    mozlog.debug("using testdate: %d", date)
-    mozlog.debug("actual date: %d", int(time.time()))
+    logging.debug("using testdate: %d", date)
+    logging.debug("actual date: %d", int(time.time()))
 
     # results container
     talos_results = TalosResults(title=title,

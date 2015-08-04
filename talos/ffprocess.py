@@ -7,7 +7,7 @@
 import os
 import signal
 import time
-import mozlog
+import logging
 import mozinfo
 from utils import TalosError
 
@@ -83,7 +83,7 @@ def cleanup_processes(pids, timeout):
     # returns string of which process_names were terminated and with
     # what signal
 
-    mozlog.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
+    logging.debug("Terminating: %s", ", ".join(str(pid) for pid in pids))
     terminate_result = terminate_processes(pids, timeout)
     # check if anything is left behind
     if running_processes(pids):

@@ -6,7 +6,7 @@
 import sys
 import platform
 import optparse
-import mozlog
+import logging
 import mozhttpd
 # media test utilities
 import media_utils
@@ -134,9 +134,9 @@ def run_server(doc_root):
         ]
     )
 
-    mozlog.info("Server %s at %s:%s",
-                httpd_server.docroot, httpd_server.host,
-                httpd_server.port)
+    logging.info("Server %s at %s:%s",
+                 httpd_server.docroot, httpd_server.host,
+                 httpd_server.port)
     ObjectDb.httpd_server = httpd_server
     httpd_server.start()
     return httpd_server
