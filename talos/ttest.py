@@ -20,7 +20,6 @@ import subprocess
 import tempfile
 import time
 import utils
-import copy
 import mozcrash
 import talosconfig
 import shutil
@@ -40,7 +39,6 @@ import TalosProcess
 
 class TTest(object):
 
-    _ffsetup = None
     _pids = []
     platform_type = ''
 
@@ -48,8 +46,6 @@ class TTest(object):
         cmanager, platformtype = self.getPlatformType()
         self.CounterManager = cmanager
         self.platform_type = platformtype
-
-        self._ffsetup = FFSetup()
 
     def getPlatformType(self):
         if platform.system() == "Linux":
@@ -72,31 +68,6 @@ class TTest(object):
             CounterManager = cmanager_mac.MacCounterManager
             platform_type = 'mac_'
         return CounterManager, platform_type
-
-    def createProfile(self, profile_path, preferences, extensions, webserver):
-        # Create the new profile
-        temp_dir, profile_dir = \
-            self._ffsetup.CreateTempProfileDir(profile_path,
-                                               preferences,
-                                               extensions,
-                                               webserver)
-        mozlog.debug("created profile")
-        return profile_dir, temp_dir
-
-    def initializeProfile(self, profile_dir, browser_config):
-        res, pid = \
-            self._ffsetup.InitializeNewProfile(profile_dir, browser_config)
-        if pid:
-            self._pids.append(pid)
-        if not res:
-            raise TalosError("failed to initialize browser")
-        processes = ffprocess.running_processes(self._pids)
-        if processes:
-            raise TalosError("browser failed to close after being initialized")
-
-    def cleanupProfile(self, dir):
-        """Delete the temp profile directory."""
-        mozfile.remove(dir)
 
     def cleanupAndCheckForCrashes(self, browser_config, profile_dir,
                                   test_name):
@@ -136,8 +107,7 @@ class TTest(object):
         if found:
             raise TalosCrash("Found crashes after test run, terminating test")
 
-    def testCleanup(self, browser_config, profile_dir, test_config, cm,
-                    temp_dir):
+    def testCleanup(self, browser_config, profile_dir, test_config, cm):
         try:
             if os.path.isfile(browser_config['browser_log']):
                 with open(browser_config['browser_log'], "r") as results_file:
@@ -154,8 +124,6 @@ class TTest(object):
                     # crashes earlier
                     pass
 
-            if temp_dir:
-                self.cleanupProfile(temp_dir)
         except TalosError, te:
             mozlog.debug("cleanup error: %s", te)
         except Exception:
@@ -191,63 +159,22 @@ class TTest(object):
         mozlog.debug("operating with platform_type : %s", self.platform_type)
         self.counters = test_config.get(self.platform_type + 'counters', [])
         self.resolution = test_config['resolution']
-        with utils.restore_environment_vars():
-            return self._runTest(browser_config, test_config)
+        with FFSetup(browser_config, test_config) as setup:
+            return self._runTest(browser_config, test_config, setup)
 
-    def _runTest(self, browser_config, test_config):
-        for k, v in browser_config['env'].iteritems():
-            os.environ[k] = str(v)
-        os.environ['MOZ_CRASHREPORTER_NO_REPORT'] = '1'
-        # for winxp e10s logging:
-        # https://bugzilla.mozilla.org/show_bug.cgi?id=1037445
-        os.environ['MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA'] = '1'
-        if browser_config['symbols_path']:
-            os.environ['MOZ_CRASHREPORTER'] = '1'
-        else:
-            os.environ['MOZ_CRASHREPORTER_DISABLE'] = '1'
-
-        os.environ['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
-
-        os.environ["LD_LIBRARY_PATH"] = \
-            os.path.dirname(browser_config['browser_path'])
-
-        profile_dir = None
-        temp_dir = None
-
+    def _runTest(self, browser_config, test_config, setup):
         try:
-            # make profile path work cross-platform
-            test_config['profile_path'] = \
-                os.path.normpath(test_config['profile_path'])
 
             # add the mainthread_io to the environment variable, as defined
             # in test.py configs
             here = os.path.dirname(os.path.realpath(__file__))
             if test_config['mainthread']:
                 mainthread_io = os.path.join(here, "mainthread_io.log")
-                os.environ['MOZ_MAIN_THREAD_IO_LOG'] = mainthread_io
+                setup.env['MOZ_MAIN_THREAD_IO_LOG'] = mainthread_io
 
-            preferences = copy.deepcopy(browser_config['preferences'])
-            if 'preferences' in test_config and test_config['preferences']:
-                testPrefs = dict(
-                    [(i, utils.parse_pref(j))
-                     for i, j in test_config['preferences'].items()]
-                )
-                preferences.update(testPrefs)
-
-            extensions = copy.deepcopy(browser_config['extensions'])
-            if 'extensions' in test_config and test_config['extensions']:
-                extensions.append(test_config['extensions'])
-
-            profile_dir, temp_dir = self.createProfile(
-                test_config['profile_path'],
-                preferences,
-                extensions,
-                browser_config['webserver']
-            )
-            self.initializeProfile(profile_dir, browser_config)
             test_config['url'] = utils.interpolate(
                 test_config['url'],
-                profile=profile_dir,
+                profile=setup.profile_dir,
                 firefox=browser_config['browser_path']
             )
 
@@ -261,7 +188,6 @@ class TTest(object):
             profile_arcname = None
             profiling_info = None
 
-            additional_env_vars = {}
             symbol_paths = {}
 
             if sps_profile:
@@ -308,12 +234,12 @@ class TTest(object):
                     # Set environment variables which will cause profiling to
                     # start as early as possible. These are consumed by Gecko
                     # itself, not by Talos JS code.
-                    additional_env_vars = {
+                    setup.env.update({
                         'MOZ_PROFILER_STARTUP': '1',
                         'MOZ_PROFILER_INTERVAL': str(sps_profile_interval),
                         'MOZ_PROFILER_ENTRIES': str(sps_profile_entries),
                         "MOZ_PROFILER_THREADS": str(sps_profile_threads)
-                    }
+                    })
 
             mozlog.debug("initialized %s", browser_config['process'])
 
@@ -330,16 +256,15 @@ class TTest(object):
                     platform.system() != "Linux":
                 # ignore responsiveness tests on linux until we fix
                 # Bug 710296
-                os.environ['MOZ_INSTRUMENT_EVENT_LOOP'] = '1'
-                os.environ['MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD'] = '20'
-                os.environ['MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL'] = '10'
+                setup.env['MOZ_INSTRUMENT_EVENT_LOOP'] = '1'
+                setup.env['MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD'] = '20'
+                setup.env['MOZ_INSTRUMENT_EVENT_LOOP_INTERVAL'] = '10'
                 global_counters['responsiveness'] = []
 
             # instantiate an object to hold test results
             test_results = results.TestResults(
                 test_config,
-                global_counters,
-                extensions=self._ffsetup.extensions
+                global_counters
             )
 
             for i in range(test_config['cycles']):
@@ -354,7 +279,7 @@ class TTest(object):
                     for keep in test_config['reinstall']:
                         origin = os.path.join(test_config['profile_path'],
                                               keep)
-                        dest = os.path.join(profile_dir, keep)
+                        dest = os.path.join(setup.profile_dir, keep)
                         mozlog.debug("Reinstalling %s on top of %s", origin,
                                      dest)
                         shutil.copy(origin, dest)
@@ -373,7 +298,7 @@ class TTest(object):
                 command_args = utils.GenerateBrowserCommandLine(
                     browser_config["browser_path"],
                     browser_config["extra_args"],
-                    profile_dir,
+                    setup.profile_dir,
                     test_config['url'],
                     profiling_info=profiling_info
                 )
@@ -400,8 +325,7 @@ class TTest(object):
 
                 browser = TalosProcess.TalosProcess(
                     command_args,
-                    env=dict(os.environ.items() +
-                             additional_env_vars.items()),
+                    env=setup.env,
                     logfile=browser_config['browser_log'],
                     suppress_javascript_errors=True,
                     wait_for_quit_timeout=5
@@ -480,7 +404,7 @@ class TTest(object):
                 # with the same profile
                 for fname in ('sessionstore.js', '.parentlock',
                               'sessionstore.bak'):
-                    mozfile.remove(os.path.join(profile_dir, fname))
+                    mozfile.remove(os.path.join(setup.profile_dir, fname))
 
                 # ensure the browser log exists
                 browser_log_filename = browser_config['browser_log']
@@ -617,12 +541,12 @@ class TTest(object):
                                 )
 
                 # clean up any stray browser processes
-                self.cleanupAndCheckForCrashes(browser_config, profile_dir,
+                self.cleanupAndCheckForCrashes(browser_config,
+                                               setup.profile_dir,
                                                test_config['name'])
                 # clean up the bcontroller process
 
             # cleanup
-            self.cleanupProfile(temp_dir)
             if sps_profile:
                 mozfile.remove(sps_profile_dir)
                 for symbol_path in symbol_paths.values():
@@ -642,6 +566,6 @@ class TTest(object):
 
         except Exception, e:
             self.counters = vars().get('cm', self.counters)
-            self.testCleanup(browser_config, profile_dir, test_config,
-                             self.counters, temp_dir)
+            self.testCleanup(browser_config, setup.profile_dir, test_config,
+                             self.counters)
             raise

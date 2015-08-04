@@ -14,8 +14,6 @@ import mozlog
 import json
 import re
 import platform
-import copy
-from contextlib import contextmanager
 
 # directory of this file for use with interpolatePath()
 here = os.path.dirname(os.path.realpath(__file__))
@@ -49,25 +47,6 @@ def stamped_msg(msg_title, msg_action):
     print msg_format % (msg_title, msg_action,
                         time.strftime(time_format, time.localtime()))
     sys.stdout.flush()
-
-
-@contextmanager
-def restore_environment_vars():
-    """
-    clone the os.environ variable then restore it at the end.
-
-    This is intended to be used like this: ::
-
-      with restore_environment_vars():
-          # os.environ is a copy
-          os.environ['VAR'] = '1'
-      # os.environ is restored
-    """
-    backup_env, os.environ = os.environ, copy.deepcopy(os.environ)
-    try:
-        yield
-    finally:
-        os.environ = backup_env
 
 
 class TalosError(Exception):

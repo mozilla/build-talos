@@ -2,120 +2,137 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-"""A set of functions to set up a browser with the correct
-   preferences and extensions in the given directory.
-
+"""
+Set up a browser environment before running a test.
 """
 
 import os
 import re
 import tempfile
-import time
 import mozlog
+import mozfile
+from mozprocess import ProcessHandler
 from mozprofile.profile import Profile
 
 from utils import TalosError
 import utils
 
-import TalosProcess
-
 
 class FFSetup(object):
-    def __init__(self):
-        self.extensions = None
+    """
+    Initialize the browser environment before running a test.
 
-    def CreateTempProfileDir(self, source_profile, prefs, extensions,
-                             webserver):
-        """Creates a temporary profile directory from the source profile
-            directory and adds the given prefs and links to extensions.
+    This prepares:
+     - the environment vars for running the test in the browser,
+       available via the instance member *env*.
+     - the profile used to run the test, available via the
+       instance member *profile_dir*.
 
-        Args:
-            source_profile: String containing the absolute path of the source
-                            profile directory to copy from.
-            prefs: Preferences to set in the prefs.js file of the new profile.
-                    Format: {"PrefName1" : "PrefValue1",
-                    "PrefName2" : "PrefValue2"}
-            extensions: list of paths to .xpi files to be installed
+    Note that the browser will be run once with the profile, to ensure
+    this is basically working and negate any performance noise with the
+    real test run (installing the profile the first time takes time).
 
-        Returns:
-            String containing the absolute path of the profile directory.
-        """
+    This class should be used as a context manager::
 
-        # Create a temporary directory for the profile, and copy the
-        # source profile to it.
-        temp_dir = tempfile.mkdtemp()
-        profile_dir = os.path.join(temp_dir, 'profile')
-        profile = Profile.clone(source_profile, profile_dir, restore=False)
+      with FFSetup(browser_config, test_config) as setup:
+          # setup.env is initialized, and setup.profile_dir created
+          pass
+      # here the profile is removed
+    """
 
-        # Copy the user-set prefs to user.js
-        real_prefs = {}
-        for name, value in prefs.iteritems():
+    PROFILE_REGEX = re.compile('__metrics(.*)__metrics',
+                               re.DOTALL | re.MULTILINE)
+
+    def __init__(self, browser_config, test_config):
+        self.browser_config, self.test_config = browser_config, test_config
+        self._tmp_dir = tempfile.mkdtemp()
+        self.env = None
+        # The profile dir must be named 'profile' because of xperf analysis
+        # (in etlparser.py). TODO fix that ?
+        self.profile_dir = os.path.join(self._tmp_dir, 'profile')
+
+    def _init_env(self):
+        self.env = dict(os.environ)
+        for k, v in self.browser_config['env'].iteritems():
+            self.env[k] = str(v)
+        self.env['MOZ_CRASHREPORTER_NO_REPORT'] = '1'
+        # for winxp e10s logging:
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=1037445
+        self.env['MOZ_WIN_INHERIT_STD_HANDLES_PRE_VISTA'] = '1'
+        if self.browser_config['symbols_path']:
+            self.env['MOZ_CRASHREPORTER'] = '1'
+        else:
+            self.env['MOZ_CRASHREPORTER_DISABLE'] = '1'
+
+        self.env['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = '1'
+
+        self.env["LD_LIBRARY_PATH"] = \
+            os.path.dirname(self.browser_config['browser_path'])
+
+    def _init_profile(self):
+        preferences = dict(self.browser_config['preferences'])
+        if self.test_config.get('preferences'):
+            test_prefs = dict(
+                [(i, utils.parse_pref(j))
+                 for i, j in self.test_config['preferences'].items()]
+            )
+            preferences.update(test_prefs)
+        # interpolate webserver value in prefs
+        webserver = self.browser_config['webserver']
+        if '://' not in webserver:
+            webserver = 'http://' + webserver
+        for name, value in preferences.items():
             if type(value) is str:
-                webserver_var = webserver
-                if '://' not in webserver:
-                    webserver_var = 'http://' + webserver_var
-                value = utils.interpolate(value, webserver=webserver_var)
-            real_prefs[name] = value
-        profile.set_preferences(real_prefs)
+                value = utils.interpolate(value, webserver=webserver)
+                preferences[name] = value
 
-        # Install the extensions.
+        extensions = self.browser_config['extensions'][:]
+        if self.test_config.get('extensions'):
+            extensions.append(self.test_config['extensions'])
+
+        profile = Profile.clone(
+            os.path.normpath(self.test_config['profile_path']),
+            self.profile_dir,
+            restore=False)
+
+        profile.set_preferences(preferences)
         profile.addon_manager.install_addons(extensions)
 
-        return temp_dir, profile_dir
-
-    def InitializeNewProfile(self, profile_dir, browser_config):
-        """
-        Runs browser with the new profile directory, to negate any performance
-        hit that could occur as a result of starting up with a new profile.
-        Also kills the "extra" browser that gets spawned the first time browser
-        is run with a new profile.
-        Returns 1 (success) if PROFILE_REGEX is found,
-        and 0 (failure) otherwise
-
-        Args:
-            browser_config: object containing all the browser_config options
-            profile_dir: The full path to the profile directory to load
-        """
-        PROFILE_REGEX = re.compile('__metrics(.*)__metrics',
-                                   re.DOTALL | re.MULTILINE)
-
+    def _run_profile(self):
         command_args = utils.GenerateBrowserCommandLine(
-            browser_config["browser_path"],
-            browser_config["extra_args"],
-            profile_dir,
-            browser_config["init_url"]
+            self.browser_config["browser_path"],
+            self.browser_config["extra_args"],
+            self.profile_dir,
+            self.browser_config["init_url"]
         )
-        pid = None
-        browser = TalosProcess.TalosProcess(
-            command_args,
-            env=os.environ.copy(),
-            logfile=browser_config['browser_log']
-        )
+        browser = ProcessHandler(command_args)
         browser.run()
-        pid = browser.pid
         try:
             browser.wait()
         except KeyboardInterrupt:
             browser.kill()
             raise
-        finally:
-            browser.closeLogFile()
-        browser = None
-        time.sleep(5)
 
-        res = 0
-        if not os.path.isfile(browser_config['browser_log']):
-            raise TalosError("initalization has no output from browser")
-        with open(browser_config['browser_log'], "r") as results_file:
-            results_raw = results_file.read()
+        results_raw = '\n'.join(browser.output)
 
-        match = PROFILE_REGEX.search(results_raw)
-        if match:
-            res = 1
-        else:
-            mozlog.info("Could not find %s in browser_log: %s",
-                        PROFILE_REGEX.pattern, browser_config['browser_log'])
+        if not self.PROFILE_REGEX.search(results_raw):
+            mozlog.info("Could not find %s in browser output",
+                        self.PROFILE_REGEX.pattern)
             mozlog.info("Raw results:%s", results_raw)
-            mozlog.info("Initialization of new profile failed")
+            raise TalosError("browser failed to close after being initialized")
 
-        return res, pid
+    def clean(self):
+        mozfile.remove(self._tmp_dir)
+
+    def __enter__(self):
+        self._init_env()
+        self._init_profile()
+        try:
+            self._run_profile()
+        except:
+            self.clean()
+            raise
+        return self
+
+    def __exit__(self, type, value, tb):
+        self.clean()
