@@ -1,3 +1,7 @@
+# remove these two dependencies once we fixed the dependencies nightmare.
+mozlog==2.6
+mozdevice==0.40
+
 mozcrash==0.13
 mozfile==1.1
 mozhttpd==0.5
