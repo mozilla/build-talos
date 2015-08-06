@@ -54,15 +54,9 @@ function whenDelayedStartupFinished(win, callback) {
   }, topic, false);
 }
 
-function waitForTabLoads(browser, urls, callback) {
-  // Make sure we get load events for all the urls we need.
-  // Before we kept a count and sometimes received load events for other tabs
-  // and got a bad count.
-  var waitingToLoad = {};
-  for (var i = 0; i < urls.length; i++) {
-    waitingToLoad[urls[i]] = true;
-  }
+function waitForTabLoads(browser, numTabs, callback) {
   let listener = {
+    count: 0,
     QueryInterface: XPCOMUtils.generateQI(["nsIWebProgressListener",
                                            "nsISupportsWeakReference"]),
 
@@ -72,11 +66,8 @@ function waitForTabLoads(browser, urls, callback) {
       if ((aStateFlags & loadedState) == loadedState &&
           !aWebProgress.isLoadingDocument &&
           aWebProgress.DOMWindow == aWebProgress.DOMWindow.top) {
-        delete waitingToLoad[aBrowser.currentURI.spec];
-        dump("Loaded: " + aBrowser.currentURI.spec + "\n");
-
-        aBrowser.messageManager.loadFrameScript("chrome://pageloader/content/talos-content.js", false);
-        if (Object.keys(waitingToLoad).length == 0) {
+        this.count++;
+        if (this.count == numTabs) {
           browser.removeTabsProgressListener(listener);
           callback();
         }
@@ -104,7 +95,7 @@ function loadTabs(urls, win, callback) {
   // Set about:blank to be the first tab. This will allow us to use about:blank
   // to let paint event stabilize and make all tab switch more even.
   initialTab.linkedBrowser.loadURI("about:blank", null, null);
-  waitForTabLoads(win.gBrowser, urls, function() {
+  waitForTabLoads(win.gBrowser, urls.length, function() {
     let tabs = win.gBrowser.getTabsToTheEndFrom(initialTab);
     callback(tabs);
   });
@@ -124,62 +115,41 @@ function runTest(tabs, win, callback) {
 function runTestHelper(startTab, tabs, index, win, times, callback) {
   let tab = tabs[index];
 
-  // Clean up garbage so they don't randomly occur during our test
-  // making the results too noisy
-  win.QueryInterface(Ci.nsIInterfaceRequestor)
-     .getInterface(Ci.nsIDOMWindowUtils)
-     .garbageCollect();
-
-  forceContentGC(tab.linkedBrowser).then(function() {
-
-    if (typeof(Profiler) !== "undefined") {
-      Profiler.resume(tab.linkedBrowser.currentURI.spec);
-    }
-    let start = win.performance.now();
-    win.gBrowser.selectedTab = tab;
-    // This will fire when we're about to paint the tab switch
+  if (typeof(Profiler) !== "undefined") {
+    Profiler.resume(tab.linkedBrowser.currentURI.spec);
+  }
+  let start = win.performance.now();
+  win.gBrowser.selectedTab = tab;
+  // This will fire when we're about to paint the tab switch
+  win.requestAnimationFrame(function() {
+    // This will fire on the next vsync tick after the tab has switched.
+    // If we have a sync transaction on the compositor, that time will
+    // be included here. It will not accuratly capture the composite time
+    // or the time of async transaction.
+    // XXX: This will need to be adjusted for e10s since we need to block
+    //      on the child/content having painted.
     win.requestAnimationFrame(function() {
+      times.push(win.performance.now() - start);
+      if (typeof(Profiler) !== "undefined") {
+        Profiler.pause(tab.linkedBrowser.currentURI.spec);
+      }
 
-      // This will fire on the next vsync tick after the tab has switched.
-      // If we have a sync transaction on the compositor, that time will
-      // be included here. It will not accuratly capture the composite time
-      // or the time of async transaction.
-      // XXX: This will need to be adjusted for e10s since we need to block
-      //      on the child/content having painted.
+      // Select about:blank which will let the browser reach a steady no
+      // painting state
+      win.gBrowser.selectedTab = aboutBlankTab;
+
       win.requestAnimationFrame(function() {
-        times.push(win.performance.now() - start);
-        if (typeof(Profiler) !== "undefined") {
-          Profiler.pause(tab.linkedBrowser.currentURI.spec);
-        }
-
-        // Select about:blank which will let the browser reach a steady no
-        // painting state
-        win.gBrowser.selectedTab = aboutBlankTab;
-
         win.requestAnimationFrame(function() {
-          win.requestAnimationFrame(function() {
-            if (index == tabs.length - 1) {
+          if (index == tabs.length - 1) {
+            callback();
+          } else {
+            runTestHelper(startTab, tabs, index + 1, win, times, function() {
               callback();
-            } else {
-              runTestHelper(startTab, tabs, index + 1, win, times, function() {
-                callback();
-              });
-            }
-          });
+            });
+          }
         });
       });
     });
-  });
-}
-
-function forceContentGC(browser) {
-  return new Promise((resolve) => {
-    let mm = browser.messageManager;
-    mm.addMessageListener("Talos:ForceGC:OK", function onTalosContentForceGC(msg) {
-      mm.removeMessageListener("Talos:ForceGC:OK", onTalosContentForceGC);
-      resolve();
-    });
-    mm.sendAsyncMessage("Talos:ForceGC");
   });
 }
 
