@@ -9,25 +9,19 @@ objects and methods for parsing and serializing Talos results
 see https://wiki.mozilla.org/Buildbot/Talos/DataFormat
 """
 
-import filter
 import json
 import os
-import output
 import re
-import utils
 import csv
 import logging
-
-__all__ = ['TalosResults', 'TestResults', 'TsResults', 'PageloaderResults',
-           'BrowserLogResults']
+from talos import output, utils
 
 
 class TalosResults(object):
     """Container class for Talos results"""
 
-    def __init__(self, title, date, browser_config, filters):
+    def __init__(self, title, date, browser_config):
         self.results = []
-        self.filters = filters
 
         # info needed for graphserver
         self.title = title
@@ -149,7 +143,7 @@ class TestResults(object):
 
 
 class Results(object):
-    def filter(self, *filters):
+    def filter(self, filters):
         """
         filter the results set;
         applies each of the filters in order to the results data
@@ -161,7 +155,8 @@ class Results(object):
         for result in self.results:
             page = result['page']
             data = result['runs']
-            data = filter.apply(data, filters)
+            for filter in filters:
+                data = filter.apply(data)
             retval.append([data, page])
         return retval
 
@@ -170,7 +165,7 @@ class Results(object):
 
     def values(self, filters):
         """return filtered (value, page) for each value"""
-        return [[val, page] for val, page in self.filter(*filters)
+        return [[val, page] for val, page in self.filter(filters)
                 if val > -1]
 
 

@@ -194,17 +194,7 @@ class GraphserverOutput(Output):
             if not (test.format == 'tpformat' and test.using_xperf):
                 vals = []
                 for result in test.results:
-                    # per test filters
-                    _filters = self.results.filters
-                    if 'filters' in test.test_config:
-                        try:
-                            _filters = filter.filters_args(
-                                test.test_config['filters']
-                            )
-                        except AssertionError, e:
-                            raise utils.TalosError(str(e))
-
-                    vals.extend(result.values(_filters))
+                    vals.extend(result.values(test.test_config['filters']))
                 result_strings.append(self.construct_results(vals,
                                                              testname=testname,
                                                              **info_dict))
@@ -528,17 +518,8 @@ class PerfherderOutput(Output):
             if not test.using_xperf:
                 vals = []
                 for result in test.results:
-                    # per test filters
-                    _filters = self.results.filters
-                    if 'filters' in test.test_config:
-                        try:
-                            _filters = filter.filters_args(
-                                test.test_config['filters']
-                            )
-                        except AssertionError, e:
-                            raise utils.TalosError(str(e))
-
-                    filtered_results = result.values(_filters)
+                    filtered_results = \
+                        result.values(test.test_config['filters'])
                     vals.extend(filtered_results)
                     for val, page in filtered_results:
                         if page == 'NULL':

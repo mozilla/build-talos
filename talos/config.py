@@ -6,9 +6,7 @@ import argparse
 import os
 import copy
 
-import utils
-import filter
-import test
+from talos import utils, test
 
 
 class _ListTests(argparse.Action):
@@ -100,9 +98,6 @@ def parse_args(argv=None):
                  " graph servers.")
     add_arg('--responsiveness', action='store_true',
             help="turn on responsiveness collection")
-    add_arg('--filter', dest='filters', action='append',
-            help="filters to apply to the data from talos.filters [DEFAULT:"
-                 " ignore_max, median]")
     add_arg("--cycles", type=int,
             help="number of browser cycles to run")
     add_arg("--tpmanifest",
@@ -396,29 +391,6 @@ def update_prefs(config):
 def fix_init_url(config):
     if 'init_url' in config:
         config['init_url'] = convert_url(config, config['init_url'])
-
-
-@validator
-def convert_filters(config):
-    filters = []
-    _filters = config['filters'] or ['ignore_max', 'median']
-    for position, filter_name in enumerate(_filters):
-        try:
-            f = filter.parse(filter_name)
-            # Check if last filter is scalar filter
-            # and if all the rest are series filters
-            if position == len(_filters)-1:
-                assert f[0] in filter.scalar_filters,\
-                    "Last filter has to be a scalar filter."
-            else:
-                assert f[0] in filter.series_filters,\
-                    "Any filter except the last has to be a"\
-                    " series filter."
-        except Exception, e:
-            raise ConfigurationError(
-                "Bad value for filter '%s': %s" % (filter_name, e))
-        filters.append(f)
-    config['filters'] = filters
 
 
 def get_counters(config):

@@ -3,11 +3,50 @@ import math
 """
 data filters:
 takes a series of run data and applies statistical transforms to it
+
+Each filter is a simple function, but it also have attached a special
+`prepare` method that create a tuple with one instance of a
+:class:`Filter`; this allow to write stuff like::
+
+  from talos import filter
+  filters = filter.ignore_first.prepare(1) + filter.median.prepare()
+
+  for filter in filters:
+      data = filter(data)
+  # data is filtered
 """
+
+
+class Filter(object):
+    def __init__(self, func, *args, **kwargs):
+        """
+        Takes a filter function, and save args and kwargs that
+        should be used when the filter is used.
+        """
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def apply(self, data):
+        """
+        Apply the filter on the data, and return the new data
+        """
+        return self.func(data, *self.args, **self.kwargs)
+
+
+def define_filter(func):
+    """
+    decorator to attach the prepare method.
+    """
+    def prepare(*args, **kwargs):
+        return (Filter(func, *args, **kwargs),)
+    func.prepare = prepare
+    return func
 
 # filters that return a scalar
 
 
+@define_filter
 def mean(series):
     """
     mean of data; needs at least one data point
@@ -15,6 +54,7 @@ def mean(series):
     return sum(series)/float(len(series))
 
 
+@define_filter
 def median(series):
     """
     median of data; needs at least one data point
@@ -29,6 +69,7 @@ def median(series):
         return 0.5*(series[middle-1] + series[middle])
 
 
+@define_filter
 def variance(series):
     """
     variance: http://en.wikipedia.org/wiki/Variance
@@ -39,6 +80,7 @@ def variance(series):
     return variance
 
 
+@define_filter
 def stddev(series):
     """
     standard deviation: http://en.wikipedia.org/wiki/Standard_deviation
@@ -46,6 +88,7 @@ def stddev(series):
     return variance(series)**0.5
 
 
+@define_filter
 def dromaeo(series):
     """
     dromaeo: https://wiki.mozilla.org/Dromaeo, pull the internal calculation
@@ -61,11 +104,13 @@ def dromaeo(series):
     return geometric_mean(means)
 
 
+@define_filter
 def dromaeo_chunks(series, size):
     for i in xrange(0, len(series), size):
         yield series[i:i+size]
 
 
+@define_filter
 def geometric_mean(series):
     """
     geometric_mean: http://en.wikipedia.org/wiki/Geometric_mean
@@ -75,10 +120,10 @@ def geometric_mean(series):
         total += math.log(i+1)
     return math.exp(total / len(series)) - 1
 
-scalar_filters = [mean, median, max, min, variance, stddev, dromaeo]
-
-
 # filters that return a list
+
+
+@define_filter
 def ignore_first(series, number=1):
     """
     ignore first datapoint
@@ -89,6 +134,7 @@ def ignore_first(series, number=1):
     return series[number:]
 
 
+@define_filter
 def ignore(series, function):
     """
     ignore the first value of a list given by function
@@ -102,6 +148,7 @@ def ignore(series, function):
     return series
 
 
+@define_filter
 def ignore_max(series):
     """
     ignore maximum data point
@@ -109,108 +156,9 @@ def ignore_max(series):
     return ignore(series, max)
 
 
+@define_filter
 def ignore_min(series):
     """
     ignore minimum data point
     """
     return ignore(series, min)
-
-series_filters = [ignore_first, ignore_max, ignore_min]
-
-# mappings
-
-scalar_filters = dict([(i.__name__, i) for i in scalar_filters])
-series_filters = dict([(i.__name__, i) for i in series_filters])
-
-# utility functions
-
-
-def parse(filter_name):
-    """
-    parses a filter_name like
-    "ignore_first:10" to return
-    ['ignore_first', [10]]
-    or "foo:10.1,2,5.0" to return
-    ['foo', [10.1, 2, 5.0]] .
-    The filter name strings are returned versus the functions
-    """
-
-    sep = ':'
-
-    def convert_to_number(string):
-        """convert a string to an int or float"""
-        try:
-            return int(string)
-        except ValueError:
-            return float(string)
-
-    args = []
-    if sep in filter_name:
-        filter_name, args = filter_name.split(sep, 1)
-        args = [convert_to_number(arg)
-                for arg in args.split(',')]
-    # check validity of filter
-    assert (filter_name in scalar_filters) or (filter_name in series_filters),\
-        "--filter value not found in filters."
-    return [filter_name, args]
-
-
-def filters(*filter_names):
-    """
-    return a list of filter functions given a list of names
-    """
-
-    # convert to a list
-    filter_names = list(filter_names)
-    if not filter_names:
-        return []
-
-    # sanity checks
-    allowable_filters = set(scalar_filters.keys() + series_filters.keys())
-    missing = [i for i in filter_names if i not in allowable_filters]
-    if missing:
-        raise AssertionError(
-            "Filters not found: %s; (allowable filters: %s)"
-            % (', '.join(missing), ', '.join(allowable_filters))
-        )
-    reducer = filter_names.pop()
-    assert reducer in scalar_filters, \
-        ("Last filter must return a scalar: %s, you gave %s"
-         % (scalar_filters.keys(), reducer))
-    assert set(filter_names).issubset(series_filters), \
-        ("All but last filter must return a series: %s, you gave %s"
-         % (series_filters.keys(), filter_names))
-
-    # get the filter functions
-    retval = [series_filters[i] for i in filter_names]
-    retval.append(scalar_filters[reducer])
-    return retval
-
-
-def filters_args(_filters):
-    """
-    convenience function to take a list of
-    [['filter_name', args]] and convert these to functions
-    """
-    retval = []
-    filter_names = [f[0] for f in _filters]
-    filter_functions = filters(*filter_names)
-    for index, value in enumerate(_filters):
-        retval.append([filter_functions[index], value[-1]])
-    return retval
-
-
-def apply(data, filters):
-    """apply filters to a data series. does no safety check"""
-    for f in filters:
-        args = ()
-        if isinstance(f, list) or isinstance(f, tuple):
-            if len(f) == 2:  # function, extra arguments
-                f, args = f
-            elif len(f) == 1:  # function
-                f = f[0]
-            else:
-                raise AssertionError(
-                    "Each value must be either [filter, [args]] or [filter]")
-        data = f(data, *args)
-    return data

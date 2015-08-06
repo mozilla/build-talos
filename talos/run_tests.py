@@ -105,13 +105,6 @@ def setup_webserver(webserver):
 def run_tests(config, browser_config):
     """Runs the talos tests on the given configuration and generates a report.
     """
-    # data filters
-    filters = config['filters']
-    try:
-        filters = filter.filters_args(filters)
-    except AssertionError, e:
-        raise TalosError(str(e))
-
     # get the test data
     tests = config['tests']
     tests = useBaseTestDefaults(config.get('basetest', {}), tests)
@@ -135,15 +128,6 @@ def run_tests(config, browser_config):
         test['url'] = utils.interpolate(test['url'])
         test['setup'] = utils.interpolate(test['setup'])
         test['cleanup'] = utils.interpolate(test['cleanup'])
-
-        # ensure test-specific filters are valid
-        if 'filters' in test:
-            try:
-                filter.filters_args(test['filters'])
-            except AssertionError, e:
-                raise TalosError(str(e))
-            except IndexError, e:
-                raise TalosError(str(e))
 
     # pass --no-remote to firefox launch, if --develop is specified
     if browser_config['develop']:
@@ -204,8 +188,7 @@ def run_tests(config, browser_config):
     # results container
     talos_results = TalosResults(title=title,
                                  date=date,
-                                 browser_config=browser_config,
-                                 filters=filters)
+                                 browser_config=browser_config)
 
     # results links
     if not browser_config['develop']:

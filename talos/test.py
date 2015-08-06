@@ -1,4 +1,5 @@
 import os
+from talos import filter
 
 """
 test definitions for Talos
@@ -28,6 +29,7 @@ class Test(object):
     cycles = None  # number of cycles
     keys = []
     desktop = True
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
 
     @classmethod
     def name(cls):
@@ -102,6 +104,7 @@ class TsBase(Test):
         'tpmozafterpaint',
         'test_name_extension',
         'extensions',
+        'filters',
         'setup',
         'cleanup',
         'reinstall',     # A list of files from the profile directory that
@@ -129,7 +132,7 @@ class ts_paint(TsBase):
     shutdown = False
     xperf_counters = []
     win7_counters = []
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     tpmozafterpaint = True
     rss = False
     mainthread = False
@@ -184,7 +187,7 @@ class tpaint(TsBase):
     sps_profile_interval = 1
     sps_profile_entries = 2000000
     tpmozafterpaint = True
-    filters = [["ignore_first", [5]], ['median', []]]
+    filters = filter.ignore_first.prepare(5) + filter.median.prepare()
 
 
 @register_test()
@@ -199,7 +202,7 @@ class tresize(TsBase):
     sps_profile_interval = 2
     sps_profile_entries = 1000000
     tpmozafterpaint = True
-    filters = [["ignore_first", [5]], ['median', []]]
+    filters = filter.ignore_first.prepare(5) + filter.median.prepare()
 
 
 # Media Test
@@ -228,7 +231,6 @@ class PageloaderTest(Test):
     tpcycles = 1  # number of time to run each page
     cycles = None
     timeout = None
-    filters = None
     keys = ['tpmanifest', 'tpcycles', 'tppagecycles', 'tprender', 'tpchrome',
             'tpmozafterpaint', 'tploadnocache', 'rss', 'mainthread',
             'resolution', 'cycles', 'sps_profile', 'sps_profile_interval',
@@ -299,7 +301,7 @@ class tart(PageloaderTest):
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
 
 
 @register_test()
@@ -331,7 +333,7 @@ class cart(PageloaderTest):
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
 
 
 @register_test()
@@ -350,7 +352,7 @@ class damp(PageloaderTest):
     sps_profile_interval = 10
     sps_profile_entries = 1000000
     win_counters = w7_counters = linux_counters = mac_counters = None
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
 
 
 @register_test()
@@ -375,7 +377,7 @@ class glterrain(PageloaderTest):
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
 
 
 @register_test()
@@ -414,7 +416,7 @@ class tp5n(PageloaderTest):
                             'Microsoft-Windows-TCPIP']
     xperf_stackwalk = ['FileCreate', 'FileRead', 'FileWrite', 'FileFlush',
                        'FileClose']
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
     timeout = 1800
     setup = '${talos}/xtalos/start_xperf.py -c ${talos}/bcontroller.json'
     cleanup = '${talos}/xtalos/parse_xperf.py -c ${talos}/bcontroller.json'
@@ -443,7 +445,7 @@ class tp5o(PageloaderTest):
     responsiveness = True
     sps_profile_interval = 2
     sps_profile_entries = 4000000
-    filters = [["ignore_first", [5]], ['median', []]]
+    filters = filter.ignore_first.prepare(5) + filter.median.prepare()
     timeout = 1800
 
 
@@ -464,7 +466,7 @@ class tp5o_scroll(PageloaderTest):
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
 
 
 @register_test()
@@ -498,7 +500,7 @@ class kraken(PageloaderTest):
     sps_profile_entries = 1000000
     tpmozafterpaint = False
     preferences = {'dom.send_after_paint_to_content': False}
-    filters = [['mean', []]]
+    filters = filter.mean.prepare()
 
 
 @register_test()
@@ -515,12 +517,12 @@ class tcanvasmark(PageloaderTest):
     sps_profile_entries = 2500000
     tpmozafterpaint = False
     preferences = {'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [1]], ['median', []]]
+    filters = filter.ignore_first.prepare(1) + filter.median.prepare()
 
 
 class dromaeo(PageloaderTest):
     """abstract base class for dramaeo tests"""
-    filters = [['dromaeo', []]]
+    filters = filter.dromaeo.prepare()
 
 
 @register_test()
@@ -567,7 +569,7 @@ class tsvgm(PageloaderTest):
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [2]], ['median', []]]
+    filters = filter.ignore_first.prepare(2) + filter.median.prepare()
 
 
 @register_test()
@@ -585,7 +587,7 @@ class tsvgx(PageloaderTest):
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [5]], ['median', []]]
+    filters = filter.ignore_first.prepare(5) + filter.median.prepare()
 
 
 @register_test()
@@ -598,7 +600,7 @@ class tsvgr_opacity(PageloaderTest):
     tppagecycles = 25
     sps_profile_interval = 1
     sps_profile_entries = 10000000
-    filters = [["ignore_first", [5]], ['median', []]]
+    filters = filter.ignore_first.prepare(5) + filter.median.prepare()
 
 
 @register_test()
@@ -616,7 +618,7 @@ class tscrollx(PageloaderTest):
     preferences = {'layout.frame_rate': 0,
                    'docshell.event_starvation_delay_hint': 1,
                    'dom.send_after_paint_to_content': False}
-    filters = [["ignore_first", [5]], ['median', []]]
+    filters = filter.ignore_first.prepare(5) + filter.median.prepare()
 
 
 @register_test()
