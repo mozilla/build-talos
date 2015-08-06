@@ -295,12 +295,12 @@ def run_tests(config, browser_config):
 
 
 def main(args=sys.argv[1:]):
-    config, browser_config = get_configs()
-    utils.startLogger('debug' if config['debug'] else 'info')
     try:
-        sys.exit(run_tests(config, browser_config))
+        config, browser_config = get_configs()
     except ConfigurationError, exc:
         sys.exit("ERROR: %s" % exc)
+    utils.startLogger('debug' if config['debug'] else 'info')
+    sys.exit(run_tests(config, browser_config))
 
 
 if __name__ == '__main__':
