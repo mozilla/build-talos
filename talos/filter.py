@@ -162,3 +162,28 @@ def ignore_min(series):
     ignore minimum data point
     """
     return ignore(series, min)
+
+
+@define_filter
+def v8_subtest(series, name):
+    """
+       v8 benchmark score - modified for no sub benchmarks.
+       * removed Crypto and kept Encrypt/Decrypt standalone
+       * removed EarlyBoyer and kept Earley/Boyer standalone
+
+       this is not 100% in parity but within .3%
+    """
+    reference = {'Encrypt': 266181.,
+                 'Decrypt': 266181.,
+                 'DeltaBlue': 66118.,
+                 'Earley': 666463.,
+                 'Boyer': 666463.,
+                 'NavierStokes': 1484000.,
+                 'RayTrace': 739989.,
+                 'RegExp': 910985.,
+                 'Richards': 35302.,
+                 'Splay': 81491.
+                 }
+
+    return reference[name] / filter.geometric_mean(series)
+

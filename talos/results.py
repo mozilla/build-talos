@@ -14,7 +14,7 @@ import os
 import re
 import csv
 import logging
-from talos import output, utils
+from talos import output, utils, filter
 
 
 class TalosResults(object):
@@ -143,7 +143,7 @@ class TestResults(object):
 
 
 class Results(object):
-    def filter(self, filters):
+    def filter(self, testname, filters):
         """
         filter the results set;
         applies each of the filters in order to the results data
@@ -155,18 +155,47 @@ class Results(object):
         for result in self.results:
             page = result['page']
             data = result['runs']
-            for filter in filters:
-                data = filter.apply(data)
-            retval.append([data, page])
+            remaining_filters = []
+
+            # ignore* functions return a filtered set of data
+            for f in filters:
+                if f.func.__name__.startswith('ignore'):
+                    data = f.apply(data)
+                else:
+                    remaining_filters.append(f)
+
+            # calculate common numbers with the raw data
+            data_summary = {
+                'min': min(data),
+                'max': max(data),
+                'mean': filter.mean(data),
+                'median': filter.median(data),
+                'std': filter.stddev(data)
+            }
+
+            # apply the summarization filters
+            for f in remaining_filters:
+                if f.func.__name__ == "v8_subtest":
+                    # for v8_subtest we need to page for reference data
+                    data = filter.v8_subtest(data, page)
+                else:
+                    data = f.apply(data)
+            data_summary['filtered'] = data
+
+            # special case for dromaeo_dom and v8_7
+            if testname == 'dromaeo_dom' or testname.startswith('v8_7'):
+                data_summary['value'] = data
+
+            retval.append([data_summary, page])
         return retval
 
     def raw_values(self):
         return [(result['page'], result['runs']) for result in self.results]
 
-    def values(self, filters):
+    def values(self, testname, filters):
         """return filtered (value, page) for each value"""
-        return [[val, page] for val, page in self.filter(filters)
-                if val > -1]
+        return [[val, page] for val, page in self.filter(testname, filters)
+                if val['filtered'] > -1]
 
 
 class TsResults(Results):

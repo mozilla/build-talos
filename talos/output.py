@@ -97,35 +97,8 @@ class Output(object):
 
     @classmethod
     def v8_Metric(cls, val_list):
-        """v8 benchmark score"""
-        reference = {'Crypto': 266181.,
-                     'DeltaBlue': 66118.,
-                     'EarlyBoyer': 666463.,
-                     'NavierStokes': 1484000.,
-                     'RayTrace': 739989.,
-                     'RegExp': 910985.,
-                     'Richards': 35302.,
-                     'Splay': 81491.
-                     }
-        tests = [('Crypto', ['Encrypt', 'Decrypt']),
-                 ('DeltaBlue', ['DeltaBlue']),
-                 ('EarlyBoyer', ['Earley', 'Boyer']),
-                 ('NavierStokes', ['NavierStokes']),
-                 ('RayTrace', ['RayTrace']),
-                 ('RegExp', ['RegExp']),
-                 ('Richards', ['Richards']),
-                 ('Splay', ['Splay'])]
-        results = dict([(j, i) for i, j in val_list])
-        scores = []
-        logging.info("v8 benchmark")
-        for test, benchmarks in tests:
-            vals = [results[benchmark] for benchmark in benchmarks]
-            mean = filter.geometric_mean(vals)
-            score = reference[test] / mean
-            scores.append(score)
-            logging.info(" %s: %s", test, score * 100)
-        score = 100 * filter.geometric_mean(scores)
-        logging.info("Score: %s", score)
+        results = [i for i, j in val_list]
+        score = 100 * filter.geometric_mean(results)
         return score
 
     @classmethod
@@ -194,7 +167,9 @@ class GraphserverOutput(Output):
             if not (test.format == 'tpformat' and test.using_xperf):
                 vals = []
                 for result in test.results:
-                    vals.extend(result.values(test.test_config['filters']))
+                    filtered_val = result.values(testname,
+                                                 test.test_config['filters'])
+                    vals.extend([[i['filtered'], j] for i, j in filtered_val])
                 result_strings.append(self.construct_results(vals,
                                                              testname=testname,
                                                              **info_dict))
@@ -519,8 +494,9 @@ class PerfherderOutput(Output):
                 vals = []
                 for result in test.results:
                     filtered_results = \
-                        result.values(test.test_config['filters'])
-                    vals.extend(filtered_results)
+                        result.values(test_result['testrun']['suite'],
+                                      test.test_config['filters'])
+                    vals.extend([[i['filtered'], j] for i, j in filtered_results])
                     for val, page in filtered_results:
                         if page == 'NULL':
                             summary['subtests'][test.name()] = val
