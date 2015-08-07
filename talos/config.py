@@ -222,6 +222,12 @@ DEFAULTS = dict(
             'http://127.0.0.1/safebrowsing-dummy/newkey',
         'browser.safebrowsing.updateURL':
             'http://127.0.0.1/safebrowsing-dummy/update',
+        'browser.trackingprotection.gethashURL':
+            'http://127.0.0.1/safebrowsing-dummy/gethash',
+        'browser.trackingprotection.updateURL':
+            'http://127.0.0.1/safebrowsing-dummy/update',
+        'privacy.trackingprotection.introURL':
+            'http://127.0.0.1/trackingprotection/tour',
         'browser.safebrowsing.enabled': False,
         'browser.safebrowsing.malware.enabled': False,
         'browser.search.isUS': True,
