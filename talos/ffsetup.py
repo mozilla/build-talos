@@ -105,7 +105,7 @@ class FFSetup(object):
             self.profile_dir,
             self.browser_config["init_url"]
         )
-        browser = ProcessHandler(command_args)
+        browser = ProcessHandler(command_args, env=self.env)
         browser.run()
         try:
             browser.wait()
