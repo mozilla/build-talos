@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import mozinfo
+import threading
+
 
 class CounterManager(object):
 
@@ -30,3 +33,50 @@ class CounterManager(object):
 
     def updatePidList(self):
         """Updates the list of PIDs we're interested in"""
+
+
+if mozinfo.os == 'linux':
+    from talos.cmanager_linux import LinuxCounterManager \
+        as DefaultCounterManager
+elif mozinfo.os == 'win':
+    from talos.cmanager_win32 import WinCounterManager \
+        as DefaultCounterManager
+else:  # mac
+    from talos.cmanager_mac import MacCounterManager \
+        as DefaultCounterManager
+
+
+class CounterManagement(object):
+    def __init__(self, process, counters, resolution):
+        """
+        Public interface to manage counters.
+
+        On creation, automatically spawn a thread to collect counters.
+        Be sure to call :meth:`stop` to stop the thread.
+        """
+        assert counters
+        self._manager = DefaultCounterManager(process, counters)
+        self._raw_counters = counters
+        self._counter_results = \
+            dict([(counter, []) for counter in self._raw_counters])
+
+        self._resolution = resolution
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._collect)
+        self._thread.start()
+
+    def _collect(self):
+        while not self._stop.wait(self._resolution):
+            # Get the output from all the possible counters
+            for count_type in self._raw_counters:
+                val = self._manager.getCounterValue(count_type)
+                if val:
+                    self._counter_results[count_type].append(val)
+
+    def stop(self):
+        self._stop.set()
+        self._thread.join()
+
+    def results(self):
+        assert not self._thread.is_alive()
+        return self._counter_results

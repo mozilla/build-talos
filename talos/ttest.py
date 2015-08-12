@@ -24,44 +24,29 @@ import talosconfig
 import shutil
 import mozfile
 import logging
-from threading import Thread
 
 from talos.utils import TalosError, TalosCrash, TalosRegression
 from talos import ffprocess, TalosProcess
 from talos.ffsetup import FFSetup
+from talos.cmanager import CounterManagement
 
 
 class TTest(object):
 
     _pids = []
-    platform_type = ''
-
-    def __init__(self):
-        cmanager, platformtype = self.getPlatformType()
-        self.CounterManager = cmanager
-        self.platform_type = platformtype
-
-    def getPlatformType(self):
-        if platform.system() == "Linux":
-            import cmanager_linux
-            CounterManager = cmanager_linux.LinuxCounterManager
-            platform_type = 'linux_'
-        elif platform.system() in ("Windows", "Microsoft"):
-            if '5.1' in platform.version():  # winxp
-                platform_type = 'win_'
-            elif '6.1' in platform.version():  # w7
-                platform_type = 'w7_'
-            elif '6.2' in platform.version():  # w8
-                platform_type = 'w8_'
-            else:
-                raise TalosError('unsupported windows version')
-            import cmanager_win32
-            CounterManager = cmanager_win32.WinCounterManager
-        elif platform.system() == "Darwin":
-            import cmanager_mac
-            CounterManager = cmanager_mac.MacCounterManager
-            platform_type = 'mac_'
-        return CounterManager, platform_type
+    if platform.system() == "Linux":
+        platform_type = 'linux_'
+    elif platform.system() in ("Windows", "Microsoft"):
+        if '5.1' in platform.version():  # winxp
+            platform_type = 'win_'
+        elif '6.1' in platform.version():  # w7
+            platform_type = 'w7_'
+        elif '6.2' in platform.version():  # w8
+            platform_type = 'w8_'
+        else:
+            raise TalosError('unsupported windows version')
+    elif platform.system() == "Darwin":
+        platform_type = 'mac_'
 
     def cleanupAndCheckForCrashes(self, browser_config, profile_dir,
                                   test_name):
@@ -101,7 +86,7 @@ class TTest(object):
         if found:
             raise TalosCrash("Found crashes after test run, terminating test")
 
-    def testCleanup(self, browser_config, profile_dir, test_config, cm):
+    def testCleanup(self, browser_config, profile_dir, test_config):
         try:
             if os.path.isfile(browser_config['browser_log']):
                 with open(browser_config['browser_log'], "r") as results_file:
@@ -124,19 +109,6 @@ class TTest(object):
             logging.debug("unknown error during cleanup: %s"
                           % (traceback.format_exc(),))
 
-    def collectCounters(self):
-        # set up the counters for this test
-        if self.counters:
-            while not self.isFinished:
-                time.sleep(self.resolution)
-                # Get the output from all the possible counters
-                for count_type in self.counters:
-                    if not self.cm:
-                        continue
-                    val = self.cm.getCounterValue(count_type)
-                    if val and self.counter_results:
-                        self.counter_results[count_type].append(val)
-
     def runTest(self, browser_config, test_config):
         """
             Runs an url based test on the browser as specified in the
@@ -151,12 +123,12 @@ class TTest(object):
         """
 
         logging.debug("operating with platform_type : %s", self.platform_type)
-        self.counters = test_config.get(self.platform_type + 'counters', [])
-        self.resolution = test_config['resolution']
         with FFSetup(browser_config, test_config) as setup:
             return self._runTest(browser_config, test_config, setup)
 
     def _runTest(self, browser_config, test_config, setup):
+        counters = test_config.get(self.platform_type + 'counters', [])
+        resolution = test_config['resolution']
         try:
 
             # add the mainthread_io to the environment variable, as defined
@@ -235,7 +207,6 @@ class TTest(object):
                                     if setup.sps_profile else None)
                 )
 
-                self.counter_results = None
                 mainthread_error_count = 0
                 if test_config['setup']:
                     # Generate bcontroller.json for xperf
@@ -246,7 +217,6 @@ class TTest(object):
                         ['python'] + test_config['setup'].split(),
                     )
 
-                self.isFinished = False
                 mm_httpd = None
 
                 if test_config['name'] == 'media_tests':
@@ -266,16 +236,13 @@ class TTest(object):
                 pid = browser.pid
                 self._pids.append(pid)
 
-                if self.counters:
-                    self.cm = self.CounterManager(
+                counter_management = None
+                if counters:
+                    counter_management = CounterManagement(
                         browser_config['process'],
-                        self.counters
+                        counters,
+                        resolution
                     )
-                    self.counter_results = \
-                        dict([(counter, []) for counter in self.counters])
-                    cmthread = Thread(target=self.collectCounters)
-                    cmthread.setDaemon(True)  # don't hang on quit
-                    cmthread.start()
 
                 # todo: ctrl+c doesn't close the browser windows
                 try:
@@ -283,14 +250,15 @@ class TTest(object):
                 except KeyboardInterrupt:
                     browser.kill()
                     raise
+                finally:
+                    if counter_management:
+                        counter_management.stop()
+                    if mm_httpd:
+                        mm_httpd.stop()
                 logging.info(
                     "Browser exited with error code: {0}".format(code)
                 )
                 browser = None
-                self.isFinished = True
-
-                if mm_httpd:
-                    mm_httpd.stop()
 
                 if test_config['mainthread']:
                     rawlog = os.path.join(here, "mainthread_io.log")
@@ -354,13 +322,16 @@ class TTest(object):
 
                 # add the results from the browser output
                 try:
-                    test_results.add(browser_log_filename,
-                                     counter_results=self.counter_results)
-                except Exception as e:
+                    test_results.add(
+                        browser_log_filename,
+                        counter_results=(counter_management.results()
+                                         if counter_management
+                                         else None))
+                except Exception:
                     # Log the exception, but continue. One way to get here
                     # is if the browser hangs, and we'd still like to get
                     # symbolicated profiles in that case.
-                    logging.info(e)
+                    logging.exception("Unable to add results for cycle %d" % i)
 
                 if setup.sps_profile:
                     setup.sps_profile.symbolicate(i)
@@ -382,8 +353,6 @@ class TTest(object):
             # return results
             return test_results
 
-        except Exception, e:
-            self.counters = vars().get('cm', self.counters)
-            self.testCleanup(browser_config, setup.profile_dir, test_config,
-                             self.counters)
+        except Exception:
+            self.testCleanup(browser_config, setup.profile_dir, test_config)
             raise
