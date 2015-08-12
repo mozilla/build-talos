@@ -7,7 +7,6 @@
 import mozversion
 import mozfile
 import logging
-import filter
 import os
 import sys
 import time
@@ -16,10 +15,10 @@ import urllib
 import urlparse
 import utils
 
-from results import TalosResults
-from ttest import TTest
-from utils import TalosError, TalosCrash, TalosRegression
-from config import get_configs, ConfigurationError
+from talos.results import TalosResults
+from talos.ttest import TTest
+from talos.utils import TalosError, TalosCrash, TalosRegression
+from talos.config import get_configs, ConfigurationError
 
 # directory of this file
 here = os.path.dirname(os.path.realpath(__file__))

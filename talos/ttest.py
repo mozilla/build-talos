@@ -17,24 +17,18 @@ import platform
 import results
 import traceback
 import subprocess
-import tempfile
 import time
 import utils
 import mozcrash
 import talosconfig
 import shutil
-import zipfile
-import json
-from profiler import symbolication
-from profiler import sps
 import mozfile
 import logging
 from threading import Thread
 
-from utils import TalosError, TalosCrash, TalosRegression
-import ffprocess
-from ffsetup import FFSetup
-import TalosProcess
+from talos.utils import TalosError, TalosCrash, TalosRegression
+from talos import ffprocess, TalosProcess
+from talos.ffsetup import FFSetup
 
 
 class TTest(object):
@@ -178,69 +172,6 @@ class TTest(object):
                 firefox=browser_config['browser_path']
             )
 
-            upload_dir = os.environ.get('MOZ_UPLOAD_DIR', None)
-            sps_profile = upload_dir and test_config.get('sps_profile', False)
-
-            if test_config.get('sps_profile', False) and not upload_dir:
-                print "Profiling ignored because MOZ_UPLOAD_DIR was not set"
-
-            sps_profile_dir = None
-            profile_arcname = None
-            profiling_info = None
-
-            symbol_paths = {}
-
-            if sps_profile:
-                # Create a temporary directory into which the tests can put
-                # their profiles. These files will be assembled into one big
-                # zip file later on, which is put into the MOZ_UPLOAD_DIR.
-                sps_profile_dir = tempfile.mkdtemp()
-
-                sps_profile_interval = test_config.get('sps_profile_interval',
-                                                       1)
-                sps_profile_entries = test_config.get('sps_profile_entries',
-                                                      1000000)
-                sps_profile_threads = 'GeckoMain,Compositor'
-
-                # Make sure no archive already exists in the location where
-                # we plan to output our profiler archive
-                profile_arcname = os.path.join(
-                    upload_dir,
-                    "profile_{0}.sps.zip".format(test_config['name'])
-                )
-                logging.info("Clearing archive {0}".format(profile_arcname))
-                mozfile.remove(profile_arcname)
-
-                symbol_paths = {
-                    'FIREFOX': tempfile.mkdtemp(),
-                    'THUNDERBIRD': tempfile.mkdtemp(),
-                    'WINDOWS': tempfile.mkdtemp()
-                }
-
-                logging.info("Activating Gecko Profiling. Temp. profile dir:"
-                             " {0}, interval: {1}, entries: {2}"
-                             .format(sps_profile_dir,
-                                     sps_profile_interval,
-                                     sps_profile_entries))
-
-                profiling_info = {
-                    "sps_profile_interval": sps_profile_interval,
-                    "sps_profile_entries": sps_profile_entries,
-                    "sps_profile_dir": sps_profile_dir,
-                    "sps_profile_threads": sps_profile_threads
-                }
-
-                if test_config.get('sps_profile_startup', False):
-                    # Set environment variables which will cause profiling to
-                    # start as early as possible. These are consumed by Gecko
-                    # itself, not by Talos JS code.
-                    setup.env.update({
-                        'MOZ_PROFILER_STARTUP': '1',
-                        'MOZ_PROFILER_INTERVAL': str(sps_profile_interval),
-                        'MOZ_PROFILER_ENTRIES': str(sps_profile_entries),
-                        "MOZ_PROFILER_THREADS": str(sps_profile_threads)
-                    })
-
             logging.debug("initialized %s", browser_config['process'])
 
             # setup global (cross-cycle) counters:
@@ -290,7 +221,7 @@ class TTest(object):
 
                 # Run the test
                 timeout = test_config.get('timeout', 7200)  # 2 hours default
-                if sps_profile:
+                if setup.sps_profile:
                     # When profiling, give the browser some extra time
                     # to dump the profile.
                     timeout += 5 * 60
@@ -300,7 +231,8 @@ class TTest(object):
                     browser_config["extra_args"],
                     setup.profile_dir,
                     test_config['url'],
-                    profiling_info=profiling_info
+                    profiling_info=(setup.sps_profile.profiling_info
+                                    if setup.sps_profile else None)
                 )
 
                 self.counter_results = None
@@ -430,127 +362,13 @@ class TTest(object):
                     # symbolicated profiles in that case.
                     logging.info(e)
 
-                if sps_profile:
-                    symbolicator = symbolication.ProfileSymbolicator({
-                        # Trace-level logging (verbose)
-                        "enableTracing": 0,
-                        # Fallback server if symbol is not found locally
-                        "remoteSymbolServer":
-                            "http://symbolapi.mozilla.org:80/talos/",
-                        # Maximum number of symbol files to keep in memory
-                        "maxCacheEntries": 2000000,
-                        # Frequency of checking for recent symbols to
-                        # cache (in hours)
-                        "prefetchInterval": 12,
-                        # Oldest file age to prefetch (in hours)
-                        "prefetchThreshold": 48,
-                        # Maximum number of library versions to pre-fetch
-                        # per library
-                        "prefetchMaxSymbolsPerLib": 3,
-                        # Default symbol lookup directories
-                        "defaultApp": "FIREFOX",
-                        "defaultOs": "WINDOWS",
-                        # Paths to .SYM files, expressed internally as a
-                        # mapping of app or platform names to directories
-                        # Note: App & OS names from requests are converted
-                        # to all-uppercase internally
-                        "symbolPaths": symbol_paths
-                    })
-
-                    if browser_config['symbols_path']:
-                        if mozfile.is_url(browser_config['symbols_path']):
-                            symbolicator\
-                                .integrate_symbol_zip_from_url(
-                                    browser_config['symbols_path']
-                                )
-                        else:
-                            symbolicator\
-                                .integrate_symbol_zip_from_file(
-                                    browser_config['symbols_path']
-                                )
-
-                    missing_symbols_zip = os.path.join(upload_dir,
-                                                       "missingsymbols.zip")
-
-                    try:
-                        mode = zipfile.ZIP_DEFLATED
-                    except NameError:
-                        mode = zipfile.ZIP_STORED
-                    with zipfile.ZipFile(profile_arcname, 'a', mode) as arc:
-                        # Collect all individual profiles that the test
-                        # has put into sps_profile_dir.
-                        for profile_filename in os.listdir(sps_profile_dir):
-                            testname = profile_filename
-                            if testname.endswith(".sps"):
-                                testname = testname[0:-4]
-                            profile_path = os.path.join(sps_profile_dir,
-                                                        profile_filename)
-                            try:
-                                with open(profile_path, 'r') as profile_file:
-                                    profile = json.load(profile_file)
-                                symbolicator\
-                                    .dump_and_integrate_missing_symbols(
-                                        profile,
-                                        missing_symbols_zip
-                                    )
-                                symbolicator.symbolicate_profile(profile)
-                                sps.save_profile(profile, profile_path)
-                                profile = None  # Free up memory
-                            except MemoryError as e:
-                                logging.info(
-                                    "Ran out of memory while trying"
-                                    " to symbolicate profile {0} (cycle {1})"
-                                    .format(profile_path, i)
-                                )
-                            except Exception as e:
-                                logging.info(e)
-                                logging.info(
-                                    "Encountered an exception during profile"
-                                    " symbolication {0} (cycle {1})"
-                                    .format(profile_path, i)
-                                )
-                            profile = None  # Free up memory
-
-                            # Our zip will contain one directory per subtest,
-                            # and each subtest directory will contain one or
-                            # more cycle_i.sps files. For example, with
-                            # test_config['name'] == 'tscrollx',
-                            # profile_filename == 'iframe.svg.sps', i == 0,
-                            # we'll get path_in_zip ==
-                            # 'profile_tscrollx/iframe.svg/cycle_0.sps'.
-                            cycle_name = "cycle_{0}.sps".format(i)
-                            path_in_zip = \
-                                os.path.join(
-                                    "profile_{0}".format(test_config['name']),
-                                    testname,
-                                    cycle_name
-                                )
-                            logging.info(
-                                "Adding profile {0} to archive {1}"
-                                .format(path_in_zip, profile_arcname)
-                            )
-                            try:
-                                arc.write(profile_path, path_in_zip)
-                            except Exception as e:
-                                logging.info(e)
-                                logging.info(
-                                    "Failed to copy profile {0} as {1} to"
-                                    " archive {2}".format(profile_path,
-                                                          path_in_zip,
-                                                          profile_arcname)
-                                )
+                if setup.sps_profile:
+                    setup.sps_profile.symbolicate(i)
 
                 # clean up any stray browser processes
                 self.cleanupAndCheckForCrashes(browser_config,
                                                setup.profile_dir,
                                                test_config['name'])
-                # clean up the bcontroller process
-
-            # cleanup
-            if sps_profile:
-                mozfile.remove(sps_profile_dir)
-                for symbol_path in symbol_paths.values():
-                    mozfile.remove(symbol_path)
 
             # include global (cross-cycle) counters
             test_results.all_counter_results.extend(
