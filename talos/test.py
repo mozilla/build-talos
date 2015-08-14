@@ -255,7 +255,8 @@ class tps(PageloaderTest):
     preferences = {
         'addon.test.tabswitch.urlfile': os.path.join('${talos}',
                                                      'page_load_test',
-                                                     'tp5o.html')
+                                                     'tp5o.html'),
+        'addon.test.tabswitch.webserver': '${webserver}',
     }
 
 

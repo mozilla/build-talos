@@ -254,7 +254,8 @@ function handleFile(win, file) {
 
 
   let testURLs = [];
-  let parent = localURI.spec.split(localFile.leafName)[0];
+  let server = Services.prefs.getCharPref("addon.test.tabswitch.webserver");
+  let parent = server + "/page_load_test/";
   let lines = req.responseText.split('<a href=\"');
   testURLs = [];
   lines.forEach(function(a) {
