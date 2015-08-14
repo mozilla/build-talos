@@ -218,7 +218,6 @@ def run_tests(config, browser_config):
     utils.stamped_msg(title, "Started")
     for test in tests:
         testname = test['name']
-        test['browser_log'] = browser_config['browser_log']
         utils.stamped_msg("Running test " + testname, "Started")
 
         mozfile.remove('logcat.log')

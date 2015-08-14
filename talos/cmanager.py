@@ -51,27 +51,32 @@ class CounterManagement(object):
         """
         Public interface to manage counters.
 
-        On creation, automatically spawn a thread to collect counters.
+        On creation, create a thread to collect counters. Call :meth:`start`
+        to start collecting counters with that thread.
+
         Be sure to call :meth:`stop` to stop the thread.
         """
         assert counters
-        self._manager = DefaultCounterManager(process, counters)
         self._raw_counters = counters
+        self._process = process
         self._counter_results = \
             dict([(counter, []) for counter in self._raw_counters])
 
         self._resolution = resolution
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._collect)
-        self._thread.start()
 
     def _collect(self):
+        manager = DefaultCounterManager(self._process, self._raw_counters)
         while not self._stop.wait(self._resolution):
             # Get the output from all the possible counters
             for count_type in self._raw_counters:
-                val = self._manager.getCounterValue(count_type)
+                val = manager.getCounterValue(count_type)
                 if val:
                     self._counter_results[count_type].append(val)
+
+    def start(self):
+        self._thread.start()
 
     def stop(self):
         self._stop.set()

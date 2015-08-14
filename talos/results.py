@@ -115,18 +115,13 @@ class TestResults(object):
         - counter_results : counters accumulated for this cycle
         """
 
-        if isinstance(results, basestring):
-            # ensure the browser log exists
-            if not os.path.isfile(results):
-                raise utils.TalosError("no output from browser [%s]" % results)
-
-            # convert to a results class via parsing the browser log
-            browserLog = BrowserLogResults(
-                filename=results,
-                counter_results=counter_results,
-                global_counters=self.global_counters
-            )
-            results = browserLog.results()
+        # convert to a results class via parsing the browser log
+        browserLog = BrowserLogResults(
+            results,
+            counter_results=counter_results,
+            global_counters=self.global_counters
+        )
+        results = browserLog.results()
 
         self.using_xperf = browserLog.using_xperf
         # ensure the results format matches previous results
@@ -331,7 +326,7 @@ class BrowserLogResults(object):
     # xperf counters
     using_xperf = False
 
-    def __init__(self, filename=None, results_raw=None, counter_results=None,
+    def __init__(self, results_raw, counter_results=None,
                  global_counters=None):
         """
         - shutdown : whether to record shutdown results or not
@@ -339,19 +334,6 @@ class BrowserLogResults(object):
 
         self.counter_results = counter_results
         self.global_counters = global_counters
-
-        if not (results_raw or filename):
-            raise utils.TalosError("Must specify filename or results_raw")
-
-        self.filename = filename
-        if results_raw is None:
-            # read the file
-
-            if not os.path.isfile(filename):
-                raise utils.TalosError("File '%s' does not exist" % filename)
-
-            with open(filename, 'r') as f:
-                results_raw = f.read()
 
         self.results_raw = results_raw
 
@@ -373,8 +355,6 @@ class BrowserLogResults(object):
 
     def error(self, message):
         """raise a TalosError for bad parsing of the browser log"""
-        if self.filename:
-            message += ' [%s]' % self.filename
         raise utils.TalosError(message)
 
     def parse(self):

@@ -13,11 +13,11 @@
 """
 
 import os
+import sys
 import platform
 import results
 import traceback
 import subprocess
-import time
 import utils
 import mozcrash
 import talosconfig
@@ -26,7 +26,8 @@ import mozfile
 import logging
 
 from talos.utils import TalosError, TalosCrash, TalosRegression
-from talos import ffprocess, TalosProcess
+from talos import ffprocess
+from talos.talos_process import run_browser
 from talos.ffsetup import FFSetup
 from talos.cmanager import CounterManagement
 
@@ -88,11 +89,6 @@ class TTest(object):
 
     def testCleanup(self, browser_config, profile_dir, test_config):
         try:
-            if os.path.isfile(browser_config['browser_log']):
-                with open(browser_config['browser_log'], "r") as results_file:
-                    results_raw = results_file.read()
-                logging.info(results_raw)
-
             if profile_dir:
                 try:
                     self.cleanupAndCheckForCrashes(browser_config,
@@ -172,9 +168,8 @@ class TTest(object):
 
             for i in range(test_config['cycles']):
 
-                # remove the browser log file and error file
-                for key in ('browser_log', 'error_filename'):
-                    mozfile.remove(browser_config[key])
+                # remove the browser  error file
+                mozfile.remove(browser_config['error_filename'])
 
                 # reinstall any file whose stability we need to ensure across
                 # the cycles
@@ -225,17 +220,6 @@ class TTest(object):
                         os.path.dirname(os.path.realpath(__file__))
                     )
 
-                browser = TalosProcess.TalosProcess(
-                    command_args,
-                    env=setup.env,
-                    logfile=browser_config['browser_log'],
-                    suppress_javascript_errors=True,
-                    wait_for_quit_timeout=5
-                )
-                browser.run(timeout=timeout)
-                pid = browser.pid
-                self._pids.append(pid)
-
                 counter_management = None
                 if counters:
                     counter_management = CounterManagement(
@@ -244,21 +228,22 @@ class TTest(object):
                         resolution
                     )
 
-                # todo: ctrl+c doesn't close the browser windows
                 try:
-                    code = browser.wait()
-                except KeyboardInterrupt:
-                    browser.kill()
-                    raise
+                    pid, browser_output = run_browser(
+                        command_args,
+                        timeout=timeout,
+                        env=setup.env,
+                        # start collecting counters as soon as possible
+                        on_started=(counter_management.start
+                                    if counter_management else None),
+                    )
                 finally:
                     if counter_management:
                         counter_management.stop()
                     if mm_httpd:
                         mm_httpd.stop()
-                logging.info(
-                    "Browser exited with error code: {0}".format(code)
-                )
-                browser = None
+
+                self._pids.append(pid)
 
                 if test_config['mainthread']:
                     rawlog = os.path.join(here, "mainthread_io.log")
@@ -289,28 +274,15 @@ class TTest(object):
                                                     browser_config,
                                                     test_config,
                                                     pid=pid)
-                    cleanup = TalosProcess.TalosProcess(
-                        ['python'] + test_config['cleanup'].split(),
-                        env=os.environ.copy()
+                    subprocess.call(
+                        [sys.executable] + test_config['cleanup'].split()
                     )
-                    cleanup.run()
-                    cleanup.wait()
-
-                # allow mozprocess to terminate fully.
-                # It appears our log file is partial unless we wait
-                time.sleep(5)
 
                 # For startup tests, we launch the browser multiple times
                 # with the same profile
                 for fname in ('sessionstore.js', '.parentlock',
                               'sessionstore.bak'):
                     mozfile.remove(os.path.join(setup.profile_dir, fname))
-
-                # ensure the browser log exists
-                browser_log_filename = browser_config['browser_log']
-                if not os.path.isfile(browser_log_filename):
-                    raise TalosError("no output from browser [%s]"
-                                     % browser_log_filename)
 
                 # check for xperf errors
                 if os.path.exists(browser_config['error_filename']) or \
@@ -323,7 +295,7 @@ class TTest(object):
                 # add the results from the browser output
                 try:
                     test_results.add(
-                        browser_log_filename,
+                        '\n'.join(browser_output),
                         counter_results=(counter_management.results()
                                          if counter_management
                                          else None))

@@ -78,9 +78,6 @@ def parse_args(argv=None):
             help="Path to windows performance tool xperf.exe")
     add_arg('--test_timeout', type=int, default=1200,
             help="Time to wait for the browser to output to the log file")
-    add_arg('--logFile', dest='browser_log',
-            default=os.path.abspath('browser_output.txt'),
-            help="Local log file to store the output from the browser in")
     add_arg('--errorFile', dest='error_filename',
             default=os.path.abspath('browser_failures.txt'),
             help="Filename to store the errors found during the test."
@@ -522,8 +519,7 @@ def tests(config):
 
 
 def get_browser_config(config):
-    required = ('preferences', 'extensions',
-                'browser_path', 'browser_log', 'browser_wait',
+    required = ('preferences', 'extensions', 'browser_path', 'browser_wait',
                 'extra_args', 'buildid', 'env', 'init_url')
     optional = {'bcontroller_config': '${talos}/bcontroller.json',
                 'branch_name': '',

@@ -9,8 +9,7 @@ def writeConfigFile(obj, vals):
 
 def generateTalosConfig(command_line, browser_config, test_config, pid=None):
     bcontroller_vars = ['command', 'child_process', 'process', 'browser_wait',
-                        'test_timeout', 'browser_log', 'browser_path',
-                        'error_filename']
+                        'test_timeout', 'browser_path', 'error_filename']
 
     if 'xperf_path' in browser_config:
         bcontroller_vars.append('xperf_path')
