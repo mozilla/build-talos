@@ -12,6 +12,9 @@ import post_file
 import time
 import utils
 
+# NOTE: we have a circular dependecy with output.py when we import results
+import results as TalosResults
+
 from StringIO import StringIO
 
 
@@ -489,10 +492,32 @@ class PerfherderOutput(Output):
 
             # serialize test results
             results = {}
+            tsresult = None
             summary = {"suite": 0, "subtests": {}}
             if not test.using_xperf:
                 vals = []
+
+                # TODO: counters!!!! we don't have any, but they suffer the same
                 for result in test.results:
+                    # XXX this will not work for manifests which list
+                    # the same page name twice. It also ignores cycles
+                    for page, val in result.raw_values():
+                        if page == 'NULL':
+                            results.setdefault(test.name(), []).extend(val)
+                            if tsresult is None:
+                                tsresult = r = TalosResults.Results()
+                                r.results = [{'index': 0, 'page': test.name(),
+                                              'runs': val}]
+                            else:
+                                r = tsresult.results[0]
+                                if r['page'] == test.name():
+                                    r['runs'].extend(val)
+                        else:
+                            results.setdefault(page, []).extend(val)
+
+                tresults = [tsresult] if tsresult else test.results
+
+                for result in tresults:
                     filtered_results = \
                         result.values(test_result['testrun']['suite'],
                                       test.test_config['filters'])
@@ -503,13 +528,6 @@ class PerfherderOutput(Output):
                         else:
                             summary['subtests'][page] = val
 
-                    # XXX this will not work for manifests which list
-                    # the same page name twice. It also ignores cycles
-                    for page, val in result.raw_values():
-                        if page == 'NULL':
-                            results.setdefault(test.name(), []).extend(val)
-                        else:
-                            results.setdefault(page, []).extend(val)
 
                 suite_summary = self.construct_results(vals,
                                                        testname=test.name())

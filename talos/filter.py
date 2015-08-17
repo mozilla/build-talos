@@ -185,5 +185,5 @@ def v8_subtest(series, name):
                  'Splay': 81491.
                  }
 
-    return reference[name] / filter.geometric_mean(series)
+    return reference[name] / geometric_mean(series)
 

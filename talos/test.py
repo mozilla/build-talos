@@ -486,6 +486,7 @@ class v8_7(PageloaderTest):
     resolution = 20
     tpmozafterpaint = False
     preferences = {'dom.send_after_paint_to_content': False}
+    filters = filter.v8_subtest.prepare()
 
 
 @register_test()
