@@ -88,11 +88,10 @@ def parse_args(argv=None):
             metavar="PREF=VALUE",
             help="defines an extra user preference")
     add_arg('--webServer', dest='webserver',
-            help="address of the webserver hosting the talos files")
+            help="DEPRECATED")
     add_arg('--develop', action='store_true', default=False,
             help="useful for running tests on a developer machine."
-                 " Creates a local webserver and doesn't upload to the"
-                 " graph servers.")
+                 " Doesn't upload to the graph servers.")
     add_arg('--responsiveness', action='store_true',
             help="turn on responsiveness collection")
     add_arg("--cycles", type=int,
@@ -367,9 +366,15 @@ def fix_xperf(config):
 
 
 @validator
-def check_webserver(config):
-    if config['develop'] and not config['webserver']:
-        config['webserver'] = 'localhost:15707'
+def set_webserver(config):
+    # pick a free port
+    import socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+
+    config['webserver'] = 'localhost:%d' % port
 
 
 @validator
@@ -483,7 +488,7 @@ def get_test(config, global_overrides, counters, test_instance):
 
     # fix up tpmanifest
     tpmanifest = getattr(test_instance, 'tpmanifest', None)
-    if tpmanifest and config.get('develop'):
+    if tpmanifest:
         test_instance.tpmanifest = \
             build_manifest(config, utils.interpolate(tpmanifest))
 
@@ -520,7 +525,7 @@ def tests(config):
 
 def get_browser_config(config):
     required = ('preferences', 'extensions', 'browser_path', 'browser_wait',
-                'extra_args', 'buildid', 'env', 'init_url')
+                'extra_args', 'buildid', 'env', 'init_url', 'webserver')
     optional = {'bcontroller_config': '${talos}/bcontroller.json',
                 'branch_name': '',
                 'child_process': 'plugin-container',
@@ -532,7 +537,6 @@ def get_browser_config(config):
                 'symbols_path': None,
                 'test_name_extension': '',
                 'test_timeout': 1200,
-                'webserver': '',
                 'xperf_path': None,
                 'error_filename': None,
                 }
