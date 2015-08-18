@@ -65,7 +65,7 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
             for i in range(1, wait_for_quit_timeout):
                 if proc.wait(1) is not None:
                     break
-            if proc.returncode is not None:
+            if proc.poll() is None:
                 logging.info(
                     "Browser shutdown timed out after {0} seconds, terminating"
                     " process.".format(wait_for_quit_timeout)
