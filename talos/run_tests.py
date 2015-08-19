@@ -66,15 +66,6 @@ def buildCommandLine(test):
     return ' '.join(url)
 
 
-def print_logcat():
-    if os.path.exists('logcat.log'):
-        with open('logcat.log') as f:
-            data = f.read()
-        for l in data.split('\r'):
-            # Buildbot will mark the job as failed if it finds 'ERROR'.
-            print l.replace('RROR', 'RR_R')
-
-
 def setup_webserver(webserver):
     """use mozhttpd to setup a webserver"""
     logging.info("starting webserver on %r" % webserver)
@@ -141,9 +132,7 @@ def run_tests(config, browser_config):
     browser_config['browser_path'] = \
         os.path.normpath(browser_config['browser_path'])
 
-    binary = browser_config.get("apk_path")
-    if not binary:
-        binary = browser_config["browser_path"]
+    binary = browser_config["browser_path"]
     version_info = mozversion.get_version(binary=binary)
     browser_config['browser_name'] = version_info['application_name']
     browser_config['browser_version'] = version_info['application_version']
@@ -202,8 +191,6 @@ def run_tests(config, browser_config):
             testname = test['name']
             utils.stamped_msg("Running test " + testname, "Started")
 
-            mozfile.remove('logcat.log')
-
             mytest = TTest()
             if mytest:
                 talos_results.add(mytest.runTest(browser_config, test))
@@ -228,7 +215,6 @@ def run_tests(config, browser_config):
         return 2
     finally:
         httpd.stop()
-        print_logcat()
 
     elapsed = timer.elapsed()
     print "cycle time: " + elapsed
