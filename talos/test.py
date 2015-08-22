@@ -107,6 +107,7 @@ class TsBase(Test):
         'filters',
         'setup',
         'cleanup',
+        'linux_counters',
         'reinstall',     # A list of files from the profile directory that
                          # should be copied to the temporary profile prior to
                          # running each cycle, to avoid one cycle overwriting
@@ -202,6 +203,8 @@ class tresize(TsBase):
     sps_profile_interval = 2
     sps_profile_entries = 1000000
     tpmozafterpaint = True
+    linux_counters = ['Network_lo_packets_rx', 'Network_lo_packets_tx', 'Network_eth0_packets_rx', 'Network_eth0_packets_tx',
+                      'Network_lo_bytes_rx', 'Network_lo_bytes_tx', 'Network_eth0_bytes_rx', 'Network_eth0_bytes_tx']
     filters = filter.ignore_first.prepare(5) + filter.median.prepare()
 
 

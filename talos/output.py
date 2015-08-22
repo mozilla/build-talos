@@ -183,6 +183,11 @@ class GraphserverOutput(Output):
             for cd in test.all_counter_results:
                 for counter_type, values in cd.items():
                     # get the counter name
+
+                    # We don't upload network counters to graph server
+                    if counter_type.startswith('Network'):
+                        continue
+
                     counterName = '%s_%s' % (test.name(),
                                              self.shortName(counter_type))
                     if not values:
@@ -497,7 +502,6 @@ class PerfherderOutput(Output):
             if not test.using_xperf:
                 vals = []
 
-                # TODO: counters!!!! we don't have any, but they suffer the same
                 for result in test.results:
                     # XXX this will not work for manifests which list
                     # the same page name twice. It also ignores cycles
@@ -537,6 +541,8 @@ class PerfherderOutput(Output):
                 for result, values in results.items():
                     test_result['results'][result] = values
 
+            # coalesce counters on --cycles, do filtering as needed
+            tcounters = {}
             # counters results_aux data
             for cd in test.all_counter_results:
                 for name, vals in cd.items():
@@ -551,22 +557,37 @@ class PerfherderOutput(Output):
                     if 'mainthreadio' in name:
                         continue
 
-                    if test.using_xperf:
-                        test_result['talos_counters'][name] = {"mean": vals[0]}
-                    else:
-                        # calculate mean and max value
-                        varray = []
-                        counter_mean = 0
-                        counter_max = 0
-                        if len(vals) > 0:
-                            for v in vals:
-                                varray.append(float(v))
-                            counter_mean = "%.2f" % filter.mean(varray)
-                            counter_max = "%.2f" % max(varray)
-                        test_result['talos_counters'][name] = {
-                            "mean": counter_mean,
-                            "max": counter_max
-                        }
+                    if name not in tcounters:
+                        tcounters[name] = []
+                    tcounters[name].extend(vals)
+
+            # counters results_aux data
+            for name in tcounters:
+                vals = tcounters[name]
+
+                if test.using_xperf:
+                    test_result['talos_counters'][name] = {"mean": vals[0]}
+                else:
+                    # calculate mean and max value
+                    varray = []
+                    counter_mean = 0
+                    counter_max = 0
+                    counter_range = 0
+                    if len(vals) > 0:
+                        for v in vals:
+                            varray.append(float(v))
+                        counter_mean = "%.2f" % filter.mean(varray)
+                        counter_max = "%.2f" % max(varray)
+                        counter_range = "%.2f" % (max(varray) - min(varray))
+
+                    # HACK: for network stats to debug stuff we want total traffic, not mean
+                    if name.startswith('Network'):
+                        counter_mean = counter_range
+
+                    test_result['talos_counters'][name] = {
+                        "mean": counter_mean,
+                        "max": counter_max
+                    }
 
             if browser_config['develop'] and not browser_config['sourcestamp']:
                 browser_config['sourcestamp'] = ''

@@ -5,6 +5,8 @@
 import os
 import re
 import subprocess
+import psutil
+
 from cmanager import CounterManager
 from mozprocess import pid as mozpid
 
@@ -142,6 +144,25 @@ def GetXRes(pids):
     return XRes
 
 
+def GetNetworkCounters(counterName):
+    args = {
+       "Network_lo_packets_rx": ('lo', 'packets_recv'),
+       "Network_lo_packets_tx": ('lo', 'packets_sent'),
+       "Network_lo_bytes_rx": ('lo', 'bytes_recv'),
+       "Network_lo_bytes_tx": ('lo', 'bytes_sent'),
+       "Network_eth0_packets_rx": ('eth0', 'packets_recv'),
+       "Network_eth0_packets_tx": ('eth0', 'packets_sent'),
+       "Network_eth0_bytes_rx": ('eth0', 'bytes_recv'),
+       "Network_eth0_bytes_tx": ('eth0', 'bytes_sent')
+    }
+    nic, field = args[counterName]
+    counters = psutil.net_io_counters(pernic=True)
+    data = counters[nic]
+    fields = ['bytes_sent', 'bytes_recv', 'packets_sent', 'packets_recv', 'errin', 'errout', 'dropin', 'dropout']
+    idx = fields.index(field)
+    return data[idx]
+
+
 class LinuxCounterManager(CounterManager):
     """This class manages the monitoring of a process with any number of
        counters.
@@ -153,7 +174,15 @@ class LinuxCounterManager(CounterManager):
 
     counterDict = {"Private Bytes": GetPrivateBytes,
                    "RSS": GetResidentSize,
-                   "XRes": GetXRes}
+                   "XRes": GetXRes,
+                   "Network_lo_packets_rx": GetNetworkCounters,
+                   "Network_lo_packets_tx": GetNetworkCounters,
+                   "Network_lo_bytes_rx": GetNetworkCounters,
+                   "Network_lo_bytes_tx": GetNetworkCounters,
+                   "Network_eth0_packets_rx": GetNetworkCounters,
+                   "Network_eth0_packets_tx": GetNetworkCounters,
+                   "Network_eth0_bytes_rx": GetNetworkCounters,
+                   "Network_eth0_bytes_tx": GetNetworkCounters}
 
     def __init__(self, process, counters=None,
                  childProcess="plugin-container"):
@@ -175,7 +204,10 @@ class LinuxCounterManager(CounterManager):
         """Returns the last value of the counter 'counterName'"""
         try:
             self.updatePidList()
-            return self.registeredCounters[counterName][0](self.pidList)
+            if counterName.startswith('Network'):
+                return self.registeredCounters[counterName][0](counterName)
+            else:
+                return self.registeredCounters[counterName][0](self.pidList)
         except:
             return None
 
