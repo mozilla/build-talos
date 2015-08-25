@@ -459,6 +459,8 @@ def build_manifest(config, manifestName):
     with open(manifestName + '.develop', 'w') as newHandle:
         for line in manifestLines:
             newline = line.replace('localhost', config['webserver'])
+            # bug 1195288, until tp5n.zip is modified,
+            # we need to replace dynamically
             newline = newline.replace('page_load_test', 'tests')
             newHandle.write(newline)
 
