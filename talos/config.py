@@ -458,8 +458,9 @@ def build_manifest(config, manifestName):
     # write modified manifest lines
     with open(manifestName + '.develop', 'w') as newHandle:
         for line in manifestLines:
-            newHandle.write(line.replace('localhost',
-                                         config['webserver']))
+            newline = line.replace('localhost', config['webserver'])
+            newline = newline.replace('page_load_test', 'tests')
+            newHandle.write(newline)
 
     newManifestName = manifestName + '.develop'
 
