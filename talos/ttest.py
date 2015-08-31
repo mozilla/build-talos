@@ -57,30 +57,10 @@ class TTest(object):
         ffprocess.cleanup_processes(self._pids,
                                     browser_config['browser_wait'])
 
-        # find stackwalk binary
-        if platform.system() in ('Windows', 'Microsoft'):
-            stackwalkpaths = ['win32', 'minidump_stackwalk.exe']
-        elif platform.system() == 'Linux':
-            # are we 64 bit?
-            if '64' in platform.architecture()[0]:
-                stackwalkpaths = ['linux64', 'minidump_stackwalk']
-            else:
-                stackwalkpaths = ['linux', 'minidump_stackwalk']
-        elif platform.system() == 'Darwin':
-            stackwalkpaths = ['osx', 'minidump_stackwalk']
-        else:
-            # no minidump_stackwalk available for your platform
-            return
-        stackwalkbin = os.path.join(os.path.dirname(__file__), 'breakpad',
-                                    *stackwalkpaths)
-        assert os.path.exists(stackwalkbin), \
-            "minidump_stackwalk binary not found: %s" % stackwalkbin
-
         # check for minidumps
         minidumpdir = os.path.join(profile_dir, 'minidumps')
         found = mozcrash.check_for_crashes(minidumpdir,
                                            browser_config['symbols_path'],
-                                           stackwalk_binary=stackwalkbin,
                                            test_name=test_name)
         mozfile.remove(minidumpdir)
 
