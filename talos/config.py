@@ -213,15 +213,13 @@ DEFAULTS = dict(
             '${webserver}/directoryLinks.json',
         'browser.newtabpage.directory.ping': '',
         'browser.newtabpage.introShown': True,
-        'browser.safebrowsing.gethashURL':
+        'browser.safebrowsing.provider.google.gethashURL':
             'http://127.0.0.1/safebrowsing-dummy/gethash',
-        'browser.safebrowsing.keyURL':
-            'http://127.0.0.1/safebrowsing-dummy/newkey',
-        'browser.safebrowsing.updateURL':
+        'browser.safebrowsing.provider.google.updateURL':
             'http://127.0.0.1/safebrowsing-dummy/update',
-        'browser.trackingprotection.gethashURL':
+        'browser.safebrowsing.provider.mozilla.gethashURL':
             'http://127.0.0.1/safebrowsing-dummy/gethash',
-        'browser.trackingprotection.updateURL':
+        'browser.safebrowsing.provider.mozilla.updateURL':
             'http://127.0.0.1/safebrowsing-dummy/update',
         'privacy.trackingprotection.introURL':
             'http://127.0.0.1/trackingprotection/tour',
