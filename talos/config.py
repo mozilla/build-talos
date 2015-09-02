@@ -88,10 +88,11 @@ def parse_args(argv=None):
             metavar="PREF=VALUE",
             help="defines an extra user preference")
     add_arg('--webServer', dest='webserver',
-            help="DEPRECATED")
+            help="address of the webserver hosting the talos files")
     add_arg('--develop', action='store_true', default=False,
             help="useful for running tests on a developer machine."
-                 " Doesn't upload to the graph servers.")
+                 " Creates a local webserver and doesn't upload to the"
+                 " graph servers.")
     add_arg('--responsiveness', action='store_true',
             help="turn on responsiveness collection")
     add_arg("--cycles", type=int,
@@ -366,15 +367,9 @@ def fix_xperf(config):
 
 
 @validator
-def set_webserver(config):
-    # pick a free port
-    import socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('', 0))
-    port = sock.getsockname()[1]
-    sock.close()
-
-    config['webserver'] = 'localhost:%d' % port
+def check_webserver(config):
+    if config['develop'] and not config['webserver']:
+        config['webserver'] = 'localhost:15707'
 
 
 @validator
@@ -458,11 +453,8 @@ def build_manifest(config, manifestName):
     # write modified manifest lines
     with open(manifestName + '.develop', 'w') as newHandle:
         for line in manifestLines:
-            newline = line.replace('localhost', config['webserver'])
-            # bug 1195288, until tp5n.zip is modified,
-            # we need to replace dynamically
-            newline = newline.replace('page_load_test', 'tests')
-            newHandle.write(newline)
+            newHandle.write(line.replace('localhost',
+                                         config['webserver']))
 
     newManifestName = manifestName + '.develop'
 
@@ -491,7 +483,7 @@ def get_test(config, global_overrides, counters, test_instance):
 
     # fix up tpmanifest
     tpmanifest = getattr(test_instance, 'tpmanifest', None)
-    if tpmanifest:
+    if tpmanifest and config.get('develop'):
         test_instance.tpmanifest = \
             build_manifest(config, utils.interpolate(tpmanifest))
 
@@ -528,7 +520,7 @@ def tests(config):
 
 def get_browser_config(config):
     required = ('preferences', 'extensions', 'browser_path', 'browser_wait',
-                'extra_args', 'buildid', 'env', 'init_url', 'webserver')
+                'extra_args', 'buildid', 'env', 'init_url')
     optional = {'bcontroller_config': '${talos}/bcontroller.json',
                 'branch_name': '',
                 'child_process': 'plugin-container',
@@ -540,6 +532,7 @@ def get_browser_config(config):
                 'symbols_path': None,
                 'test_name_extension': '',
                 'test_timeout': 1200,
+                'webserver': '',
                 'xperf_path': None,
                 'error_filename': None,
                 }
