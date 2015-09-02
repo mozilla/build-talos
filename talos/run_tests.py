@@ -66,15 +66,6 @@ def buildCommandLine(test):
     return ' '.join(url)
 
 
-def print_logcat():
-    if os.path.exists('logcat.log'):
-        with open('logcat.log') as f:
-            data = f.read()
-        for l in data.split('\r'):
-            # Buildbot will mark the job as failed if it finds 'ERROR'.
-            print l.replace('RROR', 'RR_R')
-
-
 def setup_webserver(webserver):
     """use mozhttpd to setup a webserver"""
 
@@ -157,9 +148,7 @@ def run_tests(config, browser_config):
     browser_config['browser_path'] = \
         os.path.normpath(browser_config['browser_path'])
 
-    binary = browser_config.get("apk_path")
-    if not binary:
-        binary = browser_config["browser_path"]
+    binary = browser_config["browser_path"]
     version_info = mozversion.get_version(binary=binary)
     browser_config['browser_name'] = version_info['application_name']
     browser_config['browser_version'] = version_info['application_version']
@@ -221,8 +210,6 @@ def run_tests(config, browser_config):
         testtimer = utils.Timer()
         logging.info("Starting test %s", testname)
 
-        mozfile.remove('logcat.log')
-
         try:
             mytest = TTest()
             if mytest:
@@ -231,7 +218,6 @@ def run_tests(config, browser_config):
                 logging.error("Error found while running %s", testname)
         except TalosRegression:
             logging.error("Detected a regression for %s", testname)
-            print_logcat()
             if httpd:
                 httpd.stop()
             # by returning 1, we report an orange to buildbot
@@ -242,14 +228,12 @@ def run_tests(config, browser_config):
             # problem and cannot continue
             #       this will prevent future tests from running
             traceback.print_exception(*sys.exc_info())
-            print_logcat()
             if httpd:
                 httpd.stop()
             # indicate a failure to buildbot, turn the job red
             return 2
 
         logging.info("Completed test %s (%s)", testname, testtimer.elapsed())
-        print_logcat()
 
     logging.info("Completed test suite (%s)", timer.elapsed())
 
