@@ -23,7 +23,7 @@ class Reader(object):
 
         if not (line.startswith('JavaScript error:') or
                 line.startswith('JavaScript warning:')):
-            print line
+            logging.debug('BROWSER_OUTPUT: %s', line)
             self.output.append(line)
 
 

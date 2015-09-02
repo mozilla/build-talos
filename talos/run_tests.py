@@ -215,10 +215,11 @@ def run_tests(config, browser_config):
 
     # run the tests
     timer = utils.Timer()
-    utils.stamped_msg(title, "Started")
+    logging.info("Starting test suite %s", title)
     for test in tests:
         testname = test['name']
-        utils.stamped_msg("Running test " + testname, "Started")
+        testtimer = utils.Timer()
+        logging.info("Starting test %s", testname)
 
         mozfile.remove('logcat.log')
 
@@ -227,11 +228,9 @@ def run_tests(config, browser_config):
             if mytest:
                 talos_results.add(mytest.runTest(browser_config, test))
             else:
-                utils.stamped_msg("Error found while running %s" % testname,
-                                  "Error")
+                logging.error("Error found while running %s", testname)
         except TalosRegression:
-            utils.stamped_msg("Detected a regression for " + testname,
-                              "Stopped")
+            logging.error("Detected a regression for %s", testname)
             print_logcat()
             if httpd:
                 httpd.stop()
@@ -242,21 +241,17 @@ def run_tests(config, browser_config):
             # NOTE: if we get into this condition, talos has an internal
             # problem and cannot continue
             #       this will prevent future tests from running
-            utils.stamped_msg("Failed %s" % testname, "Stopped")
-            TalosError_tb = sys.exc_info()
-            traceback.print_exception(*TalosError_tb)
+            traceback.print_exception(*sys.exc_info())
             print_logcat()
             if httpd:
                 httpd.stop()
             # indicate a failure to buildbot, turn the job red
             return 2
 
-        utils.stamped_msg("Completed test " + testname, "Stopped")
+        logging.info("Completed test %s (%s)", testname, testtimer.elapsed())
         print_logcat()
 
-    elapsed = timer.elapsed()
-    print "cycle time: " + elapsed
-    utils.stamped_msg(title, "Stopped")
+    logging.info("Completed test suite (%s)", timer.elapsed())
 
     # stop the webserver if running
     if httpd:
@@ -266,6 +261,7 @@ def run_tests(config, browser_config):
     if results_urls:
         talos_results.output(results_urls)
         if browser_config['develop']:
+            print
             print ("Thanks for running Talos locally. Results are in"
                    " %s and %s" % (results_urls['results_urls'],
                                    results_urls['datazilla_urls']))

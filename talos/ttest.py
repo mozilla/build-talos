@@ -120,8 +120,6 @@ class TTest(object):
                 firefox=browser_config['browser_path']
             )
 
-            logging.debug("initialized %s", browser_config['process'])
-
             # setup global (cross-cycle) counters:
             # shutdown, responsiveness
             global_counters = {}
@@ -147,6 +145,8 @@ class TTest(object):
             )
 
             for i in range(test_config['cycles']):
+                logging.info("Running cycle %d/%d for %s test...",
+                             i+1, test_config['cycles'], test_config['name'])
 
                 # remove the browser  error file
                 mozfile.remove(browser_config['error_filename'])
@@ -299,8 +299,7 @@ class TTest(object):
             )
             for c in test_results.all_counter_results:
                 for key, value in c.items():
-                    print "COUNTER: %s" % key
-                    print value
+                    logging.debug("COUNTER %r: %s", key, value)
 
             # return results
             return test_results

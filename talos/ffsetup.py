@@ -109,7 +109,12 @@ class FFSetup(object):
             self.profile_dir,
             self.browser_config["init_url"]
         )
-        browser = ProcessHandler(command_args, env=self.env)
+
+        def browser_log(line):
+            logging.debug('BROWSER_OUTPUT: %s', line)
+
+        browser = ProcessHandler(command_args, env=self.env,
+                                 processOutputLine=browser_log)
         browser.run()
         try:
             browser.wait()
@@ -142,6 +147,8 @@ class FFSetup(object):
             self.sps_profile.clean()
 
     def __enter__(self):
+        logging.info('Initialising browser for %s test...',
+                     self.test_config['name'])
         self._init_env()
         self._init_profile()
         try:
@@ -150,6 +157,7 @@ class FFSetup(object):
             self.clean()
             raise
         self._init_sps_profile()
+        logging.info('Browser initialized.')
         return self
 
     def __exit__(self, type, value, tb):

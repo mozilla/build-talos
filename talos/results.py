@@ -13,7 +13,6 @@ import json
 import os
 import re
 import csv
-import logging
 from talos import output, utils, filter
 
 
@@ -60,7 +59,6 @@ class TalosResults(object):
         - output_formats: a dict mapping formats to a list of URLs
         """
 
-        logging.info("Outputting talos results => %s", output_formats)
         tbpl_output = {}
         try:
 
@@ -84,7 +82,8 @@ class TalosResults(object):
             print '\nFAIL: %s' % str(e).replace('\n', '\nRETURN:')
             raise e
 
-        print "TinderboxPrint: TalosResult: %s" % json.dumps(tbpl_output)
+        if tbpl_output:
+            print "TinderboxPrint: TalosResult: %s" % json.dumps(tbpl_output)
 
 
 class TestResults(object):

@@ -35,7 +35,7 @@ class Timer(object):
 def startLogger(levelChoice):
     # declare and define global logger object to send logging messages to
     log_levels = {'debug': logging.DEBUG, 'info': logging.INFO}
-    logging.basicConfig(format='%(levelname)s : %(message)s',
+    logging.basicConfig(format='%(asctime)-15s %(levelname)s : %(message)s',
                         level=log_levels[levelChoice])
 
 

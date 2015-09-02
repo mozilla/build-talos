@@ -161,8 +161,7 @@ class GraphserverOutput(Output):
                 # /run_tests.py#l176
                 testname += test.extension()
 
-            utils.stamped_msg("Generating results file: %s" % test.name(),
-                              "Started")
+            logging.debug("Generating results file: %s" % test.name())
 
             # HACK: when running xperf, we upload xperf counters to the graph
             # server but we do not want to
@@ -176,8 +175,6 @@ class GraphserverOutput(Output):
                 result_strings.append(self.construct_results(vals,
                                                              testname=testname,
                                                              **info_dict))
-                utils.stamped_msg("Generating results file: %s" % test.name(),
-                                  "Stopped")
 
             # counter results
             for cd in test.all_counter_results:
