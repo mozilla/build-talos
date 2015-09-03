@@ -4,10 +4,35 @@
 
 import time
 import logging
+import psutil
 from mozprocess import ProcessHandler
 from threading import Event
 
 from utils import TalosError
+
+
+class ProcessContext(object):
+    """
+    Store useful results of the browser execution.
+    """
+    def __init__(self):
+        self.output = None
+        self.process = None
+
+    @property
+    def pid(self):
+        return self.process and self.process.pid
+
+    def kill_process(self):
+        if self.process and self.process.is_running():
+            logging.debug("Terminating %s", self.process)
+            self.process.terminate()
+            try:
+                self.process.wait(3)
+            except psutil.TimeoutExpired:
+                self.process.kill()
+                # will raise TimeoutExpired if unable to kill
+                self.process.wait(3)
 
 
 class Reader(object):
@@ -34,6 +59,9 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
     After the browser prints __endTimestamp, we give it 5
     seconds to quit and kill it if it's still alive at that point.
 
+    Note that this method ensure that the process is killed at
+    the end. If this is not possible, an exception will be raised.
+
     :param command: the commad (as a string list) to run the browser
     :param timeout: if specified, timeout to wait for the browser before
                     we raise a :class:`TalosError`
@@ -42,8 +70,9 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
     :param kwargs: additional keyword arguments for the :class:`ProcessHandler`
                    instance
 
-    Returns a tuple (pid, output) where output is a list of strings.
+    Returns a ProcessContext instance, with available output and pid used.
     """
+    context = ProcessContext()
     first_time = int(time.time()) * 1000
     wait_for_quit_timeout = 5
     event = Event()
@@ -55,6 +84,7 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
     proc = ProcessHandler(command, **kwargs)
     proc.run()
     try:
+        context.process = psutil.Process(proc.pid)
         if on_started:
             on_started()
         # wait until we saw __endTimestamp in the proc output,
@@ -72,9 +102,8 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
                 )
     finally:
         # this also handle KeyboardInterrupt
-        if proc.poll() is None:
-            proc.kill()
-            proc.wait(timeout=1)  # wait a bit for complete termination
+        # ensure early the process is really terminated
+        context.kill_process()
 
     reader.output.append(
         "__startBeforeLaunchTimestamp%d__endBeforeLaunchTimestamp"
@@ -84,4 +113,5 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
         % (int(time.time()) * 1000))
 
     logging.info("Browser exited with error code: {0}".format(proc.returncode))
-    return proc.pid, reader.output
+    context.output = reader.output
+    return context
