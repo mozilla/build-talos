@@ -5,6 +5,7 @@
 import time
 import logging
 import psutil
+import mozcrash
 from mozprocess import ProcessHandler
 from threading import Event
 
@@ -90,6 +91,8 @@ def run_browser(command, timeout=None, on_started=None, **kwargs):
         # wait until we saw __endTimestamp in the proc output,
         # or the browser just terminated - or we have a timeout
         if not event.wait(timeout):
+            # try to extract the minidump stack if the browser hangs
+            mozcrash.kill_and_get_minidump(proc.pid)
             raise TalosError("timeout")
         if reader.got_end_timestamp:
             for i in range(1, wait_for_quit_timeout):
